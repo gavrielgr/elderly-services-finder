@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.95.0'; // Updated version number
+const APP_VERSION = '1.96.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
@@ -490,14 +490,9 @@ function renderCategories() {
 }
 
 function renderDefaultResults() {
-    // If data exists, show the 5 most recent services
-    if (allServicesData) {
-        resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה</div>';
-    } else {
-        resultsContainer.innerHTML = '<div class="results-message">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
-    }
+    // אם אין חיפוש טקסט ואין קטגוריה נבחרת, הצג הודעה במקום כל התוצאות
+    resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה כדי להציג תוצאות</div>';
 }
-
 // Search functions
 function performSearch() {
     if (!allServicesData) {
@@ -526,13 +521,17 @@ function searchServices(query, category, noWaitlistOnly) {
     let results = [];
     const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
     
+    // אם אין חיפוש וגם אין קטגוריה נבחרת, החזר מערך ריק
+    if (searchTerms.length === 0 && !category) {
+        return [];
+    }
+    
     // Process each category (sheet)
     Object.entries(allServicesData).forEach(([sheetName, services]) => {
         // Trim sheet name for comparison with active category
         const trimmedSheetName = sheetName.trim();
         
         // Skip if category filter is applied and doesn't match
-        // Use trimmed version for comparison with the active category
         if (category && category !== trimmedSheetName) return;
         
         // Skip empty sheets
@@ -544,11 +543,11 @@ function searchServices(query, category, noWaitlistOnly) {
             const hasWaitlist = service['רשימת המתנה'] === 'כן';
             if (noWaitlistOnly && hasWaitlist) return;
             
-            // If no search terms, include all services from the category
-            if (searchTerms.length === 0) {
+            // If no search terms but category is selected, include all services from the category
+            if (searchTerms.length === 0 && category) {
                 results.push({
                     ...service,
-                    category: trimmedSheetName // Use trimmed name
+                    category: trimmedSheetName
                 });
                 return;
             }
@@ -565,7 +564,7 @@ function searchServices(query, category, noWaitlistOnly) {
             if (matchesAllTerms) {
                 results.push({
                     ...service,
-                    category: trimmedSheetName // Use trimmed name
+                    category: trimmedSheetName
                 });
             }
         });
