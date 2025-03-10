@@ -1,10 +1,11 @@
 // Global variables
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0'; // Updated version number
 const DB_NAME = 'elderlyServicesDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2; // Increased DB version
 const STORE_NAME = 'servicesData';
 const DATA_KEY = 'allServicesData';
 const LAST_UPDATED_KEY = 'lastUpdated';
+const VERSION_KEY = 'appVersion';
 
 // Replace with your actual Google Apps Script URL
 const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhjH6M2KJrbCQRu4YiofKbgwrkDpjxZGvLIUqE4KrcA_IKd5sp_8eDl0Pb_zEjeWb9_F8A26cGZyN3LnUwLp1tSGwE4DO0MvbpgpbuL6dkaSgQyecapCtZLqZWSy4fns_lzmQ-VVQYa0YZvoLbV3-5Oq0p4FguPA1dOH8tQlui0VwZ_H9mdlkd0D1AgxO53pa8r4r8VlKWtje0O0-W-tIQTtzYauPWkvm8bwXofRooP4qw-IYmKBYIVb_wXqSyHH5n9dcN7a7v5RpLauKypRY9G1hw1Uw&lib=MOF1g2zWJcL4207AxUsxFPKpukIcnFaFe';
@@ -46,6 +47,7 @@ let currentSearchQuery = '';
 let noWaitlistOnly = false;
 let currentServiceDetails = null;
 let isOnline = navigator.onLine;
+let storedVersion = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', initApp);
@@ -86,6 +88,9 @@ async function initApp() {
     updateConnectionStatus();
     
     try {
+        // Check for version mismatch first
+        await checkAppVersion();
+        
         // Load data from IndexedDB
         await loadFromIndexedDB();
         
@@ -96,6 +101,70 @@ async function initApp() {
     } catch (error) {
         console.error('Error initializing app:', error);
         showStatusMessage('שגיאה בטעינת המידע. נסה שוב מאוחר יותר.', 'error');
+    }
+}
+
+// Check if app version has changed
+async function checkAppVersion() {
+    try {
+        // Open the database
+        const db = await openDatabase();
+        
+        // Get stored version
+        storedVersion = await getFromStore(db, VERSION_KEY);
+        
+        if (!storedVersion || storedVersion !== APP_VERSION) {
+            console.log(`Version change detected: ${storedVersion || 'none'} -> ${APP_VERSION}`);
+            
+            // Clear caches
+            if ('caches' in window) {
+                try {
+                    const cacheKeys = await caches.keys();
+                    await Promise.all(
+                        cacheKeys.map(key => caches.delete(key))
+                    );
+                    console.log('All caches cleared due to version change');
+                } catch (error) {
+                    console.error('Error clearing caches:', error);
+                }
+            }
+            
+            // Delete all data in IndexedDB
+            await clearIndexedDB();
+            
+            // Store the new version
+            await saveToIndexedDBSimple(VERSION_KEY, APP_VERSION);
+            
+            // Show update message to user
+            showStatusMessage('גרסה חדשה! המידע יטען מחדש.', 'success', 5000);
+            
+            // Force a refresh from API
+            if (isOnline) {
+                await refreshData(false);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking app version:', error);
+        // Continue with app initialization even if this fails
+    }
+}
+
+// Clear all IndexedDB data
+async function clearIndexedDB() {
+    try {
+        const db = await openDatabase();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            const request = store.clear();
+            
+            request.onsuccess = () => resolve(true);
+            request.onerror = () => reject('Error clearing database');
+        });
+    } catch (error) {
+        console.error('Error in clearIndexedDB:', error);
+        throw error;
     }
 }
 
@@ -243,6 +312,26 @@ async function saveToIndexedDB(data, lastUpdated) {
         });
     } catch (error) {
         console.error('Error in saveToIndexedDB:', error);
+        throw error;
+    }
+}
+
+// Simplified function to save a single key/value pair
+async function saveToIndexedDBSimple(key, value) {
+    try {
+        const db = await openDatabase();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            
+            // Save the value
+            store.put({ key: key, value: value });
+            
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = () => reject('Error saving to database');
+        });
+    } catch (error) {
+        console.error(`Error saving ${key} to IndexedDB:`, error);
         throw error;
     }
 }
