@@ -55,6 +55,21 @@ let storedVersion = null;
 document.addEventListener('DOMContentLoaded', initApp);
 
 // Event listeners
+
+const themeSwitch = document.getElementById('theme-switch');
+
+// בדיקה אם המשתמש כבר בחר מצב
+const currentTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+themeSwitch.addEventListener('click', () => {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+});
+
 searchButton.addEventListener('click', performSearch);
 clearSearchButton.addEventListener('click', clearSearch);
 searchInput.addEventListener('keyup', (e) => {
