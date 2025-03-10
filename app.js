@@ -14,7 +14,6 @@ const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_k
 const searchInput = document.getElementById('search-input');
 const searchButton = document.getElementById('search-button');
 const voiceSearchButton = document.getElementById('voice-search-button');
-const noWaitlistCheckbox = document.getElementById('no-waitlist-checkbox');
 const categoriesContainer = document.getElementById('categories-container');
 const resultsContainer = document.getElementById('results-container');
 const lastUpdatedText = document.getElementById('last-updated-text');
@@ -58,10 +57,6 @@ searchInput.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') performSearch();
 });
 voiceSearchButton.addEventListener('click', startVoiceSearch);
-noWaitlistCheckbox.addEventListener('change', () => {
-    noWaitlistOnly = noWaitlistCheckbox.checked;
-    performSearch();
-});
 refreshButton.addEventListener('click', refreshData);
 closeModalButton.addEventListener('click', closeModal);
 window.addEventListener('click', (e) => {
