@@ -1,6 +1,54 @@
 // Global variables
-const APP_VERSION = '1.96.0'; // Updated version number
+const APP_VERSION = '1.97.0'; // Updated version number
+
+// At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
+
+async function checkAppVersion() {
+  try {
+    // Open the database
+    const db = await openDatabase();
+    
+    // Get stored version
+    storedVersion = await getFromStore(db, VERSION_KEY);
+    console.log('Stored version:', storedVersion, 'Current version:', APP_VERSION);
+    
+    if (!storedVersion || storedVersion !== APP_VERSION) {
+      console.log(`Version change detected: ${storedVersion || 'none'} -> ${APP_VERSION}`);
+      
+      // Clear caches
+      if ('caches' in window) {
+        try {
+          const cacheKeys = await caches.keys();
+          await Promise.all(
+            cacheKeys.map(key => {
+              console.log('Clearing cache:', key);
+              return caches.delete(key);
+            })
+          );
+          console.log('All caches cleared');
+        } catch (error) {
+          console.error('Error clearing caches:', error);
+        }
+      }
+      
+      // Delete all data in IndexedDB
+      await clearIndexedDB();
+      
+      // Store the new version
+      await saveToIndexedDBSimple(VERSION_KEY, APP_VERSION);
+      
+      // Show update message
+      showStatusMessage('גרסה חדשה! המידע יטען מחדש.', 'success', 5000);
+      
+      // Force a page reload to ensure everything is fresh
+      window.location.reload(true);
+    }
+  } catch (error) {
+    console.error('Error checking app version:', error);
+  }
+}
+
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
 const STORE_NAME = 'servicesData';
@@ -139,51 +187,6 @@ async function initApp() {
     } catch (error) {
         console.error('Error initializing app:', error);
         showStatusMessage('שגיאה בטעינת המידע. נסה שוב מאוחר יותר.', 'error');
-    }
-}
-
-// Check if app version has changed
-async function checkAppVersion() {
-    try {
-        // Open the database
-        const db = await openDatabase();
-        
-        // Get stored version
-        storedVersion = await getFromStore(db, VERSION_KEY);
-        
-        if (!storedVersion || storedVersion !== APP_VERSION) {
-            console.log(`Version change detected: ${storedVersion || 'none'} -> ${APP_VERSION}`);
-            
-            // Clear caches
-            if ('caches' in window) {
-                try {
-                    const cacheKeys = await caches.keys();
-                    await Promise.all(
-                        cacheKeys.map(key => caches.delete(key))
-                    );
-                    console.log('All caches cleared due to version change');
-                } catch (error) {
-                    console.error('Error clearing caches:', error);
-                }
-            }
-            
-            // Delete all data in IndexedDB
-            await clearIndexedDB();
-            
-            // Store the new version
-            await saveToIndexedDBSimple(VERSION_KEY, APP_VERSION);
-            
-            // Show update message to user
-            showStatusMessage('גרסה חדשה! המידע יטען מחדש.', 'success', 5000);
-            
-            // Force a refresh from API
-            if (isOnline) {
-                await refreshData(false);
-            }
-        }
-    } catch (error) {
-        console.error('Error checking app version:', error);
-        // Continue with app initialization even if this fails
     }
 }
 
@@ -577,10 +580,19 @@ function renderSearchResults(results) {
     // Clear results container
     resultsContainer.innerHTML = '';
     
+    // If no results
     if (results.length === 0) {
-        resultsContainer.innerHTML = '<div class="no-results">לא נמצאו שירותים מתאימים</div>';
+        // Check if any search was performed (either text search or category selection)
+        if (currentSearchQuery || activeCategory) {
+            // If search was attempted but found nothing
+            resultsContainer.innerHTML = '<div class="no-results">לא נמצאו תוצאות</div>';
+        } else {
+            // If no search was attempted
+            resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה כדי להציג תוצאות</div>';
+        }
         return;
     }
+    
     
     results.forEach((service, index) => {
         const resultCard = document.createElement('div');
