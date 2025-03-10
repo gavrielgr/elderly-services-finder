@@ -3,12 +3,12 @@
     --primary-color: #4285f4;
     --primary-dark: #3367d6;
     --secondary-color: #f8f9fa;
-     /* מצב רגיל - בהיר */
-      --bg-primary: #ffffff;
-      --bg-secondary: #f8f9fa;
-      --text-color: #202124;
-      --text-light: #5f6368;
-      --border-color: #dadce0;
+  /* מצב רגיל - בהיר */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text-color: #202124;
+  --text-light: #5f6368;
+  --border-color: #dadce0;
     --success-color: #0f9d58;
     --error-color: #ea4335;
     --warning-color: #fbbc04;
@@ -20,7 +20,7 @@
   --text-color: #e0e0e0;
   --text-light: #a0a0a0;
   --border-color: #3c3c3c;
-  /* התאמת שאר המשתנים */
+  --primary-color: #81b0ff; /* גוון בהיר יותר של כחול במצב כהה */
 }
 * {
     margin: 0;
@@ -31,7 +31,7 @@
 body {
     font-family: 'Heebo', sans-serif;
     color: var(--text-color);
-    background-color: #f8f9fa;
+  background-color: var(--bg-secondary);
     direction: rtl;
     text-align: right;
     line-height: 1.6;
@@ -91,7 +91,8 @@ body {
     border-radius: 24px;
     padding: 0.5rem;
     margin-bottom: 0.5rem;
-     background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-color);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.3s;
 }
@@ -164,8 +165,8 @@ body {
     justify-content: center;
     width: 90px; /* Increased width for better text display */
     height: 95px; /* Adjusted height */
-    background-color: var(--secondary-color);
-    border-radius: 12px;
+background-color: var(--bg-primary);
+  color: var(--text-color);    border-radius: 12px;
     padding: 0.5rem 0.25rem; /* Adjusted padding */
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
@@ -249,6 +250,7 @@ body {
     -webkit-box-orient: vertical;
       position: relative;
   z-index: 1;
+  color: var(--text-light);
 
 }
 
@@ -318,7 +320,8 @@ body {
      animation: slide-up 0.3s ease forwards;
   opacity: 0;
   transform: translateY(20px);
-    background-color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-color);
     border-radius: 8px;
     padding: 1rem;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
@@ -331,7 +334,9 @@ body {
     transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
-
+.result-description {
+  color: var(--text-light);
+}
 .result-name {
     font-weight: 500;
     font-size: 1.1rem;
@@ -390,8 +395,8 @@ body {
 
 .modal-content {
     position: relative;
-    background-color: white;
-    margin: 10% auto;
+  background-color: var(--bg-primary);
+  color: var(--text-color);    margin: 10% auto;
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
@@ -511,6 +516,8 @@ body {
     
     .category-name {
         font-size: 0.65rem;
+          color: var(--text-light);
+
     }
     
     .modal-content {
