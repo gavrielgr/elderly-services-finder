@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מאתר שירותים לגיל השלישי</title>
+    
+    <!-- PWA meta tags -->
+    <meta name="theme-color" content="#4285f4">
+    <meta name="description" content="אפליקציה לחיפוש שירותים לגיל השלישי">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>מאתר שירותים לגיל השלישי</h1>
+            <div id="connection-status" class="connection-status" title="סטטוס חיבור">
+                <span class="status-icon online">🟢</span>
+                <span class="status-icon offline hidden">🔴</span>
+            </div>
+        </header>
+
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="חיפוש שירותים..." aria-label="חיפוש">
+                <button id="search-button" aria-label="חפש">🔍</button>
+                <button id="voice-search-button" aria-label="חיפוש קולי">🎤</button>
+            </div>
+            <div class="filter-options">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="no-waitlist-checkbox">
+                    <span class="checkbox-text">ללא רשימת המתנה</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section class="categories-section">
+            <h2>קטגוריות</h2>
+            <div id="categories-container" class="categories-container">
+                <!-- Categories will be populated dynamically -->
+                <div class="category-loading">טוען קטגוריות...</div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            <div class="results-header">
+                <h2>תוצאות</h2>
+                <div class="last-updated">
+                    <span id="last-updated-text">עודכן: טוען...</span>
+                    <button id="refresh-button" title="רענן מידע">🔄</button>
+                </div>
+            </div>
+            <div id="results-container" class="results-container">
+                <!-- Results will be populated dynamically -->
+                <div class="results-message">הזן מילות חיפוש או בחר קטגוריה</div>
+            </div>
+        </section>
+
+        <!-- Service Details Modal -->
+        <div id="service-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <div id="service-details-container">
+                    <!-- Service details will be populated dynamically -->
+                </div>
+                <div class="modal-actions">
+                    <button id="call-button" class="action-button call-button">התקשר</button>
+                    <button id="share-button" class="action-button share-button">שתף</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Status Bar -->
+        <div id="status-bar" class="status-bar"></div>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered successfully');
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    
+    <!-- Main Script -->
+    <script src="app.js"></script>
+</body>
+</html>
