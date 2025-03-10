@@ -90,10 +90,15 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 24px;
     padding: 0.5rem;
-    background-color: var(--secondary-color);
     margin-bottom: 0.5rem;
+     background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s;
 }
 
+.search-container:focus-within {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 #search-input {
     flex: 1;
     border: none;
@@ -165,6 +170,23 @@ body {
     cursor: pointer;
     transition: transform 0.2s, background-color 0.2s;
     border: 1px solid var(--border-color);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+
+}
+
+
+.category-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--category-color, transparent);
+  opacity: 0.15;
+  z-index: 0;
 }
 
 .category-card:hover {
@@ -177,9 +199,42 @@ body {
     border-color: var(--primary-color);
 }
 
+
+/* צבעים ייחודיים לכל קטגוריה */
+.category-card[data-category="שירותים ומסגרות בזקנה"] {
+  --category-color: #4285f4; /* כחול */
+}
+
+.category-card[data-category="ניצולי שואה"] {
+  --category-color: #fbbc04; /* צהוב */
+}
+
+.category-card[data-category="מוקדים ממשלתיים"] {
+  --category-color: #0f9d58; /* ירוק */
+}
+
+.category-card[data-category="תוכניות משרד לשיוון חברתי"] {
+  --category-color: #9c27b0; /* סגול */
+}
+
+.category-card[data-category="מנועי חיפוש לזקנה"] {
+  --category-color: #ff7043; /* כתום */
+}
+
+.category-card[data-category="בעלי מקצוע"] {
+  --category-color: #03a9f4; /* תכלת */
+}
+
+.category-card[data-category="הטפול בזקן בישראל"] {
+  --category-color: #e91e63; /* ורוד */
+}
+
 .category-icon {
     font-size: 1.75rem;
     margin-bottom: 0.25rem;
+      position: relative;
+  z-index: 1;
+
 }
 
 .category-name {
@@ -192,6 +247,9 @@ body {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
+      position: relative;
+  z-index: 1;
+
 }
 
 .category-loading {
@@ -239,20 +297,39 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+      transition: opacity 0.3s ease;
+
 }
 
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  opacity: 1;
+}
+@keyframes slide-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .result-card {
+     animation: slide-up 0.3s ease forwards;
+  opacity: 0;
+  transform: translateY(20px);
     background-color: white;
     border-radius: 8px;
     padding: 1rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     cursor: pointer;
-    transition: transform 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
+    
 }
 
 .result-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .result-name {
