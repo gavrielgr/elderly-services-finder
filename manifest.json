@@ -1,7 +1,7 @@
 {
   "name": "שירותי+",
   "short_name": "שירותי+",
-  "description": "חיפוש שירותים לגיל השלישי",
+  "description": "אפליקציה למציאת פתרונות לאזרחים ותיקים",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
