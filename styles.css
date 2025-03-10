@@ -540,3 +540,116 @@ body {
 #clear-search-button.hidden {
     display: none;
 }
+/* Install Prompt Styles */
+.install-prompt {
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    overflow: auto;
+}
+
+.install-prompt.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.install-prompt-content {
+    position: relative;
+    background-color: white;
+    margin: auto;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    direction: rtl;
+}
+
+.install-prompt-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.install-prompt-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--primary-color);
+}
+
+.close-prompt {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-light);
+}
+
+.install-prompt-body {
+    padding: 1rem;
+}
+
+.install-message {
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.install-instructions {
+    background-color: var(--secondary-color);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.install-instructions ol {
+    margin: 0.5rem 2rem;
+    padding: 0;
+}
+
+.install-instructions li {
+    margin-bottom: 0.5rem;
+}
+
+.icon {
+    font-weight: bold;
+    background-color: #ddd;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+}
+
+.install-prompt-actions {
+    display: flex;
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    justify-content: space-between;
+}
+
+.install-button, .later-button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 24px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+}
+
+.install-button {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.later-button {
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.hidden {
+    display: none;
+}
