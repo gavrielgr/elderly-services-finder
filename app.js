@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.92.0'; // Updated version number
+const APP_VERSION = '1.93.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
@@ -517,8 +517,13 @@ function searchServices(query, category, noWaitlistOnly) {
     
     // Process each category (sheet)
     Object.entries(allServicesData).forEach(([sheetName, services]) => {
+        // Trim sheet name for comparison with active category
+        const trimmedSheetName = sheetName.trim();
+        
         // Skip if category filter is applied and doesn't match
-        if (category && category !== sheetName) return;
+        // Use trimmed version for comparison with the active category
+        if (category && category !== trimmedSheetName) return;
+        
         // Skip empty sheets
         if (sheetName === 'גיליון2') return;
         
@@ -532,7 +537,7 @@ function searchServices(query, category, noWaitlistOnly) {
             if (searchTerms.length === 0) {
                 results.push({
                     ...service,
-                    category: sheetName
+                    category: trimmedSheetName // Use trimmed name
                 });
                 return;
             }
@@ -549,7 +554,7 @@ function searchServices(query, category, noWaitlistOnly) {
             if (matchesAllTerms) {
                 results.push({
                     ...service,
-                    category: sheetName
+                    category: trimmedSheetName // Use trimmed name
                 });
             }
         });
