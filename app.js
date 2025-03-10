@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.94.0'; // Updated version number
+const APP_VERSION = '1.95.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
@@ -73,8 +73,19 @@ themeSwitch.addEventListener('click', () => {
   
   document.documentElement.setAttribute('data-theme', newTheme);
   localStorage.setItem('theme', newTheme);
+  
+  // עדכון אייקון המתג
+  const lightIcon = themeSwitch.querySelector('.light-mode-icon');
+  const darkIcon = themeSwitch.querySelector('.dark-mode-icon');
+  
+  if (newTheme === 'dark') {
+    lightIcon.classList.add('hidden');
+    darkIcon.classList.remove('hidden');
+  } else {
+    darkIcon.classList.add('hidden');
+    lightIcon.classList.remove('hidden');
+  }
 });
-
 searchButton.addEventListener('click', performSearch);
 clearSearchButton.addEventListener('click', clearSearch);
 searchInput.addEventListener('keyup', (e) => {
