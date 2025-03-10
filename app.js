@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.7.0'; // Updated version number
+const APP_VERSION = '1.8.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
@@ -31,14 +31,14 @@ const clearSearchButton = document.getElementById('clear-search-button');
 
 // Category icons mapping (default icons if not specified in data)
 const categoryIcons = {
-    'שירותים ומסגרות בזקנה': '🏢',
-    'ניצולי שואה': '🕯️',
-    'מוקדים ממשלתיים': '🏛️',
-    'תוכניות משרד לשיוון חברתי': '📝',
-    'מנועי חיפוש לזקנה': '🔍',
-    'בעלי מקצוע': '👨‍⚕️',
-    'הטפול בזקן בישראל': '🏥',
-    'default': '📋'
+    'שירותים ומסגרות בזקנה': '🏠', // בית - מייצג מסגרות דיור ושירותים קבועים
+    'ניצולי שואה': '🕯️', // נר זיכרון - סמל מכובד ומקובל לזיכרון
+    'מוקדים ממשלתיים': '📞', // טלפון - מייצג מוקדי שירות טלפוניים
+    'תוכניות משרד לשיוון חברתי': '⚖️', // מאזניים - מסמל שוויון וצדק חברתי
+    'מנועי חיפוש לזקנה': '🔍', // זכוכית מגדלת - מסמל חיפוש מידע
+    'בעלי מקצוע': '👨‍⚕️', // איש מקצוע/רופא - מייצג אנשי מקצוע בתחום הבריאות
+    'הטפול בזקן בישראל': '❤️', // לב - מסמל טיפול ואכפתיות
+    'default': '📋' // רשימה - מתאים לכל קטגוריה כללית
 };
 
 // State
