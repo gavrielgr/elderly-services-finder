@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.9.0'; // Updated version number
+const APP_VERSION = '1.91.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
