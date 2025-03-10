@@ -1,5 +1,6 @@
 // Global variables
-const APP_VERSION = '1.6.0'; // Updated version number
+const APP_VERSION = '1.7.0'; // Updated version number
+console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
 const STORE_NAME = 'servicesData';
@@ -805,7 +806,7 @@ function clearSearch() {
 // PWA Installation Logic
 let deferredPrompt;
 const installPrompt = document.getElementById('install-prompt');
-const installButton = document.getElementById('install-button');
+const installButtonAndroid = document.getElementById('install-button-android');
 const laterButton = document.getElementById('later-button');
 const closePromptButton = document.getElementById('close-prompt');
 const androidInstructions = document.getElementById('android-instructions');
@@ -853,11 +854,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
     }
 });
 
-// Detect device type and show install prompt only on mobile devices
+// Detect if in standalone mode (already installed)
 window.addEventListener('load', () => {
     if (window.matchMedia('(display-mode: standalone)').matches || 
         window.navigator.standalone === true) {
-        // App is already installed, don't show install prompt
+        // App is installed, don't show install prompt
         return;
     }
     
@@ -870,70 +871,75 @@ window.addEventListener('load', () => {
         return;
     }
     
-    // For mobile devices, check if we should show the prompt
-    const lastPromptTime = localStorage.getItem('installPromptDismissed');
-    const now = new Date().getTime();
-    
-    if (!lastPromptTime || now - parseInt(lastPromptTime) > 7 * 24 * 60 * 60 * 1000) {
-        // Set the appropriate instructions based on device type
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // For iOS devices (Safari doesn't fire beforeinstallprompt)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS && !deferredPrompt) {
+        // Check if we should show the iOS instructions
+        const lastPromptTime = localStorage.getItem('installPromptDismissed');
+        const now = new Date().getTime();
         
-        if (isIOS) {
+        if (!lastPromptTime || now - parseInt(lastPromptTime) > 7 * 24 * 60 * 60 * 1000) {
             androidInstructions.classList.add('hidden');
             iosInstructions.classList.remove('hidden');
-        } else {
-            // Android or other mobile
-            iosInstructions.classList.add('hidden');
-            androidInstructions.classList.remove('hidden');
+            
+            // Wait 3 seconds before showing the prompt
+            setTimeout(() => {
+                showInstallPrompt();
+            }, 3000);
         }
-        
-        // Wait 3 seconds before showing the prompt
-        setTimeout(() => {
-            showInstallPrompt();
-        }, 3000);
     }
 });
 
 // Show install prompt
 function showInstallPrompt() {
-    installPrompt.classList.add('show');
+    if (installPrompt) {
+        installPrompt.classList.add('show');
+    }
 }
 
 // Hide install prompt
 function hideInstallPrompt() {
-    installPrompt.classList.remove('show');
-    // Save the time when the prompt was dismissed
-    localStorage.setItem('installPromptDismissed', new Date().getTime());
+    if (installPrompt) {
+        installPrompt.classList.remove('show');
+        // Save the time when the prompt was dismissed
+        localStorage.setItem('installPromptDismissed', new Date().getTime());
+    }
 }
 
-// Handle install button click
-installButton.addEventListener('click', async () => {
-    if (deferredPrompt) {
-        // Show browser install prompt
-        deferredPrompt.prompt();
-        // Wait for user choice
-        const { outcome } = await deferredPrompt.userChoice;
-        // Clear the deferredPrompt so it can be used again later
-        deferredPrompt = null;
-        
-        if (outcome === 'accepted') {
-            console.log('User accepted the install prompt');
-            showStatusMessage('האפליקציה מותקנת!', 'success');
-        } else {
-            console.log('User dismissed the install prompt');
+// Handle Android install button click
+if (installButtonAndroid) {
+    installButtonAndroid.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            // Show browser install prompt
+            deferredPrompt.prompt();
+            // Wait for user choice
+            const { outcome } = await deferredPrompt.userChoice;
+            // Clear the deferredPrompt so it can be used again later
+            deferredPrompt = null;
+            
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+                showStatusMessage('האפליקציה מותקנת!', 'success');
+            } else {
+                console.log('User dismissed the install prompt');
+            }
         }
-    }
-    
-    // Hide our custom prompt
-    hideInstallPrompt();
-});
+        
+        // Hide our custom prompt
+        hideInstallPrompt();
+    });
+}
 
 // Handle later button click
-laterButton.addEventListener('click', () => {
-    hideInstallPrompt();
-});
+if (laterButton) {
+    laterButton.addEventListener('click', () => {
+        hideInstallPrompt();
+    });
+}
 
 // Handle close button click
-closePromptButton.addEventListener('click', () => {
-    hideInstallPrompt();
-});
+if (closePromptButton) {
+    closePromptButton.addEventListener('click', () => {
+        hideInstallPrompt();
+    });
+}
