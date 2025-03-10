@@ -83,29 +83,6 @@
         <!-- App Status Bar -->
         <div id="status-bar" class="status-bar"></div>
     </div>
-
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered successfully');
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
-            });
-        }
-    </script>
-    
-    <!-- Main Script -->
-    <script src="app.js"></script>
-    <footer class="app-footer">
-    <div class="copyright">
-        © 2025 שירותי+ | כל הזכויות שמורות
-    </div>
-</footer>
     <!-- Install Prompt -->
 <div id="install-prompt" class="install-prompt">
     <div class="install-prompt-content">
@@ -138,5 +115,30 @@
         </div>
     </div>
 </div>
+
+    
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered successfully');
+                    })
+                    .catch(error => {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+    
+    <!-- Main Script -->
+    <script src="app.js"></script>
+    <footer class="app-footer">
+        <div class="copyright">
+            © 2025 שירותי+ | כל הזכויות שמורות
+        </div>
+    </footer>
 </body>
 </html>
