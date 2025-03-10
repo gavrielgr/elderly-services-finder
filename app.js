@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.3.0'; // Updated version number
+const APP_VERSION = '1.4.0'; // Updated version number
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
 const STORE_NAME = 'servicesData';
@@ -25,6 +25,8 @@ const shareButton = document.getElementById('share-button');
 const closeModalButton = document.querySelector('.close-modal');
 const connectionStatus = document.getElementById('connection-status');
 const statusBar = document.getElementById('status-bar');
+const clearSearchButton = document.getElementById('clear-search-button');
+
 
 // Category icons mapping (default icons if not specified in data)
 const categoryIcons = {
@@ -53,8 +55,17 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // Event listeners
 searchButton.addEventListener('click', performSearch);
+clearSearchButton.addEventListener('click', clearSearch);
 searchInput.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') performSearch();
+});
+// Show/hide clear button based on search input
+searchInput.addEventListener('input', () => {
+    if (searchInput.value.trim() !== '') {
+        clearSearchButton.classList.remove('hidden');
+    } else {
+        clearSearchButton.classList.add('hidden');
+    }
 });
 voiceSearchButton.addEventListener('click', startVoiceSearch);
 refreshButton.addEventListener('click', refreshData);
@@ -455,8 +466,15 @@ function performSearch() {
         return;
     }
     
-    // Get search query
+    // Get search query and update clear button visibility
     currentSearchQuery = searchInput.value.trim().toLowerCase();
+    
+    // Show/hide clear button based on search text
+    if (currentSearchQuery !== '') {
+        clearSearchButton.classList.remove('hidden');
+    } else {
+        clearSearchButton.classList.add('hidden');
+    }
     
     // Get filtered results
     const results = searchServices(currentSearchQuery, activeCategory, noWaitlistOnly);
@@ -763,4 +781,23 @@ function shareService() {
         
         document.body.removeChild(textarea);
     }
+}
+
+// Clear search function
+function clearSearch() {
+    searchInput.value = '';
+    clearSearchButton.classList.add('hidden');
+    currentSearchQuery = '';
+    
+    // Reset search results to default state
+    if (activeCategory) {
+        // If a category is selected, show only that category
+        performSearch();
+    } else {
+        // If no category is selected, show default results
+        renderDefaultResults();
+    }
+    
+    // Focus on search input after clearing
+    searchInput.focus();
 }
