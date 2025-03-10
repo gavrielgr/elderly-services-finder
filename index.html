@@ -93,15 +93,19 @@
         <div class="install-prompt-body">
             <p class="install-message">התקן את האפליקציה למסך הבית לגישה מהירה במצב מקוון ולא מקוון</p>
             <div class="install-instructions">
+                <!-- עבור אנדרואיד -->
                 <div id="android-instructions" class="hidden">
-                    <p><strong>באנדרואיד:</strong></p>
+                    <button id="install-button-android" class="install-button">פתח את חלונית ההתקנה</button>
+                    <p>או התקן ידנית:</p>
                     <ol>
                         <li>לחץ על <span class="icon">⋮</span> (תפריט)</li>
                         <li>בחר "התקן אפליקציה" או "הוסף למסך הבית"</li>
                     </ol>
                 </div>
+                
+                <!-- עבור אייפון -->
                 <div id="ios-instructions" class="hidden">
-                    <p><strong>באייפון:</strong></p>
+                    <p>כדי להתקין באייפון:</p>
                     <ol>
                         <li>לחץ על <span class="icon">↑</span> (שיתוף)</li>
                         <li>גלול מטה ובחר "הוסף למסך הבית"</li>
@@ -110,8 +114,7 @@
             </div>
         </div>
         <div class="install-prompt-actions">
-            <button id="install-button" class="install-button">התקן עכשיו</button>
-            <button id="later-button" class="later-button">אולי מאוחר יותר</button>
+           <button id="later-button" class="later-button">אולי מאוחר יותר</button>
         </div>
     </div>
 </div>
