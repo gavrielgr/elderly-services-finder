@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.2.0'; // Updated version number
+const APP_VERSION = '1.3.0'; // Updated version number
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
 const STORE_NAME = 'servicesData';
