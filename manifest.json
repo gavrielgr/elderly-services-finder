@@ -1,7 +1,7 @@
 {
-  "name": "מאתר שירותים לגיל השלישי",
-  "short_name": "שירותים לזקנים",
-  "description": "אפליקציה לחיפוש מידע על שירותים לאזרחים ותיקים",
+  "name": "שירותי+",
+  "short_name": "שירותי+",
+  "description": "חיפוש שירותים לגיל השלישי",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
