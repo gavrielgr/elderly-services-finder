@@ -507,3 +507,18 @@ body {
         page-break-inside: avoid;
     }
 }
+
+/* Footer styles */
+.app-footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: auto;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    background-color: white;
+    border-top: 1px solid var(--border-color);
+}
+
+.copyright {
+    direction: rtl;
+}
