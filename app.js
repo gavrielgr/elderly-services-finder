@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.91.0'; // Updated version number
+const APP_VERSION = '1.92.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
@@ -41,6 +41,11 @@ const categoryIcons = {
     'default': '📋'
 };
 
+// Helper function to get icon with trim handling
+function getCategoryIcon(categoryName) {
+    const trimmedName = categoryName.trim();
+    return categoryIcons[trimmedName] || categoryIcons['default'];
+}
 // State
 let allServicesData = null;
 let lastUpdated = null;
@@ -429,15 +434,20 @@ function renderCategories() {
     categories.forEach(categoryName => {
         if (!categoryName || categoryName === 'גיליון2') return; // Skip empty sheet
         
+        // Trim category name to handle spaces
+        const trimmedCategoryName = categoryName.trim();
+        
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
-        categoryCard.setAttribute('data-category', categoryName);
-
-        if (categoryName === activeCategory) {
+        categoryCard.setAttribute('data-category', trimmedCategoryName);
+        
+        // Use trimmed name for comparison with active category
+        if (trimmedCategoryName === activeCategory) {
             categoryCard.classList.add('active');
         }
         
-        const icon = categoryIcons[categoryName] || categoryIcons.default;
+        // Get icon using trimmed name
+        const icon = categoryIcons[trimmedCategoryName] || categoryIcons.default;
         
         categoryCard.innerHTML = `
             <div class="category-icon">${icon}</div>
@@ -445,7 +455,7 @@ function renderCategories() {
         `;
         
         categoryCard.addEventListener('click', () => {
-            if (activeCategory === categoryName) {
+            if (activeCategory === trimmedCategoryName) {
                 // Deselect if already active
                 activeCategory = null;
                 categoryCard.classList.remove('active');
@@ -455,8 +465,8 @@ function renderCategories() {
                     card.classList.remove('active');
                 });
                 
-                // Set new active category
-                activeCategory = categoryName;
+                // Set new active category (using trimmed name)
+                activeCategory = trimmedCategoryName;
                 categoryCard.classList.add('active');
             }
             
