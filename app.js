@@ -7,7 +7,7 @@ const DATA_KEY = 'allServicesData';
 const LAST_UPDATED_KEY = 'lastUpdated';
 
 // Replace with your actual Google Apps Script URL
-const API_URL = 'https://script.google.com/macros/s/REPLACE_WITH_YOUR_DEPLOYED_SCRIPT_ID/exec';
+const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhjH6M2KJrbCQRu4YiofKbgwrkDpjxZGvLIUqE4KrcA_IKd5sp_8eDl0Pb_zEjeWb9_F8A26cGZyN3LnUwLp1tSGwE4DO0MvbpgpbuL6dkaSgQyecapCtZLqZWSy4fns_lzmQ-VVQYa0YZvoLbV3-5Oq0p4FguPA1dOH8tQlui0VwZ_H9mdlkd0D1AgxO53pa8r4r8VlKWtje0O0-W-tIQTtzYauPWkvm8bwXofRooP4qw-IYmKBYIVb_wXqSyHH5n9dcN7a7v5RpLauKypRY9G1hw1Uw&lib=MOF1g2zWJcL4207AxUsxFPKpukIcnFaFe';
 
 // DOM Elements
 const searchInput = document.getElementById('search-input');
@@ -337,3 +337,346 @@ function renderCategories() {
                 activeCategory = null;
                 categoryCard.classList.remove('active');
             } else {
+                // Remove active class from all categories
+                document.querySelectorAll('.category-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                
+                // Set new active category
+                activeCategory = categoryName;
+                categoryCard.classList.add('active');
+            }
+            
+            // Update search results
+            performSearch();
+        });
+        
+        categoriesContainer.appendChild(categoryCard);
+    });
+}
+
+function renderDefaultResults() {
+    // If data exists, show the 5 most recent services
+    if (allServicesData) {
+        resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה</div>';
+    } else {
+        resultsContainer.innerHTML = '<div class="results-message">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
+    }
+}
+
+// Search functions
+function performSearch() {
+    if (!allServicesData) {
+        showStatusMessage('אין מידע זמין לחיפוש.', 'warning');
+        return;
+    }
+    
+    // Get search query
+    currentSearchQuery = searchInput.value.trim().toLowerCase();
+    
+    // Get filtered results
+    const results = searchServices(currentSearchQuery, activeCategory, noWaitlistOnly);
+    
+    // Render results
+    renderSearchResults(results);
+}
+
+function searchServices(query, category, noWaitlistOnly) {
+    let results = [];
+    const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
+    
+    // Process each category (sheet)
+    Object.entries(allServicesData).forEach(([sheetName, services]) => {
+        // Skip if category filter is applied and doesn't match
+        if (category && category !== sheetName) return;
+        // Skip empty sheets
+        if (sheetName === 'גיליון2') return;
+        
+        // Process each service in the category
+        services.forEach(service => {
+            // Check for waitlist if filter is applied
+            const hasWaitlist = service['רשימת המתנה'] === 'כן';
+            if (noWaitlistOnly && hasWaitlist) return;
+            
+            // If no search terms, include all services from the category
+            if (searchTerms.length === 0) {
+                results.push({
+                    ...service,
+                    category: sheetName
+                });
+                return;
+            }
+            
+            // Search across all fields
+            const allValues = Object.values(service)
+                .filter(value => value && typeof value === 'string')
+                .join(' ')
+                .toLowerCase();
+            
+            // Check if all search terms match
+            const matchesAllTerms = searchTerms.every(term => allValues.includes(term));
+            
+            if (matchesAllTerms) {
+                results.push({
+                    ...service,
+                    category: sheetName
+                });
+            }
+        });
+    });
+    
+    return results;
+}
+
+function renderSearchResults(results) {
+    // Clear results container
+    resultsContainer.innerHTML = '';
+    
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="no-results">לא נמצאו שירותים מתאימים</div>';
+        return;
+    }
+    
+    results.forEach(service => {
+        const resultCard = document.createElement('div');
+        resultCard.className = 'result-card';
+        
+        // Get common fields
+        const name = service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || 'שירות ללא שם';
+        const type = service['סוג'] || '';
+        const description = service['תיאור העסק'] || service['תיאור כללי'] || service['זכויות ותחומי אחריות'] || service['תחום'] || '';
+        const contact = service['טלפון / אימייל'] || service['טלפון'] || service['מס\' טלפון'] || service['אימייל'] || '';
+        
+        // Create interest tags
+        let tags = [];
+        for (let i = 0; i < 3; i++) {
+            const tagField = `תחום עניין${i > 0 ? ' _' + i : ''}`;
+            if (service[tagField] && service[tagField].trim()) {
+                tags.push(service[tagField].trim());
+            }
+        }
+        
+        // Create result card HTML
+        let cardHTML = `
+            <div class="result-name">${name}</div>
+        `;
+        
+        if (type) {
+            cardHTML += `<div class="result-type">${type}</div>`;
+        }
+        
+        if (description) {
+            cardHTML += `<div class="result-description">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</div>`;
+        }
+        
+        if (contact) {
+            cardHTML += `<div class="result-contact">${contact}</div>`;
+        }
+        
+        if (tags.length > 0) {
+            cardHTML += `
+                <div class="result-tags">
+                    ${tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+                </div>
+            `;
+        }
+        
+        resultCard.innerHTML = cardHTML;
+        
+        // Add click event to show details
+        resultCard.addEventListener('click', () => {
+            showServiceDetails(service);
+        });
+        
+        resultsContainer.appendChild(resultCard);
+    });
+}
+
+// Voice search functionality
+function startVoiceSearch() {
+    if (!('webkitSpeechRecognition' in window)) {
+        showStatusMessage('חיפוש קולי אינו נתמך בדפדפן זה.', 'warning');
+        return;
+    }
+    
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'he-IL';
+    recognition.interimResults = false;
+    
+    recognition.onstart = () => {
+        showStatusMessage('הקשבה... דבר עכשיו');
+        voiceSearchButton.textContent = '🔴';
+    };
+    
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        searchInput.value = transcript;
+        performSearch();
+    };
+    
+    recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        showStatusMessage('שגיאה בזיהוי קולי. נסה שוב.', 'error');
+        voiceSearchButton.textContent = '🎤';
+    };
+    
+    recognition.onend = () => {
+        voiceSearchButton.textContent = '🎤';
+    };
+    
+    recognition.start();
+}
+
+// Service detail functions
+function showServiceDetails(service) {
+    currentServiceDetails = service;
+    
+    // Clear details container
+    serviceDetailsContainer.innerHTML = '';
+    
+    // Get common fields
+    const name = service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || 'שירות ללא שם';
+    
+    // Start with service name
+    let detailsHTML = `<h2 class="service-name">${name}</h2>`;
+    
+    // Create a map of field display names (Hebrew)
+    const fieldDisplayNames = {
+        'סוג': 'סוג שירות',
+        'תיאור העסק': 'תיאור',
+        'תיאור כללי': 'תיאור',
+        'זכויות ותחומי אחריות': 'זכויות ותחומי אחריות',
+        'אתר': 'אתר אינטרנט',
+        'קישור לאתר': 'אתר אינטרנט',
+        'טלפון / אימייל': 'פרטי התקשרות',
+        'טלפון': 'טלפון',
+        'מס\' טלפון': 'טלפון',
+        'אימייל': 'אימייל',
+        'הערות': 'הערות נוספות',
+        'מטרת התוכנית': 'מטרת התוכנית',
+        'תחום': 'תחום מקצועי'
+    };
+    
+    // Add fields based on category
+    Object.entries(service).forEach(([field, value]) => {
+        // Skip empty values, ID field, and category field
+        if (!value || field === 'id' || field === 'category' || value.trim() === '') return;
+        
+        // Skip fields that begin with "תחום עניין" - we'll handle these separately
+        if (field.startsWith('תחום עניין')) return;
+        
+        // Get display name for the field, or use the field name
+        const displayName = fieldDisplayNames[field] || field;
+        
+        // Format value based on field type
+        let formattedValue = value;
+        
+        // Handle website URLs
+        if (field === 'אתר' || field === 'קישור לאתר') {
+            let url = value;
+            if (!url.startsWith('http')) {
+                url = 'https://' + url;
+            }
+            formattedValue = `<a href="${url}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+        }
+        
+        // Handle contact info
+        if (field === 'טלפון' || field === 'מס\' טלפון') {
+            const phoneNumber = value.replace(/\D/g, ''); // Remove non-digits
+            formattedValue = `<a href="tel:${phoneNumber}">${value}</a>`;
+        }
+        
+        if (field === 'אימייל') {
+            formattedValue = `<a href="mailto:${value}">${value}</a>`;
+        }
+        
+        // Add to details HTML
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">${displayName}</div>
+                <div class="service-detail-value">${formattedValue}</div>
+            </div>
+        `;
+    });
+    
+    // Add interest areas separately if they exist
+    const interests = [];
+    for (let i = 0; i < 3; i++) {
+        const tagField = `תחום עניין${i > 0 ? ' _' + i : ''}`;
+        if (service[tagField] && service[tagField].trim()) {
+            interests.push(service[tagField].trim());
+        }
+    }
+    
+    if (interests.length > 0) {
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">תחומי עניין</div>
+                <div class="service-detail-value">${interests.join(', ')}</div>
+            </div>
+        `;
+    }
+    
+    // Set HTML and show modal
+    serviceDetailsContainer.innerHTML = detailsHTML;
+    serviceModal.style.display = 'block';
+    
+    // Configure call button
+    const phoneNumber = service['טלפון'] || service['מס\' טלפון'] || service['טלפון / אימייל'];
+    if (phoneNumber && /\d/.test(phoneNumber)) {
+        callButton.style.display = 'block';
+        callButton.dataset.phone = phoneNumber.replace(/\D/g, '');
+    } else {
+        callButton.style.display = 'none';
+    }
+}
+
+function closeModal() {
+    serviceModal.style.display = 'none';
+    currentServiceDetails = null;
+}
+
+function initiateCall() {
+    if (!currentServiceDetails) return;
+    
+    const phoneNumber = callButton.dataset.phone;
+    if (phoneNumber) {
+        window.location.href = `tel:${phoneNumber}`;
+    }
+}
+
+function shareService() {
+    if (!currentServiceDetails) return;
+    
+    const name = currentServiceDetails['שם העסק'] || currentServiceDetails['שם התוכנית'] || currentServiceDetails['מוקד'] || currentServiceDetails['אנשי מקצוע'] || 'שירות לגיל השלישי';
+    const contact = currentServiceDetails['טלפון'] || currentServiceDetails['מס\' טלפון'] || currentServiceDetails['טלפון / אימייל'] || '';
+    const description = currentServiceDetails['תיאור העסק'] || currentServiceDetails['תיאור כללי'] || currentServiceDetails['זכויות ותחומי אחריות'] || '';
+    
+    let shareText = `${name}\n`;
+    if (description) shareText += `${description}\n`;
+    if (contact) shareText += `ליצירת קשר: ${contact}\n`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: name,
+            text: shareText
+        })
+        .catch((error) => console.error('Error sharing:', error));
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        // Create a temporary textarea to copy text
+        const textarea = document.createElement('textarea');
+        textarea.value = shareText;
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        try {
+            document.execCommand('copy');
+            showStatusMessage('המידע הועתק ללוח. ניתן להדביק ולשלוח.', 'success');
+        } catch (err) {
+            showStatusMessage('לא ניתן להעתיק את המידע.', 'error');
+        }
+        
+        document.body.removeChild(textarea);
+    }
+}
