@@ -3,14 +3,25 @@
     --primary-color: #4285f4;
     --primary-dark: #3367d6;
     --secondary-color: #f8f9fa;
-    --text-color: #202124;
-    --text-light: #5f6368;
-    --border-color: #dadce0;
+     /* מצב רגיל - בהיר */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8f9fa;
+      --text-color: #202124;
+      --text-light: #5f6368;
+      --border-color: #dadce0;
     --success-color: #0f9d58;
     --error-color: #ea4335;
     --warning-color: #fbbc04;
 }
-
+[data-theme="dark"] {
+  /* מצב כהה */
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --text-color: #e0e0e0;
+  --text-light: #a0a0a0;
+  --border-color: #3c3c3c;
+  /* התאמת שאר המשתנים */
+}
 * {
     margin: 0;
     padding: 0;
