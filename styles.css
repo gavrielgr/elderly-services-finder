@@ -147,7 +147,7 @@ body {
     align-items: center;
     justify-content: center;
     width: 90px; /* Increased width for better text display */
-    height: 85px; /* Adjusted height */
+    height: 95px; /* Adjusted height */
     background-color: var(--secondary-color);
     border-radius: 12px;
     padding: 0.5rem 0.25rem; /* Adjusted padding */
@@ -414,7 +414,7 @@ body {
 @media (max-width: 480px) {
     .category-card {
         width: 85px; /* Even more optimal width for mobile */
-        height: 80px;
+        height: 85px;
     }
     
     .category-icon {
