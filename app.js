@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.8.0'; // Updated version number
+const APP_VERSION = '1.9.0'; // Updated version number
 console.log('App Version:', APP_VERSION);
 const DB_NAME = 'elderlyServicesDB';
 const DB_VERSION = 2; // Increased DB version
@@ -431,6 +431,8 @@ function renderCategories() {
         
         const categoryCard = document.createElement('div');
         categoryCard.className = 'category-card';
+        categoryCard.setAttribute('data-category', categoryName);
+
         if (categoryName === activeCategory) {
             categoryCard.classList.add('active');
         }
@@ -555,10 +557,12 @@ function renderSearchResults(results) {
         return;
     }
     
-    results.forEach(service => {
+     results.forEach((service, index) => {
         const resultCard = document.createElement('div');
         resultCard.className = 'result-card';
-        
+            
+        resultCard.style.animationDelay = `${index * 0.05}s`;
+
         // Get common fields
         const name = service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || 'שירות ללא שם';
         const type = service['סוג'] || '';
@@ -608,6 +612,8 @@ function renderSearchResults(results) {
         
         resultsContainer.appendChild(resultCard);
     });
+
+    
 }
 
 // Voice search functionality
