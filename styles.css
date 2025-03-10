@@ -522,3 +522,21 @@ body {
 .copyright {
     direction: rtl;
 }
+/* Clear button styles */
+#clear-search-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.25rem;
+    color: var(--text-light);
+    transition: color 0.2s;
+}
+
+#clear-search-button:hover {
+    color: var(--error-color);
+}
+
+#clear-search-button.hidden {
+    display: none;
+}
