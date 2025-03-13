@@ -109,12 +109,31 @@ document.addEventListener('DOMContentLoaded', initApp);
 
 // Event listeners
 
-const themeSwitch = document.getElementById('theme-switch');
+
+// קוד עדכני לתיקון כפתור החלפת תצוגה
+function updateThemeToggleIcon() {
+  const lightIcon = document.querySelector('.light-mode-icon');
+  const darkIcon = document.querySelector('.dark-mode-icon');
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  
+  if (currentTheme === 'dark') {
+    lightIcon.classList.add('hidden');
+    darkIcon.classList.remove('hidden');
+  } else {
+    darkIcon.classList.add('hidden');
+    lightIcon.classList.remove('hidden');
+  }
+}
 
 // בדיקה אם המשתמש כבר בחר מצב
 const currentTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', currentTheme);
 
+// עדכון האייקונים בטעינה הראשונית
+document.addEventListener('DOMContentLoaded', updateThemeToggleIcon);
+
+// החלפת קוד הלחיצה על כפתור החלפת התצוגה
+const themeSwitch = document.getElementById('theme-switch');
 themeSwitch.addEventListener('click', () => {
   const currentTheme = document.documentElement.getAttribute('data-theme');
   const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -123,17 +142,9 @@ themeSwitch.addEventListener('click', () => {
   localStorage.setItem('theme', newTheme);
   
   // עדכון אייקון המתג
-  const lightIcon = themeSwitch.querySelector('.light-mode-icon');
-  const darkIcon = themeSwitch.querySelector('.dark-mode-icon');
-  
-  if (newTheme === 'dark') {
-    lightIcon.classList.add('hidden');
-    darkIcon.classList.remove('hidden');
-  } else {
-    darkIcon.classList.add('hidden');
-    lightIcon.classList.remove('hidden');
-  }
+  updateThemeToggleIcon();
 });
+
 searchButton.addEventListener('click', performSearch);
 clearSearchButton.addEventListener('click', clearSearch);
 searchInput.addEventListener('keyup', (e) => {
