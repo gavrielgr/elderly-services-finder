@@ -1,7 +1,7 @@
 // Service Worker for Elderly Services Finder
 
 // This version number should match APP_VERSION in app.js
-const CACHE_VERSION = '1.988.0';
+const CACHE_VERSION = '1.989.0';
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 const ASSETS_TO_CACHE = [
   '/',
