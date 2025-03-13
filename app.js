@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.983.0'; // Updated version number
+const APP_VERSION = '1.984.0'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -747,22 +747,39 @@ function showServiceDetails(service) {
         const displayName = fieldDisplayNames[field] || field;
         
         // Format value based on field type
-        let formattedValue = value;
-        
-        // Handle website URLs
-        if (field === 'אתר' || field === 'קישור לאתר') {
-            let url = value;
-            if (!url.startsWith('http')) {
-                url = 'https://' + url;
+    let formattedValue = value;
+    
+    // Handle website URLs
+    if (field === 'אתר' || field === 'קישור לאתר') {
+        let url = value;
+        if (!url.startsWith('http')) {
+            url = 'https://' + url;
+        }
+        formattedValue = `<a href="${url}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+    }
+    
+    // Handle contact info - תיקון טיפול במספרי טלפון
+    if (field === 'טלפון' || field === 'מס\' טלפון') {
+        // נפצל מספרים מרובים המופרדים בפסיק
+        const phoneNumbers = value.split(',').map(p => p.trim());
+        const phoneLinks = phoneNumbers.map(phone => {
+            // בדיקה אם המספר מתחיל בכוכבית
+            if (phone.startsWith('*')) {
+                // מספרים עם כוכבית דורשים קידוד מיוחד בקישור TEL
+                // הכוכבית צריכה להיות מקודדת כ-%2A בקישור
+                const encodedPhone = phone.replace('*', '%2A');
+                return `<a href="tel:${encodedPhone}">${phone}</a>`;
+            } else {
+                // טיפול רגיל במספרים ללא כוכבית (הסרת תווים לא מספריים)
+                const cleanPhone = phone.replace(/\D/g, '');
+                return `<a href="tel:${cleanPhone}">${phone}</a>`;
             }
-            formattedValue = `<a href="${url}" target="_blank" rel="noopener noreferrer">${value}</a>`;
-        }
+        });
         
-        // Handle contact info
-        if (field === 'טלפון' || field === 'מס\' טלפון') {
-            const phoneNumber = value.replace(/\D/g, ''); // Remove non-digits
-            formattedValue = `<a href="tel:${phoneNumber}">${value}</a>`;
-        }
+        // חיבור הקישורים בחזרה עם פסיקים
+        formattedValue = phoneLinks.join(', ');
+    }
+
         
         if (field === 'אימייל') {
             formattedValue = `<a href="mailto:${value}">${value}</a>`;
