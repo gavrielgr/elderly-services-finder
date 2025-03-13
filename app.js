@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.984.0'; // Updated version number
+const APP_VERSION = '1.985.0'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -758,16 +758,16 @@ function showServiceDetails(service) {
         formattedValue = `<a href="${url}" target="_blank" rel="noopener noreferrer">${value}</a>`;
     }
     
-    // Handle contact info - תיקון טיפול במספרי טלפון
+     // Handle contact info - תיקון טיפול במספרי טלפון
     if (field === 'טלפון' || field === 'מס\' טלפון') {
         // נפצל מספרים מרובים המופרדים בפסיק
         const phoneNumbers = value.split(',').map(p => p.trim());
         const phoneLinks = phoneNumbers.map(phone => {
             // בדיקה אם המספר מתחיל בכוכבית
             if (phone.startsWith('*')) {
-                // מספרים עם כוכבית דורשים קידוד מיוחד בקישור TEL
-                // הכוכבית צריכה להיות מקודדת כ-%2A בקישור
-                const encodedPhone = phone.replace('*', '%2A');
+                // מספרים עם כוכבית: נשמר את הצורה המקורית בטקסט המוצג,
+                // ונקודד את הכוכבית בקישור עצמו
+                const encodedPhone = encodeURIComponent(phone);
                 return `<a href="tel:${encodedPhone}">${phone}</a>`;
             } else {
                 // טיפול רגיל במספרים ללא כוכבית (הסרת תווים לא מספריים)
