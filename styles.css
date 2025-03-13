@@ -42,7 +42,7 @@
 
 /* תיקון רקע בראש האתר */
 [data-theme="dark"] .app-header {
-  background-color: var(--header-bg);
+  background: linear-gradient(135deg, #1a73e8 0%, #236b6e 100%);
 }
 
 /* תיקון רקע כרטיסי קטגוריות */
@@ -241,14 +241,14 @@ body {
 
 /* Header */
 .app-header {
-    background-color: var(--primary-color);
+    background: linear-gradient(135deg, #4285f4 0%, #34a0a4 100%);
     color: white;
     padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    position: sticky;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
     top: 0;
     z-index: 100;
 }
