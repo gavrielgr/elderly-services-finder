@@ -593,7 +593,6 @@ function renderSearchResults(results) {
         return;
     }
     
-    
     results.forEach((service, index) => {
         const resultCard = document.createElement('div');
         resultCard.className = 'result-card';
@@ -610,13 +609,15 @@ function renderSearchResults(results) {
         const description = service['תיאור העסק'] || service['תיאור כללי'] || service['זכויות ותחומי אחריות'] || service['תחום'] || '';
         const contact = service['טלפון / אימייל'] || service['טלפון'] || service['מס\' טלפון'] || service['אימייל'] || '';
         
-        // Create interest tags
-        let tags = [];
-        for (let i = 0; i < 3; i++) {
-            const tagField = `תחום עניין${i > 0 ? ' _' + i : ''}`;
-            if (service[tagField] && service[tagField].trim()) {
-                tags.push(service[tagField].trim());
-            }
+        // Create interest tags - עדכון קוד תחומי עניין
+        let interestTags = [];
+        const interestField = service['תחום עניין'];
+        
+        if (interestField && typeof interestField === 'string') {
+            // פיצול הערכים לפי פסיקים וטיפול ברווחים מיותרים
+            interestTags = interestField.split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0); // סינון ערכים ריקים
         }
         
         // Create result card HTML with category tag
@@ -637,10 +638,11 @@ function renderSearchResults(results) {
             cardHTML += `<div class="result-contact">${contact}</div>`;
         }
         
-        if (tags.length > 0) {
+        // הוספת תגיות תחומי עניין רק אם יש כאלה
+        if (interestTags.length > 0) {
             cardHTML += `
                 <div class="result-tags">
-                    ${tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+                    ${interestTags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
                 </div>
             `;
         }
@@ -718,7 +720,8 @@ function showServiceDetails(service) {
         'אימייל': 'אימייל',
         'הערות': 'הערות נוספות',
         'מטרת התוכנית': 'מטרת התוכנית',
-        'תחום': 'תחום מקצועי'
+        'תחום': 'תחום מקצועי',
+        'תחום עניין': 'תחומי עניין'
     };
     
     // Add fields based on category
@@ -726,8 +729,8 @@ function showServiceDetails(service) {
         // Skip empty values, ID field, and category field
         if (!value || field === 'id' || field === 'category' || value.trim() === '') return;
         
-        // Skip fields that begin with "תחום עניין" - we'll handle these separately
-        if (field.startsWith('תחום עניין')) return;
+        // Skip fields that are handled separately
+        if (field === 'תחום עניין') return;
         
         // Get display name for the field, or use the field name
         const displayName = fieldDisplayNames[field] || field;
@@ -763,22 +766,22 @@ function showServiceDetails(service) {
         `;
     });
     
-    // Add interest areas separately if they exist
-    const interests = [];
-    for (let i = 0; i < 3; i++) {
-        const tagField = `תחום עניין${i > 0 ? ' _' + i : ''}`;
-        if (service[tagField] && service[tagField].trim()) {
-            interests.push(service[tagField].trim());
+    // הוספת תחומי עניין כשדה נפרד, עם פיצול לפי פסיקים
+    if (service['תחום עניין'] && service['תחום עניין'].trim()) {
+        const interestTags = service['תחום עניין'].split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag.length > 0);
+            
+        if (interestTags.length > 0) {
+            detailsHTML += `
+                <div class="service-detail">
+                    <div class="service-detail-label">תחומי עניין</div>
+                    <div class="service-detail-value service-tags">
+                        ${interestTags.map(tag => `<span class="service-tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `;
         }
-    }
-    
-    if (interests.length > 0) {
-        detailsHTML += `
-            <div class="service-detail">
-                <div class="service-detail-label">תחומי עניין</div>
-                <div class="service-detail-value">${interests.join(', ')}</div>
-            </div>
-        `;
     }
     
     // Set HTML and show modal
