@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.988.0'; // Updated version number
+const APP_VERSION = '1.989.0'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -76,6 +76,42 @@ const connectionStatus = document.getElementById('connection-status');
 const statusBar = document.getElementById('status-bar');
 const clearSearchButton = document.getElementById('clear-search-button');
 
+
+// כפתורי החלפת תצוגה
+const gridViewButton = document.getElementById('grid-view-button');
+const listViewButton = document.getElementById('list-view-button');
+const resultsContainer = document.getElementById('results-container');
+
+// בדיקה אם יש העדפת תצוגה שמורה
+const savedViewMode = localStorage.getItem('viewMode') || 'grid';
+
+// פונקציה להגדרת מצב התצוגה
+function setViewMode(mode) {
+  // הסרת מחלקות קודמות
+  resultsContainer.classList.remove('grid-view', 'list-view');
+  gridViewButton.classList.remove('active');
+  listViewButton.classList.remove('active');
+  
+  // הוספת המחלקה המתאימה
+  resultsContainer.classList.add(mode + '-view');
+  
+  // סימון הכפתור המתאים כפעיל
+  if (mode === 'grid') {
+    gridViewButton.classList.add('active');
+  } else {
+    listViewButton.classList.add('active');
+  }
+  
+  // שמירת ההעדפה
+  localStorage.setItem('viewMode', mode);
+}
+
+// הגדרת מצב התצוגה ההתחלתי
+setViewMode(savedViewMode);
+
+// הוספת מאזיני אירועים לכפתורים
+gridViewButton.addEventListener('click', () => setViewMode('grid'));
+listViewButton.addEventListener('click', () => setViewMode('list'));
 
 // Category icons mapping (default icons if not specified in data)
 const categoryIcons = {
@@ -667,6 +703,11 @@ function renderSearchResults(results) {
         
         resultsContainer.appendChild(resultCard);
     });
+
+  
+  // החל מחדש את מצב התצוגה הנוכחי
+  const currentViewMode = localStorage.getItem('viewMode') || 'grid';
+  setViewMode(currentViewMode);
 }
 
 // Voice search functionality
