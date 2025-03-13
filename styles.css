@@ -13,15 +13,203 @@
     --error-color: #ea4335;
     --warning-color: #fbbc04;
 }
+
+/* תיקונים למצב כהה - הוסף את הקוד הזה לקובץ styles.css */
+
+/* העדכונים הראשיים למצב כהה */
 [data-theme="dark"] {
-  /* מצב כהה */
   --bg-primary: #121212;
   --bg-secondary: #1e1e1e;
   --text-color: #e0e0e0;
   --text-light: #a0a0a0;
   --border-color: #3c3c3c;
-  --primary-color: #81b0ff; /* גוון בהיר יותר של כחול במצב כהה */
+  --primary-color: #81b0ff;
+  
+  /* צבעים נוספים שצריך להתאים במצב כהה */
+  --card-bg: #2a2a2a;
+  --modal-bg: #2a2a2a;
+  --header-bg: #1e3a8a;
+  --tag-bg: rgba(129, 176, 255, 0.1);
+  --tag-border: rgba(129, 176, 255, 0.3);
+  --tag-color: #81b0ff;
 }
+
+/* רקע כללי */
+[data-theme="dark"] body {
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+}
+
+/* תיקון רקע בראש האתר */
+[data-theme="dark"] .app-header {
+  background-color: var(--header-bg);
+}
+
+/* תיקון רקע כרטיסי קטגוריות */
+[data-theme="dark"] .category-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* תיקון רקע כרטיסי תוצאות */
+[data-theme="dark"] .result-card {
+  background-color: var(--card-bg);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* תיקון רקע חיפוש */
+[data-theme="dark"] .search-section {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+/* תיקון רקע אזור קטגוריות */
+[data-theme="dark"] .categories-section {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+/* תיקון רקע כפתורים */
+[data-theme="dark"] button {
+  color: var(--text-color);
+}
+
+/* תיקון רקע חלונית מידע מלא */
+[data-theme="dark"] .modal-content {
+  background-color: var(--modal-bg);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+/* תיקון רקע תגיות */
+[data-theme="dark"] .result-tag {
+  background-color: var(--tag-bg);
+  border-color: var(--tag-border);
+  color: var(--tag-color);
+}
+
+[data-theme="dark"] .service-tag {
+  background-color: var(--tag-bg);
+  border-color: var(--tag-border);
+  color: var(--tag-color);
+}
+
+/* תיקון רקע פופאפ התקנה */
+[data-theme="dark"] .install-prompt-content {
+  background-color: var(--modal-bg);
+  color: var(--text-color);
+}
+
+[data-theme="dark"] .install-instructions {
+  background-color: var(--bg-secondary);
+}
+
+/* תיקון רקע פוטר */
+[data-theme="dark"] .app-footer {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
+/* תיקון לתיבת החיפוש */
+[data-theme="dark"] #search-input {
+  color: var(--text-color);
+}
+
+/* תיקון סימון קטגוריה פעילה */
+[data-theme="dark"] .category-card.active {
+  background-color: #2c4a7c;
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .category-card:hover {
+  background-color: #2c4a7c;
+}
+
+/* תיקון צבעי קטגוריות במצב כהה */
+[data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
+  background-color: rgba(66, 133, 244, 0.2);
+  border-color: rgba(66, 133, 244, 0.4);
+  color: #87b3ff;
+}
+
+[data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-tag {
+  background-color: rgba(251, 188, 4, 0.2);
+  border-color: rgba(251, 188, 4, 0.4);
+  color: #ffd54f;
+}
+
+[data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-tag {
+  background-color: rgba(15, 157, 88, 0.2);
+  border-color: rgba(15, 157, 88, 0.4);
+  color: #66bb6a;
+}
+
+[data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
+  background-color: rgba(156, 39, 176, 0.2);
+  border-color: rgba(156, 39, 176, 0.4);
+  color: #ce93d8;
+}
+
+[data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
+  background-color: rgba(255, 112, 67, 0.2);
+  border-color: rgba(255, 112, 67, 0.4);
+  color: #ffab91;
+}
+
+[data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-tag {
+  background-color: rgba(3, 169, 244, 0.2);
+  border-color: rgba(3, 169, 244, 0.4);
+  color: #81d4fa;
+}
+
+[data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-tag {
+  background-color: rgba(233, 30, 99, 0.2);
+  border-color: rgba(233, 30, 99, 0.4);
+  color: #f48fb1;
+}
+
+/* תיקון העיצוב של תגיות הקטגוריות בכרטיסי התוצאות */
+[data-theme="dark"] .result-category-tag {
+  background-color: var(--bg-secondary);
+  color: var(--text-light);
+}
+
+/* צבעי קטגוריה לתגיות במצב כהה */
+[data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-category-tag {
+  background-color: rgba(66, 133, 244, 0.2);
+  color: #87b3ff;
+}
+
+[data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-category-tag {
+  background-color: rgba(251, 188, 4, 0.2);
+  color: #ffd54f;
+}
+
+[data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-category-tag {
+  background-color: rgba(15, 157, 88, 0.2);
+  color: #66bb6a;
+}
+
+[data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-category-tag {
+  background-color: rgba(156, 39, 176, 0.2);
+  color: #ce93d8;
+}
+
+[data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-category-tag {
+  background-color: rgba(255, 112, 67, 0.2);
+  color: #ffab91;
+}
+
+[data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-category-tag {
+  background-color: rgba(3, 169, 244, 0.2);
+  color: #81d4fa;
+}
+
+[data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-category-tag {
+  background-color: rgba(233, 30, 99, 0.2);
+  color: #f48fb1;
+}
+
+
 * {
     margin: 0;
     padding: 0;
@@ -782,12 +970,6 @@ background-color: var(--bg-primary);
     border-right: 4px solid transparent;
 }
 
-/* התאמה למצב כהה */
-[data-theme="dark"] .result-tag,
-[data-theme="dark"] .service-tag {
-  background-color: rgba(129, 176, 255, 0.1);
-  border-color: rgba(129, 176, 255, 0.3);
-}
 
 /* צבע תגית לפי קטגוריה */
 .result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
