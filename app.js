@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.989.0'; // Updated version number
+const APP_VERSION = '1.990.0'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -80,7 +80,6 @@ const clearSearchButton = document.getElementById('clear-search-button');
 // כפתורי החלפת תצוגה
 const gridViewButton = document.getElementById('grid-view-button');
 const listViewButton = document.getElementById('list-view-button');
-const resultsContainer = document.getElementById('results-container');
 
 // בדיקה אם יש העדפת תצוגה שמורה
 const savedViewMode = localStorage.getItem('viewMode') || 'grid';
