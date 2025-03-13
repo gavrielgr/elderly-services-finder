@@ -69,6 +69,13 @@
   border-color: var(--border-color);
 }
 
+
+/* תיקון רקע אזור קטגוריות */
+[data-theme="dark"] .results-section {
+  background-color: var(--bg-primary);
+  border-color: var(--border-color);
+}
+
 /* תיקון רקע כפתורים */
 [data-theme="dark"] button {
   color: var(--text-color);
