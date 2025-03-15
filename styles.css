@@ -684,7 +684,7 @@ background-color: var(--bg-primary);
     direction: ltr;
     display: inline-block;
 }
-}
+
 .result-tags {
   display: flex;
   flex-wrap: wrap;
