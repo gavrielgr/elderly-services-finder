@@ -1,5 +1,5 @@
 // Global variables
-const APP_VERSION = '1.990.0'; // Updated version number
+const APP_VERSION = '1.991.0'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -666,6 +666,9 @@ function renderSearchResults(results) {
                 .filter(tag => tag.length > 0); // סינון ערכים ריקים
         }
         
+// Check for email specifically
+        const email = service['אימייל'] || '';
+        
         // Create result card HTML with category tag
         let cardHTML = `
             <div class="result-name">${name}</div>
@@ -678,6 +681,11 @@ function renderSearchResults(results) {
         
         if (description) {
             cardHTML += `<div class="result-description">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</div>`;
+        }
+        
+        // Display email if available (new)
+        if (email) {
+            cardHTML += `<div class="result-email"><span class="email-icon">✉️</span> <a href="mailto:${email}" class="email-link" onclick="event.stopPropagation();">${email}</a></div>`;
         }
         
         if (contact) {
