@@ -1,5 +1,4 @@
-// Global variables
-const APP_VERSION = '1.992.0'; // Updated version number
+const APP_VERSION = '1.993.0'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -666,51 +665,8 @@ function renderSearchResults(results) {
                 .filter(tag => tag.length > 0); // סינון ערכים ריקים
         }
         
-// Check for email specifically
-        const email = service['אימייל'] || '';
         const phone = service['טלפון'] || service['מס\' טלפון'] || service['טלפון / אימייל'] || '';
 
-         // Create result card HTML with category tag
-        let cardHTML = `
-            <div class="result-name">${name}</div>
-            <div class="result-category-tag">${service.category.trim()}</div>
-        `;
-        
-        if (type) {
-            cardHTML += `<div class="result-type">${type}</div>`;
-        }
-        
-        if (description) {
-            cardHTML += `<div class="result-description">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</div>`;
-        }
-        
-        // Display contact information with icons
-        if (phone) {
-            // Split multiple phone numbers by commas
-            const phoneNumbers = phone.split(',').map(p => p.trim());
-            const phoneLinks = phoneNumbers.map(phoneNum => {
-                // Handle special cases with asterisks
-                if (phoneNum.startsWith('*')) {
-                    const encodedPhone = encodeURIComponent(phoneNum);
-                    return `<a href="tel:${encodedPhone}" class="phone-link" onclick="event.stopPropagation();">${phoneNum}</a>`;
-                } else {
-                    // Clean the phone number for the link
-                    const cleanPhone = phoneNum.replace(/\D/g, '');
-                    return `<a href="tel:${cleanPhone}" class="phone-link" onclick="event.stopPropagation();">${phoneNum}</a>`;
-                }
-            });
-            
-            cardHTML += `<div class="result-phone"><span class="phone-icon">📞</span> ${phoneLinks.join(', ')}</div>`;
-        }
-        
-        // Display email if available
-        if (email) {
-            cardHTML += `<div class="result-email"><span class="email-icon">✉️</span> <a href="mailto:${email}" class="email-link" onclick="event.stopPropagation();">${email}</a></div>`;
-        }
-        
-        if (contact) {
-            cardHTML += `<div class="result-contact">${contact}</div>`;
-        }
         
         // הוספת תגיות תחומי עניין רק אם יש כאלה
         if (interestTags.length > 0) {
