@@ -646,12 +646,14 @@ background-color: var(--bg-primary);
     margin-bottom: 0.25rem;
 }
 
+/* Contact styles with icons */
 .result-contact {
     font-weight: 500;
     margin-top: 0.5rem;
 }
- New email styles */
-.result-email {
+
+/* Common styles for contact information with icons */
+.result-email, .result-phone {
     margin-top: 0.5rem;
     font-size: 0.9rem;
     display: flex;
@@ -681,6 +683,7 @@ background-color: var(--bg-primary);
 .phone-link {
     direction: ltr;
     display: inline-block;
+}
 }
 .result-tags {
   display: flex;
