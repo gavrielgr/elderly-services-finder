@@ -650,6 +650,28 @@ background-color: var(--bg-primary);
     font-weight: 500;
     margin-top: 0.5rem;
 }
+ New email styles */
+.result-email {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.email-icon {
+    margin-left: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.email-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.email-link:hover {
+    text-decoration: underline;
+}
 
 .result-tags {
   display: flex;
