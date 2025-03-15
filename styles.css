@@ -658,21 +658,30 @@ background-color: var(--bg-primary);
     align-items: center;
 }
 
-.email-icon {
+.email-icon, .phone-icon {
     margin-left: 0.3rem;
     font-size: 0.9rem;
 }
 
-.email-link {
+.email-link, .phone-link {
     color: var(--primary-color);
     text-decoration: none;
     word-break: break-all;
 }
 
-.email-link:hover {
+.email-link:hover, .phone-link:hover {
     text-decoration: underline;
 }
 
+/* Phone specific styles */
+.result-phone {
+    margin-top: 0.5rem;
+}
+
+.phone-link {
+    direction: ltr;
+    display: inline-block;
+}
 .result-tags {
   display: flex;
   flex-wrap: wrap;
