@@ -1171,3 +1171,9 @@ background-color: var(--bg-primary);
     background-color: rgba(233, 30, 99, 0.15);
     color: #e91e63;
 }
+
+[data-theme="dark"] .service-detail-value a,
+[data-theme="dark"] .email-link {
+    color: var(--primary-color);
+    text-decoration: none;
+}
