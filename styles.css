@@ -1,19 +1,191 @@
 /* Global Styles */
 :root {
-    --primary-color: #4285f4;
-    --primary-dark: #3367d6;
-    --secondary-color: #f8f9fa;
-  /* מצב רגיל - בהיר */
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text-color: #202124;
-  --text-light: #5f6368;
-  --border-color: #dadce0;
-    --success-color: #0f9d58;
-    --error-color: #ea4335;
-    --warning-color: #fbbc04;
+    /* Colors */
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #f8fafc;
+    --bg-primary: #ffffff;
+    --bg-secondary: #f1f5f9;
+    --text-color: #0f172a;
+    --text-light: #64748b;
+    --border-color: #e2e8f0;
+    --success-color: #10b981;
+    --error-color: #ef4444;
+    --warning-color: #f59e0b;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    
+    /* Border Radius */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Dark Mode Colors */
+[data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --text-color: #f1f5f9;
+    --text-light: #94a3b8;
+    --border-color: #334155;
+    --primary-color: #3b82f6;
+    --card-bg: #1e293b;
+    --modal-bg: #1e293b;
+    --header-bg: #1e40af;
+    --tag-bg: rgba(59, 130, 246, 0.1);
+    --tag-border: rgba(59, 130, 246, 0.3);
+    --tag-color: #60a5fa;
+}
+
+/* Base Styles */
+body {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    font-family: 'Heebo', sans-serif;
+    line-height: 1.5;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Cards */
+.result-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 1.5rem;
+    opacity: 1 !important;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Buttons */
+button {
+    border-radius: var(--radius-md);
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.action-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+}
+
+.action-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Search Bar */
+.search-container {
+    width: 100% !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    background-color: var(--bg-secondary) !important;
+    border-radius: 24px !important;
+    padding: 0.5rem 0.75rem !important;
+    height: 44px !important;
+}
+
+.search-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+}
+
+#search-input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: var(--text-color) !important;
+    text-align: right !important;
+    direction: rtl !important;
+}
+
+#search-button,
+#voice-search-button,
+#clear-search-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    color: var(--text-light) !important;
+    transition: color 0.2s !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    top: 0 !important;
+}
+
+#search-button:hover,
+#voice-search-button:hover,
+#clear-search-button:hover {
+    color: var(--primary-color) !important;
+}
+
+/* Tags */
+.result-tag, .service-tag {
+    background-color: var(--tag-bg);
+    border: 1px solid var(--tag-border);
+    color: var(--primary-color);
+    border-radius: var(--radius-full);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    transition: all var(--transition-fast);
+}
+
+.result-tag:hover, .service-tag:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Modal */
+.modal-content {
+    background-color: var(--bg-primary);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    max-width: 90%;
+    width: 600px;
+    padding: 2rem;
+}
+
+/* Header */
+.app-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    padding: 1.5rem;
+    color: white;
+    box-shadow: var(--shadow-md);
+}
 
 /* סגנונות לכפתורי תצוגה */
 .view-toggle {
@@ -90,24 +262,6 @@
 /* תיקונים למצב כהה - הוסף את הקוד הזה לקובץ styles.css */
 
 /* העדכונים הראשיים למצב כהה */
-[data-theme="dark"] {
-  --bg-primary: #121212;
-  --bg-secondary: #1e1e1e;
-  --text-color: #e0e0e0;
-  --text-light: #a0a0a0;
-  --border-color: #3c3c3c;
-  --primary-color: #81b0ff;
-  
-  /* צבעים נוספים שצריך להתאים במצב כהה */
-  --card-bg: #2a2a2a;
-  --modal-bg: #2a2a2a;
-  --header-bg: #1e3a8a;
-  --tag-bg: rgba(129, 176, 255, 0.1);
-  --tag-border: rgba(129, 176, 255, 0.3);
-  --tag-color: #81b0ff;
-}
-
-/* רקע כללי */
 [data-theme="dark"] body {
   background-color: var(--bg-secondary);
   color: var(--text-color);
@@ -312,7 +466,6 @@ body {
     flex-direction: column;
 }
 
-/* Header */
 .app-header {
     background: linear-gradient(135deg, #4285f4 0%, #34a0a4 100%);
     color: white;
@@ -347,44 +500,10 @@ body {
 
 /* Search Section */
 .search-section {
-    padding: 1rem;
+    padding: 1rem !important;
+    width: 100% !important;
     background-color: white;
     border-bottom: 1px solid var(--border-color);
-}
-
-.search-container {
-    display: flex;
-    align-items: center;
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-  background-color: var(--bg-primary);
-  color: var(--text-color);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s;
-}
-
-.search-container:focus-within {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-#search-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    font-size: 1rem;
-    padding: 0.5rem;
-    background-color: transparent;
-    font-family: 'Heebo', sans-serif;
-}
-
-#search-button,
-#voice-search-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25rem;
-    padding: 0.25rem;
 }
 
 .filter-options {
@@ -420,54 +539,63 @@ body {
 }
 
 .categories-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem 0;
 }
 
 .category-card {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all var(--transition-normal);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    width: 90px; /* Increased width for better text display */
-    height: 95px; /* Adjusted height */
-background-color: var(--bg-primary);
-  color: var(--text-color);    border-radius: 12px;
-    padding: 0.5rem 0.25rem; /* Adjusted padding */
-    cursor: pointer;
-    transition: transform 0.2s, background-color 0.2s;
-    border: 1px solid var(--border-color);
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.2s;
-
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-
 .category-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--category-color, transparent);
-  opacity: 0.15;
-  z-index: 0;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-color);
+    transform: scaleX(0);
+    transition: transform var(--transition-normal);
+}
+
+.category-card:hover::before {
+    transform: scaleX(1);
 }
 
 .category-card:hover {
     transform: translateY(-2px);
-    background-color: #e8f0fe;
+    box-shadow: var(--shadow-md);
 }
 
 .category-card.active {
-    background-color: #e8f0fe;
+    background-color: var(--primary-color);
+    color: white;
     border-color: var(--primary-color);
 }
 
+.category-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    transition: transform var(--transition-normal);
+}
+
+.category-card:hover .category-icon {
+    transform: scale(1.1);
+}
 
 /* צבעים ייחודיים לכל קטגוריה */
 .category-card[data-category="שירותים ומסגרות בזקנה"] {
@@ -496,14 +624,6 @@ background-color: var(--bg-primary);
 
 .category-card[data-category="הטפול בזקן בישראל"] {
   --category-color: #e91e63; /* ורוד */
-}
-
-.category-icon {
-    font-size: 1.75rem;
-    margin-bottom: 0.25rem;
-      position: relative;
-  z-index: 1;
-
 }
 
 .category-name {
@@ -881,8 +1001,8 @@ background-color: var(--bg-primary);
     }
     
     .search-container {
-        max-width: 500px;
-        margin: 0 auto 0.5rem auto;
+        width: 100% !important;
+        margin: 0 !important;
     }
     
     .categories-container {
@@ -892,25 +1012,23 @@ background-color: var(--bg-primary);
     }
     
     .result-card {
-    height: auto;     /* גובה אוטומטי במקום גובה קבוע */
-    min-height: 150px; /* גובה מינימלי לשמירה על מראה אחיד */
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .result-name {
-    height: auto;     /* מבטל הגדרת גובה קבוע */
-    overflow: visible;
-    display: block;
-  }
-  
-  /* מאפשר לכרטיסים לשמור על גובה דומה אך לגדול לפי הצורך */
-  .results-container {
-    grid-auto-rows: minmax(150px, auto);
-    align-items: stretch;
-  }
+        height: auto;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+    }
     
-    /* Center special messages in the grid */
+    .result-name {
+        height: auto;
+        overflow: visible;
+        display: block;
+    }
+    
+    .results-container {
+        grid-auto-rows: minmax(150px, auto);
+        align-items: stretch;
+    }
+    
     .results-message,
     .no-results {
         grid-column: 1 / -1;
@@ -1188,4 +1306,513 @@ background-color: var(--bg-primary);
 [data-theme="dark"] .email-link {
     color: var(--primary-color);
     text-decoration: none;
+}
+
+/* Results Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Search Input */
+#search-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 1rem;
+    outline: none;
+}
+
+#search-input::placeholder {
+    color: var(--text-light);
+}
+
+/* Voice Search Button Animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+#voice-search-button.recording {
+    animation: pulse 1.5s infinite;
+    background-color: var(--error-color);
+    color: white;
+}
+
+/* Status Messages */
+.status-bar {
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    margin: 1rem;
+    animation: slideIn 0.3s ease-out;
+    box-shadow: var(--shadow-md);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Loading States */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.loading {
+    background: linear-gradient(90deg, 
+        var(--bg-secondary) 25%, 
+        var(--border-color) 50%, 
+        var(--bg-secondary) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Responsive Design Improvements */
+@media (max-width: 768px) {
+    .categories-container {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+
+    .action-button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .categories-container {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .category-card {
+        padding: 1rem;
+    }
+
+    .category-icon {
+        font-size: 1.5rem;
+    }
+
+    .search-container {
+        flex-direction: column;
+    }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+.screen-reader-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    .category-card {
+        width: calc(50% - 1rem) !important;
+        margin: 0.5rem !important;
+        padding: 0.75rem !important;
+        min-height: 80px !important;
+    }
+
+    .categories-container {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+        padding: 0.5rem !important;
+    }
+
+    .category-icon {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .category-name {
+        font-size: 0.9rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .result-card {
+        margin: 0.5rem 0 !important;
+        padding: 1rem !important;
+    }
+
+    .results-container {
+        padding: 0.5rem !important;
+    }
+
+    .result-name {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .result-description {
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .result-tags {
+        margin-top: 0.5rem !important;
+    }
+
+    .result-tag {
+        font-size: 0.8rem !important;
+        padding: 0.25rem 0.5rem !important;
+        margin: 0.25rem !important;
+    }
+
+    /* Search bar improvements */
+    .search-container {
+        padding: 0.5rem !important;
+    }
+
+    #search-input {
+        font-size: 1rem !important;
+        padding: 0.5rem 1rem !important;
+    }
+
+    /* Modal improvements */
+    .modal-content {
+        width: 95% !important;
+        margin: 1rem auto !important;
+        padding: 1rem !important;
+    }
+
+    .service-name {
+        font-size: 1.2rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .service-detail {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .service-detail-label {
+        font-size: 0.9rem !important;
+    }
+
+    .service-detail-value {
+        font-size: 1rem !important;
+    }
+}
+
+/* Fix for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+    .modal-content {
+        max-height: 85vh !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    
+    #search-input {
+        font-size: 16px !important; /* Prevents zoom on focus in iOS */
+    }
+}
+
+/* Mobile Header and Search Improvements */
+@media screen and (max-width: 768px) {
+    .app-header {
+        padding: 0.75rem !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    .app-header h1 {
+        font-size: 1.5rem !important;
+        margin: 0 !important;
+    }
+
+    .connection-status {
+        margin-left: auto !important;
+        margin-right: 1rem !important;
+    }
+
+    .theme-toggle {
+        margin-right: 0 !important;
+        position: static !important;
+    }
+
+    .search-section {
+        position: sticky !important;
+        top: 3.5rem !important;
+        z-index: 99 !important;
+        background-color: var(--bg-primary) !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        padding: 0.75rem !important;
+    }
+
+    .search-container {
+        margin: 0 !important;
+        height: 44px !important;
+        flex-direction: row !important;
+    }
+
+    #search-input {
+        order: 2 !important;
+    }
+
+    #search-button {
+        order: 1 !important;
+    }
+
+    #voice-search-button {
+        order: 3 !important;
+    }
+
+    #clear-search-button {
+        order: 4 !important;
+    }
+
+    /* Fix for iOS input zoom */
+    @supports (-webkit-touch-callout: none) {
+        #search-input {
+            font-size: 16px !important;
+        }
+    }
+}
+
+/* Mobile Categories and Results Improvements */
+@media screen and (max-width: 768px) {
+    .categories-section {
+        padding: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .categories-container {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 0.5rem !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .category-card {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        aspect-ratio: 1 !important;
+        padding: 0.5rem !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+        border-radius: 12px !important;
+    }
+
+    .category-icon {
+        font-size: 1.5rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .category-name {
+        font-size: 0.7rem !important;
+        line-height: 1.2 !important;
+        text-align: center !important;
+        margin: 0 !important;
+        max-height: none !important;
+    }
+
+    .results-section {
+        padding: 0.5rem !important;
+    }
+
+    .results-container {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+        padding: 0 !important;
+    }
+
+    .result-card {
+        margin: 0 !important;
+        padding: 1rem !important;
+        border-radius: 12px !important;
+    }
+
+    .result-name {
+        font-size: 1rem !important;
+        margin-bottom: 0.5rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .result-description {
+        font-size: 0.9rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .result-tags {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.25rem !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .result-tag {
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
+    }
+
+    .result-category-tag {
+        font-size: 0.7rem !important;
+        padding: 0.15rem 0.4rem !important;
+        margin-bottom: 0.5rem !important;
+        border-radius: 8px !important;
+    }
+
+    /* Modal improvements */
+    .modal-content {
+        width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        padding: 1rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .service-name {
+        font-size: 1.25rem !important;
+        margin-bottom: 1rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .service-detail {
+        margin-bottom: 1rem !important;
+    }
+
+    .modal-actions {
+        margin-top: auto !important;
+        padding: 1rem !important;
+    }
+
+    .action-button {
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+        height: 3rem !important;
+        font-size: 1rem !important;
+    }
+}
+
+/* Extra Small Screen Improvements */
+@media screen and (max-width: 360px) {
+    .categories-container {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    .category-icon {
+        font-size: 1.25rem !important;
+    }
+
+    .category-name {
+        font-size: 0.65rem !important;
+    }
+
+    .app-header h1 {
+        font-size: 1.25rem !important;
+    }
+
+    .search-container {
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    #search-input {
+        font-size: 0.9rem !important;
+        height: 1.75rem !important;
+    }
+
+    .result-card {
+        padding: 0.75rem !important;
+    }
+
+    .result-name {
+        font-size: 0.9rem !important;
+    }
+
+    .result-description {
+        font-size: 0.8rem !important;
+    }
+
+    .result-tag {
+        font-size: 0.7rem !important;
+        padding: 0.2rem 0.4rem !important;
+    }
+}
+
+/* Fix for notched phones */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .app-header {
+        padding-top: calc(env(safe-area-inset-top) + 0.75rem) !important;
+    }
+
+    .modal-content {
+        padding-top: calc(env(safe-area-inset-top) + 1rem) !important;
+        padding-bottom: calc(env(safe-area-inset-bottom) + 1rem) !important;
+    }
 }

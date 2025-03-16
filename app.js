@@ -1,7 +1,61 @@
-const APP_VERSION = '1.995.0'; // Updated version number
+const APP_VERSION = '1.997.7'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
+
+// State
+let allServicesData = null;
+let lastUpdated = null;
+let activeCategory = null;
+let currentSearchQuery = '';
+let noWaitlistOnly = false;
+let currentServiceDetails = null;
+let isOnline = navigator.onLine;
+let storedVersion = null;
+let deferredPrompt = null;
+
+// Data refresh function
+async function refreshData(showNotification = true) {
+    if (!isOnline) {
+        showStatusMessage('לא ניתן לרענן ללא חיבור לאינטרנט', 'warning');
+        return false;
+    }
+
+    if (showNotification) {
+        showStatusMessage('מרענן נתונים...', 'info');
+    }
+
+    try {
+        const success = await loadFromAPI();
+        if (success) {
+            renderCategories();
+            if (currentSearchQuery || activeCategory) {
+                performSearch();
+            } else {
+                renderDefaultResults();
+            }
+            updateLastUpdatedText();
+            if (showNotification) {
+                showStatusMessage('הנתונים עודכנו בהצלחה', 'success');
+            }
+            return true;
+        } else {
+            if (showNotification) {
+                showStatusMessage('שגיאה בעדכון הנתונים', 'error');
+            }
+            return false;
+        }
+    } catch (error) {
+        console.error('Error refreshing data:', error);
+        if (showNotification) {
+            showStatusMessage('שגיאה בעדכון הנתונים', 'error');
+        }
+        return false;
+    }
+}
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', initApp);
 
 async function checkAppVersion() {
     try {
@@ -66,8 +120,9 @@ const DATA_KEY = 'allServicesData';
 const LAST_UPDATED_KEY = 'lastUpdated';
 const VERSION_KEY = 'appVersion';
 
-// Replace with your actual Google Apps Script URL
-const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhjH6M2KJrbCQRu4YiofKbgwrkDpjxZGvLIUqE4KrcA_IKd5sp_8eDl0Pb_zEjeWb9_F8A26cGZyN3LnUwLp1tSGwE4DO0MvbpgpbuL6dkaSgQyecapCtZLqZWSy4fns_lzmQ-VVQYa0YZvoLbV3-5Oq0p4FguPA1dOH8tQlui0VwZ_H9mdlkd0D1AgxO53pa8r4r8VlKWtje0O0-W-tIQTtzYauPWkvm8bwXofRooP4qw-IYmKBYIVb_wXqSyHH5n9dcN7a7v5RpLauKypRY9G1hw1Uw&lib=MOF1g2zWJcL4207AxUsxFPKpukIcnFaFe';
+// קונפיגורציה של ה-API
+const API_URL = process.env.STRAPI_API_URL || 'http://localhost:1337';
+const API_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // DOM Elements
 const searchInput = document.getElementById('search-input');
@@ -96,23 +151,26 @@ const savedViewMode = localStorage.getItem('viewMode') || 'grid';
 
 // פונקציה להגדרת מצב התצוגה
 function setViewMode(mode) {
-  // הסרת מחלקות קודמות
-  resultsContainer.classList.remove('grid-view', 'list-view');
-  gridViewButton.classList.remove('active');
-  listViewButton.classList.remove('active');
-  
-  // הוספת המחלקה המתאימה
-  resultsContainer.classList.add(mode + '-view');
-  
-  // סימון הכפתור המתאים כפעיל
-  if (mode === 'grid') {
-    gridViewButton.classList.add('active');
-  } else {
-    listViewButton.classList.add('active');
-  }
-  
-  // שמירת ההעדפה
-  localStorage.setItem('viewMode', mode);
+    const container = document.getElementById('results-container');
+    
+    // הסר מחלקות קודמות
+    container.classList.remove('grid-view', 'list-view');
+    gridViewButton.classList.remove('active');
+    listViewButton.classList.remove('active');
+    
+    // הוסף את המחלקה המתאימה
+    container.classList.add(mode + '-view');
+    container.classList.add('visible-grid');
+    
+    // סימון הכפתור המתאים כפעיל
+    if (mode === 'grid') {
+        gridViewButton.classList.add('active');
+    } else {
+        listViewButton.classList.add('active');
+    }
+    
+    // שמירת ההעדפה
+    localStorage.setItem('viewMode', mode);
 }
 
 // הגדרת מצב התצוגה ההתחלתי
@@ -139,18 +197,6 @@ function getCategoryIcon(categoryName) {
     const trimmedName = categoryName.trim();
     return categoryIcons[trimmedName] || categoryIcons['default'];
 }
-// State
-let allServicesData = null;
-let lastUpdated = null;
-let activeCategory = null;
-let currentSearchQuery = '';
-let noWaitlistOnly = false;
-let currentServiceDetails = null;
-let isOnline = navigator.onLine;
-let storedVersion = null;
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', initApp);
 
 // Event listeners
 
@@ -225,25 +271,50 @@ if (navigator.serviceWorker) {
     });
 }
 
+// Check if the app is installable
+function isInstallable() {
+    return deferredPrompt !== null;
+}
+
 // Initialize the application
 async function initApp() {
     updateConnectionStatus();
     
     try {
-        // Load data from IndexedDB first
-        await loadFromIndexedDB();
-        
-        // Check for version mismatch only if we have data
-        if (allServicesData) {
-            await checkAppVersion();
+        // Try to load data from IndexedDB first
+        const savedData = await loadFromIndexedDB();
+        if (savedData && savedData.data) {
+            allServicesData = savedData.data;
+            lastUpdated = savedData.lastUpdated;
+            console.log('Data loaded from IndexedDB');
+        }
+
+        // Check if we need to refresh from API
+        const shouldRefresh = !allServicesData || 
+            (lastUpdated && (new Date().getTime() - new Date(lastUpdated).getTime() > 24 * 60 * 60 * 1000));
+
+        if (isOnline && shouldRefresh) {
+            console.log('Refreshing data from API...');
+            const success = await loadFromAPI();
+            if (success) {
+                console.log('Data refreshed successfully');
+            }
+        }
+
+        // Render initial UI
+        if (allServicesData && Array.isArray(allServicesData)) {
+            renderCategories();
+            renderDefaultResults();
+            updateLastUpdatedText();
+        } else {
+            console.log('No valid data available, showing empty state');
+            categoriesContainer.innerHTML = '<div class="category-loading">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
+            resultsContainer.innerHTML = '<div class="results-message">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
         }
         
-        // Only refresh from API if we don't have data OR it's been more than 24 hours since last update
-        const shouldRefresh = !allServicesData || 
-                             (lastUpdated && (new Date().getTime() - new Date(lastUpdated).getTime() > 24 * 60 * 60 * 1000));
-        
-        if (isOnline && (shouldRefresh || !allServicesData)) {
-            refreshData(true); // Silent refresh (no UI notification if no changes)
+        // Show install prompt if applicable
+        if (isInstallable()) {
+            showInstallPrompt();
         }
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -315,66 +386,95 @@ function showStatusMessage(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-// Fetch data from API
-async function fetchDataFromAPI() {
-    try {
-        const response = await fetch(API_URL);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.status === 'success') {
-            return {
-                data: data.data,
-                lastUpdated: data.lastUpdated
-            };
-        } else {
-            throw new Error('API returned error status');
-        }
-    } catch (error) {
-        console.error('Error fetching data from API:', error);
-        throw error;
+// Data transformation
+function transformData(rawData) {
+    console.log('Raw data received:', rawData);
+    if (!rawData || typeof rawData !== 'object') {
+        console.error('Invalid data format received:', rawData);
+        return [];
     }
+
+    let transformedData = [];
+
+    // Process each category directly from the root object
+    Object.entries(rawData).forEach(([category, services]) => {
+        // Skip non-array properties and special keys
+        if (!Array.isArray(services) || ['status', 'data', 'lastUpdated'].includes(category)) {
+            return;
+        }
+
+        // Remove any extra spaces from category name
+        const cleanCategory = category.trim();
+        
+        // Process each service in the category
+        services.forEach(service => {
+            const transformedService = {
+                category: cleanCategory,
+                name: service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || service['שם'] || 'שירות ללא שם',
+                description: service['תיאור העסק'] || service['תיאור כללי'] || service['זכויות ותחומי אחריות'] || service['תחום'] || service['תיאור'] || '',
+                phone: service['טלפון'] || service['מס\' טלפון'] || service['טלפון / אימייל'] || '',
+                email: service['אימייל'] || service['מייל'] || '',
+                website: service['אתר'] || service['קישור לאתר'] || '',
+                tags: []
+            };
+
+            // Add interest tags
+            if (service['תחום עניין']) {
+                const interestTags = typeof service['תחום עניין'] === 'string' 
+                    ? service['תחום עניין'].split(',')
+                    : [service['תחום עניין']];
+                
+                transformedService.tags.push(...interestTags.map(tag => tag.trim()).filter(tag => tag.length > 0));
+            }
+
+            // Add waitlist tag if applicable
+            if (service['רשימת המתנה'] === 'כן') {
+                transformedService.tags.push('רשימת המתנה');
+            }
+
+            transformedData.push(transformedService);
+        });
+    });
+
+    console.log('Final transformed data:', transformedData);
+    return transformedData;
 }
 
-// Refresh data from API
-async function refreshData(silent = false) {
-    if (!isOnline) {
-        if (!silent) showStatusMessage('אין חיבור לאינטרנט. לא ניתן לרענן את המידע.', 'warning');
-        return;
-    }
-    
-    if (!silent) showStatusMessage('מרענן נתונים...');
-    
+// Update the data loading function
+async function loadFromAPI() {
     try {
-        const apiData = await fetchDataFromAPI();
-        const newData = apiData.data;
-        const newLastUpdated = apiData.lastUpdated;
-        
-        // Check if data is new compared to what we have
-        if (lastUpdated !== newLastUpdated) {
-            // Update state
-            allServicesData = newData;
-            lastUpdated = newLastUpdated;
-            
-            // Save to IndexedDB
-            await saveToIndexedDB(newData, newLastUpdated);
-            
-            // Update UI
-            updateLastUpdatedText();
-            renderCategories();
-            performSearch(); // Refresh search results
-            
-            if (!silent) showStatusMessage('המידע עודכן בהצלחה!', 'success');
-        } else {
-            if (!silent) showStatusMessage('המידע עדכני, אין צורך ברענון.', 'info');
+        console.log('Fetching data from API...');
+        const response = await fetch(API_URL);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+        const rawData = await response.json();
+        console.log('Raw data from API:', rawData);
+        
+        // Check if we got data in the response
+        if (!rawData || typeof rawData !== 'object') {
+            throw new Error('Invalid response format');
+        }
+        
+        // Transform the data and ensure it's an array
+        const transformedData = transformData(rawData.data || rawData);
+        if (!Array.isArray(transformedData)) {
+            throw new Error('Transformed data is not an array');
+        }
+        
+        console.log('Setting allServicesData:', transformedData);
+        allServicesData = transformedData;
+        
+        // Update last updated timestamp
+        lastUpdated = rawData.lastUpdated || new Date().toISOString();
+        
+        // Save to IndexedDB
+        await saveToIndexedDB(allServicesData, lastUpdated);
+        
+        return true;
     } catch (error) {
-        console.error('Error refreshing data:', error);
-        if (!silent) showStatusMessage('שגיאה ברענון המידע. נסה שוב מאוחר יותר.', 'error');
+        console.error('Error loading data from API:', error);
+        return false;
     }
 }
 
@@ -396,7 +496,7 @@ async function openDatabase() {
     });
 }
 
-async function saveToIndexedDB(data, lastUpdated) {
+async function saveToIndexedDB(data, timestamp) {
     try {
         const db = await openDatabase();
         return new Promise((resolve, reject) => {
@@ -406,8 +506,9 @@ async function saveToIndexedDB(data, lastUpdated) {
             // Save the data
             store.put({ key: DATA_KEY, value: data });
             
-            // Save the last updated timestamp
-            store.put({ key: LAST_UPDATED_KEY, value: lastUpdated });
+            // Format and save the timestamp
+            const formattedTimestamp = new Date().toISOString();
+            store.put({ key: LAST_UPDATED_KEY, value: formattedTimestamp });
             
             transaction.oncomplete = () => resolve(true);
             transaction.onerror = () => reject('Error saving to database');
@@ -446,14 +547,18 @@ async function loadFromIndexedDB() {
         
         if (data) {
             allServicesData = data;
-            lastUpdated = timestamp;
-            updateLastUpdatedText();
+            lastUpdated = timestamp ? new Date(timestamp) : new Date();
             renderCategories();
             renderDefaultResults();
         } else {
             categoriesContainer.innerHTML = '<div class="category-loading">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
             resultsContainer.innerHTML = '<div class="results-message">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
         }
+        
+        // Update the last updated text after setting the data
+        updateLastUpdatedText();
+        
+        return { data, lastUpdated: timestamp };
     } catch (error) {
         console.error('Error in loadFromIndexedDB:', error);
         throw error;
@@ -481,75 +586,84 @@ async function getFromStore(db, key) {
 // UI Update Functions
 function updateLastUpdatedText() {
     if (lastUpdated) {
-        const date = new Date(lastUpdated);
-        const formattedDate = new Intl.DateTimeFormat('he-IL', {
-            day: 'numeric',
-            month: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric'
-        }).format(date);
-        
-        lastUpdatedText.textContent = `עודכן: ${formattedDate}`;
+        try {
+            // Try to parse the date string
+            let date;
+            if (typeof lastUpdated === 'string') {
+                // If it's already a formatted string, use it as is
+                if (lastUpdated.includes('עודכן:')) {
+                    lastUpdatedText.textContent = lastUpdated;
+                    return;
+                }
+                // Otherwise try to parse it
+                date = new Date(lastUpdated);
+            } else {
+                date = new Date(lastUpdated);
+            }
+
+            // Check if the date is valid
+            if (isNaN(date.getTime())) {
+                throw new Error('Invalid date');
+            }
+
+            const formattedDate = new Intl.DateTimeFormat('he-IL', {
+                day: 'numeric',
+                month: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+            }).format(date);
+            
+            lastUpdatedText.textContent = `עודכן: ${formattedDate}`;
+        } catch (error) {
+            console.warn('Error formatting date:', error);
+            // Fallback: just show the raw lastUpdated value if it's a string
+            if (typeof lastUpdated === 'string') {
+                lastUpdatedText.textContent = `עודכן: ${lastUpdated}`;
+            } else {
+                lastUpdatedText.textContent = 'לא עודכן';
+            }
+        }
     } else {
-        lastUpdatedText.textContent = 'לא עודכן עדיין';
+        lastUpdatedText.textContent = 'לא עודכן';
     }
 }
 
 function renderCategories() {
-    if (!allServicesData) return;
+    if (!allServicesData || !Array.isArray(allServicesData)) {
+        console.error('Invalid data format for categories');
+        return;
+    }
+
+    // Get unique categories
+    const categories = [...new Set(allServicesData.map(service => service.category))];
     
-    // Clear categories container
-    categoriesContainer.innerHTML = '';
-    
-    // Get sheet names as categories
-    const categories = Object.keys(allServicesData);
-    
-    // Create category cards
-    categories.forEach(categoryName => {
-        if (!categoryName || categoryName === 'גיליון2') return; // Skip empty sheet
+    const container = document.getElementById('categories-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    categories.forEach(category => {
+        if (!category) return;
+
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.setAttribute('data-category', category);
+
+        const icon = getCategoryIcon(category);
         
-        // Trim category name to handle spaces
-        const trimmedCategoryName = categoryName.trim();
-        
-        const categoryCard = document.createElement('div');
-        categoryCard.className = 'category-card';
-        categoryCard.setAttribute('data-category', trimmedCategoryName);
-        
-        // Use trimmed name for comparison with active category
-        if (trimmedCategoryName === activeCategory) {
-            categoryCard.classList.add('active');
-        }
-        
-        // Get icon using trimmed name
-        const icon = categoryIcons[trimmedCategoryName] || categoryIcons.default;
-        
-        categoryCard.innerHTML = `
+        card.innerHTML = `
             <div class="category-icon">${icon}</div>
-            <div class="category-name">${categoryName}</div>
+            <div class="category-name">${category}</div>
         `;
+
+        card.addEventListener('click', () => selectCategory(category));
         
-        categoryCard.addEventListener('click', () => {
-            if (activeCategory === trimmedCategoryName) {
-                // Deselect if already active
-                activeCategory = null;
-                categoryCard.classList.remove('active');
-            } else {
-                // Remove active class from all categories
-                document.querySelectorAll('.category-card').forEach(card => {
-                    card.classList.remove('active');
-                });
-                
-                // Set new active category (using trimmed name)
-                activeCategory = trimmedCategoryName;
-                categoryCard.classList.add('active');
-            }
-            
-            // Update search results
-            performSearch();
-        });
-        
-        categoriesContainer.appendChild(categoryCard);
+        if (category === activeCategory) {
+            card.classList.add('active');
+        }
+
+        container.appendChild(card);
     });
 }
 
@@ -559,201 +673,142 @@ function renderDefaultResults() {
 }
 // Search functions
 function performSearch() {
-    if (!allServicesData) {
-        showStatusMessage('אין מידע זמין לחיפוש.', 'warning');
+    console.log('Performing search...');
+    const query = searchInput.value.trim().toLowerCase();
+    currentSearchQuery = query;
+
+    // אם אין חיפוש ואין קטגוריה נבחרת, הצג את הודעת ברירת המחדל
+    if (!query && !activeCategory) {
+        renderDefaultResults();
         return;
     }
-    
-    // Get search query and update clear button visibility
-    currentSearchQuery = searchInput.value.trim().toLowerCase();
-    
-    // Show/hide clear button based on search text
-    if (currentSearchQuery !== '') {
-        clearSearchButton.classList.remove('hidden');
-    } else {
-        clearSearchButton.classList.add('hidden');
-    }
-    
-    // Get filtered results
-    const results = searchServices(currentSearchQuery, activeCategory, noWaitlistOnly);
-    
-    // Render results
-    renderSearchResults(results);
-}
 
-function searchServices(query, category, noWaitlistOnly) {
     let results = [];
-    const searchTerms = query.split(/\s+/).filter(term => term.length > 0);
-    
-    // אם אין חיפוש וגם אין קטגוריה נבחרת, החזר מערך ריק
-    if (searchTerms.length === 0 && !category) {
-        return [];
-    }
-    
-    // Process each category (sheet)
-    Object.entries(allServicesData).forEach(([sheetName, services]) => {
-        // Trim sheet name for comparison with active category
-        const trimmedSheetName = sheetName.trim();
+    if (allServicesData) {
+        console.log('Filtering services...');
+        console.log('Active category:', activeCategory);
+        console.log('Current query:', currentSearchQuery);
         
-        // Skip if category filter is applied and doesn't match
-        if (category && category !== trimmedSheetName) return;
-        
-        // Skip empty sheets
-        if (sheetName === 'גיליון2') return;
-        
-        // Process each service in the category
-        services.forEach(service => {
-            // Check for waitlist if filter is applied
-            const hasWaitlist = service['רשימת המתנה'] === 'כן';
-            if (noWaitlistOnly && hasWaitlist) return;
-            
-            // If no search terms but category is selected, include all services from the category
-            if (searchTerms.length === 0 && category) {
-                results.push({
-                    ...service,
-                    category: trimmedSheetName
-                });
-                return;
-            }
-            
-            // Search across all fields
-            const allValues = Object.values(service)
-                .filter(value => value && typeof value === 'string')
-                .join(' ')
-                .toLowerCase();
-            
-            // Check if all search terms match
-            const matchesAllTerms = searchTerms.every(term => allValues.includes(term));
-            
-            if (matchesAllTerms) {
-                results.push({
-                    ...service,
-                    category: trimmedSheetName
-                });
-            }
+        results = allServicesData.filter(service => {
+            const matchesQuery = !query || 
+                service.name.toLowerCase().includes(query) ||
+                service.description.toLowerCase().includes(query) ||
+                (service.tags && service.tags.some(tag => tag.toLowerCase().includes(query)));
+
+            const matchesCategory = !activeCategory || service.category === activeCategory;
+
+            return matchesQuery && matchesCategory;
         });
-    });
-    
-    return results;
+
+        console.log('Found results:', results.length);
+    }
+
+    // רנדר את התוצאות
+    renderResults(results);
 }
 
-function renderSearchResults(results) {
-    // Clear results container
-    resultsContainer.innerHTML = '';
-    
-    // If no results
-    if (results.length === 0) {
-        // Check if any search was performed (either text search or category selection)
-        if (currentSearchQuery || activeCategory) {
-            // If search was attempted but found nothing
-            resultsContainer.innerHTML = '<div class="no-results">לא נמצאו תוצאות</div>';
-        } else {
-            // If no search was attempted
-            resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה כדי להציג תוצאות</div>';
-        }
+function renderResults(results) {
+    if (!results || !Array.isArray(results)) {
+        console.error('Invalid results data:', results);
         return;
     }
-    
-    results.forEach((service, index) => {
-        const resultCard = document.createElement('div');
-        resultCard.className = 'result-card';
-        
-        // הוספת מאפיין data-category לצורך הסגנון
-        resultCard.setAttribute('data-category', service.category.trim());
-        
-        // Keep the existing animation delay
-        resultCard.style.animationDelay = `${index * 0.05}s`;
-        
-        // Get common fields
-        const name = service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || 'שירות ללא שם';
-        const type = service['סוג'] || '';
-        const description = service['תיאור העסק'] || service['תיאור כללי'] || service['זכויות ותחומי אחריות'] || service['תחום'] || '';
-        const contact = service['טלפון / אימייל'] || service['טלפון'] || service['מס\' טלפון'] || service['אימייל'] || '';
-        
-        // Create interest tags - עדכון קוד תחומי עניין
-        let interestTags = [];
-        const interestField = service['תחום עניין'];
-        
-        if (interestField && typeof interestField === 'string') {
-            // פיצול הערכים לפי פסיקים וטיפול ברווחים מיותרים
-            interestTags = interestField.split(',')
-                .map(tag => tag.trim())
-                .filter(tag => tag.length > 0); // סינון ערכים ריקים
+
+    console.log('Rendering results:', results.length);
+    const container = document.getElementById('results-container');
+    if (!container) {
+        console.error('Results container not found');
+        return;
+    }
+
+    // הסר את כל המחלקות הקודמות
+    container.className = 'results-container visible-grid';
+
+    // נקה את התוצאות הקודמות
+    container.innerHTML = '';
+
+    if (results.length === 0) {
+        container.innerHTML = '<div class="no-results">לא נמצאו תוצאות</div>';
+        return;
+    }
+
+    // צור את כל הכרטיסים תחילה
+    const fragment = document.createDocumentFragment();
+    results.forEach(service => {
+        const card = createResultCard(service);
+        if (card) {
+            fragment.appendChild(card);
         }
-        
-        // Check for email and phone specifically
-        const email = service['אימייל'] || '';
-        const phone = service['טלפון'] || service['מס\' טלפון'] || service['טלפון / אימייל'] || '';
-        
-        // Create result card HTML with category tag
-        let cardHTML = `
-            <div class="result-name">${name}</div>
-            <div class="result-category-tag">${service.category.trim()}</div>
-        `;
-        
-        if (type) {
-            cardHTML += `<div class="result-type">${type}</div>`;
-        }
-        
-        if (description) {
-            cardHTML += `<div class="result-description">${description.substring(0, 100)}${description.length > 100 ? '...' : ''}</div>`;
-        }
-        
-        // Display contact information with icons
-        if (phone) {
-            // Split multiple phone numbers by commas
-            const phoneNumbers = phone.split(',').map(p => p.trim());
-            const phoneLinks = phoneNumbers.map(phoneNum => {
-                // Handle special cases with asterisks
-                if (phoneNum.startsWith('*')) {
-                    const encodedPhone = encodeURIComponent(phoneNum);
-                    return `<a href="tel:${encodedPhone}" class="phone-link" onclick="event.stopPropagation();">${phoneNum}</a>`;
-                } else {
-                    // Clean the phone number for the link
-                    const cleanPhone = phoneNum.replace(/\D/g, '');
-                    return `<a href="tel:${cleanPhone}" class="phone-link" onclick="event.stopPropagation();">${phoneNum}</a>`;
-                }
-            });
-            
-            cardHTML += `<div class="result-phone"><span class="phone-icon">📞</span> ${phoneLinks.join(', ')}</div>`;
-        }
-        
-        // Display email if available
-        if (email) {
-            cardHTML += `<div class="result-email"><span class="email-icon">✉️</span> <a href="mailto:${email}" class="email-link" onclick="event.stopPropagation();">${email}</a></div>`;
-        }
-        
-        // Add any other contact information that might not be email or phone
-        const otherContact = (service['טלפון / אימייל'] && !service['טלפון'] && !service['מס\' טלפון'] && !service['אימייל']) ? 
-                            service['טלפון / אימייל'] : '';
-        
-        if (otherContact) {
-            cardHTML += `<div class="result-contact">${otherContact}</div>`;
-        }
-        
-        // הוספת תגיות תחומי עניין רק אם יש כאלה
-        if (interestTags.length > 0) {
-            cardHTML += `
-                <div class="result-tags">
-                    ${interestTags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
-                </div>
-            `;
-        }
-        
-        resultCard.innerHTML = cardHTML;
-        
-        // Add click event to show details
-        resultCard.addEventListener('click', () => {
-            showServiceDetails(service);
-        });
-        
-        resultsContainer.appendChild(resultCard);
     });
 
-  
-  // החל מחדש את מצב התצוגה הנוכחי
-  const currentViewMode = localStorage.getItem('viewMode') || 'grid';
-  setViewMode(currentViewMode);
+    // הוסף את כל הכרטיסים בבת אחת
+    container.appendChild(fragment);
+
+    // וודא שהתצוגה נשארת נכונה
+    requestAnimationFrame(() => {
+        // הוסף את מחלקת התצוגה הנוכחית
+        const currentViewMode = localStorage.getItem('viewMode') || 'grid';
+        container.classList.add(`${currentViewMode}-view`);
+        
+        // וודא שהמכל נשאר נראה
+        container.classList.add('visible-grid');
+        
+        console.log('Container classes after render:', container.className);
+    });
+}
+
+function createResultCard(service) {
+    if (!service) return null;
+
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.setAttribute('data-category', service.category || '');
+    
+    // צור את תוכן הכרטיס
+    card.innerHTML = `
+        <div class="result-category-tag">${service.category || ''}</div>
+        <h3 class="result-name">${service.name || ''}</h3>
+        <p class="result-description">${service.description || ''}</p>
+        ${service.tags ? `
+            <div class="result-tags">
+                ${service.tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+            </div>
+        ` : ''}
+    `;
+
+    // הוסף מאזין לחיצה
+    card.addEventListener('click', () => {
+        showServiceDetails(service);
+    });
+
+    return card;
+}
+
+// Category selection
+function selectCategory(category) {
+    console.log('Selecting category:', category);
+    
+    // הסר את המחלקה הפעילה מכל הקטגוריות
+    document.querySelectorAll('.category-card').forEach(card => {
+        card.classList.remove('active');
+    });
+
+    // אם לוחצים על אותה קטגוריה, נקה אותה
+    if (category === activeCategory) {
+        console.log('Clearing active category');
+        activeCategory = null;
+    } else {
+        console.log('Setting new active category:', category);
+        activeCategory = category;
+        // הוסף מחלקה פעילה לקטגוריה שנבחרה
+        const selectedCard = document.querySelector(`.category-card[data-category="${category}"]`);
+        if (selectedCard) {
+            selectedCard.classList.add('active');
+        }
+    }
+
+    // בצע חיפוש עם הקטגוריה החדשה
+    console.log('Performing search with active category:', activeCategory);
+    performSearch();
 }
 
 // Voice search functionality
@@ -798,105 +853,95 @@ function showServiceDetails(service) {
     // Clear details container
     serviceDetailsContainer.innerHTML = '';
     
-    // Get common fields
-    const name = service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || 'שירות ללא שם';
-    
-    // Start with service name
-    let detailsHTML = `<h2 class="service-name">${name}</h2>`;
-    
     // Create a map of field display names (Hebrew)
     const fieldDisplayNames = {
-        'סוג': 'סוג שירות',
-        'תיאור העסק': 'תיאור',
-        'תיאור כללי': 'תיאור',
-        'זכויות ותחומי אחריות': 'זכויות ותחומי אחריות',
-        'אתר': 'אתר אינטרנט',
-        'קישור לאתר': 'אתר אינטרנט',
-        'טלפון / אימייל': 'פרטי התקשרות',
-        'טלפון': 'טלפון',
-        'מס\' טלפון': 'טלפון',
-        'אימייל': 'אימייל',
-        'הערות': 'הערות נוספות',
-        'מטרת התוכנית': 'מטרת התוכנית',
-        'תחום': 'תחום מקצועי',
-        'תחום עניין': 'תחומי עניין'
+        'name': 'שם',
+        'description': 'תיאור',
+        'phone': 'טלפון',
+        'email': 'דוא"ל',
+        'website': 'אתר אינטרנט',
+        'category': 'קטגוריה',
+        'tags': 'תגיות'
     };
     
-    // Add fields based on category
-    Object.entries(service).forEach(([field, value]) => {
-        // Skip empty values, ID field, and category field
-        if (!value || field === 'id' || field === 'category' || value.trim() === '') return;
-        
-        // Skip fields that are handled separately
-        if (field === 'תחום עניין') return;
-        
-        // Get display name for the field, or use the field name
-        const displayName = fieldDisplayNames[field] || field;
-        
-        // Format value based on field type
-    let formattedValue = value;
+    // Start with service name
+    let detailsHTML = `<h2 class="service-name">${service.name || 'שירות ללא שם'}</h2>`;
     
-    // Handle website URLs
-    if (field === 'אתר' || field === 'קישור לאתר') {
-        let url = value;
-        if (!url.startsWith('http')) {
-            url = 'https://' + url;
-        }
-        formattedValue = `<a href="${url}" target="_blank" rel="noopener noreferrer">${value}</a>`;
+    // Add description if exists
+    if (service.description) {
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">תיאור</div>
+                <div class="service-detail-value">${service.description}</div>
+            </div>
+        `;
     }
     
-     // Handle contact info - תיקון טיפול במספרי טלפון
-    if (field === 'טלפון' || field === 'מס\' טלפון') {
-        // נפצל מספרים מרובים המופרדים בפסיק
-        const phoneNumbers = value.split(',').map(p => p.trim());
+    // Add phone if exists
+    if (service.phone) {
+        const phoneNumbers = service.phone.split(',').map(p => p.trim());
         const phoneLinks = phoneNumbers.map(phone => {
-            // בדיקה אם המספר מתחיל בכוכבית
             if (phone.startsWith('*')) {
-                // מספרים עם כוכבית: נשמר את הצורה המקורית בטקסט המוצג,
-                // ונקודד את הכוכבית בקישור עצמו
                 const encodedPhone = encodeURIComponent(phone);
                 return `<a href="tel:${encodedPhone}">${phone}</a>`;
             } else {
-                // טיפול רגיל במספרים ללא כוכבית (הסרת תווים לא מספריים)
                 const cleanPhone = phone.replace(/\D/g, '');
                 return `<a href="tel:${cleanPhone}">${phone}</a>`;
             }
         });
         
-        // חיבור הקישורים בחזרה עם פסיקים
-        formattedValue = phoneLinks.join(', ');
-    }
-
-        
-        if (field === 'אימייל') {
-            formattedValue = `<a href="mailto:${value}">${value}</a>`;
-        }
-        
-        // Add to details HTML
         detailsHTML += `
             <div class="service-detail">
-                <div class="service-detail-label">${displayName}</div>
-                <div class="service-detail-value">${formattedValue}</div>
+                <div class="service-detail-label">טלפון</div>
+                <div class="service-detail-value">${phoneLinks.join(', ')}</div>
             </div>
         `;
-    });
+    }
     
-    // הוספת תחומי עניין כשדה נפרד, עם פיצול לפי פסיקים
-    if (service['תחום עניין'] && service['תחום עניין'].trim()) {
-        const interestTags = service['תחום עניין'].split(',')
-            .map(tag => tag.trim())
-            .filter(tag => tag.length > 0);
-            
-        if (interestTags.length > 0) {
-            detailsHTML += `
-                <div class="service-detail">
-                    <div class="service-detail-label">תחומי עניין</div>
-                    <div class="service-detail-value service-tags">
-                        ${interestTags.map(tag => `<span class="service-tag">${tag}</span>`).join('')}
-                    </div>
-                </div>
-            `;
+    // Add email if exists
+    if (service.email) {
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">דוא"ל</div>
+                <div class="service-detail-value"><a href="mailto:${service.email}">${service.email}</a></div>
+            </div>
+        `;
+    }
+    
+    // Add website if exists
+    if (service.website) {
+        let url = service.website;
+        if (!url.startsWith('http')) {
+            url = 'https://' + url;
         }
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">אתר אינטרנט</div>
+                <div class="service-detail-value"><a href="${url}" target="_blank" rel="noopener noreferrer">${service.website}</a></div>
+            </div>
+        `;
+    }
+    
+    // Add category if exists
+    if (service.category) {
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">קטגוריה</div>
+                <div class="service-detail-value">${service.category}</div>
+            </div>
+        `;
+    }
+    
+    // Add tags if exist
+    if (service.tags && service.tags.length > 0) {
+        detailsHTML += `
+            <div class="service-detail">
+                <div class="service-detail-label">תגיות</div>
+                <div class="service-detail-value service-tags">
+                    ${service.tags.map(tag => `<span class="service-tag">${tag}</span>`).join('')}
+                </div>
+            </div>
+        `;
     }
     
     // Set HTML and show modal
@@ -904,10 +949,9 @@ function showServiceDetails(service) {
     serviceModal.style.display = 'block';
     
     // Configure call button
-    const phoneNumber = service['טלפון'] || service['מס\' טלפון'] || service['טלפון / אימייל'];
-    if (phoneNumber && /\d/.test(phoneNumber)) {
+    if (service.phone && /\d/.test(service.phone)) {
         callButton.style.display = 'block';
-        callButton.dataset.phone = phoneNumber.replace(/\D/g, '');
+        callButton.dataset.phone = service.phone.replace(/\D/g, '');
     } else {
         callButton.style.display = 'none';
     }
@@ -930,37 +974,55 @@ function initiateCall() {
 function shareService() {
     if (!currentServiceDetails) return;
     
-    const name = currentServiceDetails['שם העסק'] || currentServiceDetails['שם התוכנית'] || currentServiceDetails['מוקד'] || currentServiceDetails['אנשי מקצוע'] || 'שירות לגיל השלישי';
-    const contact = currentServiceDetails['טלפון'] || currentServiceDetails['מס\' טלפון'] || currentServiceDetails['טלפון / אימייל'] || '';
-    const description = currentServiceDetails['תיאור העסק'] || currentServiceDetails['תיאור כללי'] || currentServiceDetails['זכויות ותחומי אחריות'] || '';
+    const name = currentServiceDetails.name || 'שירות לגיל השלישי';
+    const description = currentServiceDetails.description || '';
+    const contact = [];
+    
+    if (currentServiceDetails.phone) {
+        contact.push(`טלפון: ${currentServiceDetails.phone}`);
+    }
+    if (currentServiceDetails.email) {
+        contact.push(`דוא"ל: ${currentServiceDetails.email}`);
+    }
+    if (currentServiceDetails.website) {
+        contact.push(`אתר: ${currentServiceDetails.website}`);
+    }
     
     let shareText = `${name}\n`;
     if (description) shareText += `${description}\n`;
-    if (contact) shareText += `ליצירת קשר: ${contact}\n`;
+    if (contact.length > 0) shareText += `\nפרטי התקשרות:\n${contact.join('\n')}`;
+    if (currentServiceDetails.category) shareText += `\n\nקטגוריה: ${currentServiceDetails.category}`;
     
     if (navigator.share) {
         navigator.share({
             title: name,
             text: shareText
         })
-        .catch((error) => console.error('Error sharing:', error));
+        .catch((error) => {
+            console.error('Error sharing:', error);
+            fallbackShare(shareText);
+        });
     } else {
-        // Fallback for browsers that don't support Web Share API
-        // Create a temporary textarea to copy text
-        const textarea = document.createElement('textarea');
-        textarea.value = shareText;
-        document.body.appendChild(textarea);
-        textarea.select();
-        
-        try {
-            document.execCommand('copy');
-            showStatusMessage('המידע הועתק ללוח. ניתן להדביק ולשלוח.', 'success');
-        } catch (err) {
-            showStatusMessage('לא ניתן להעתיק את המידע.', 'error');
-        }
-        
-        document.body.removeChild(textarea);
+        fallbackShare(shareText);
     }
+}
+
+// פונקציית גיבוי לשיתוף כאשר Web Share API לא זמין
+function fallbackShare(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+        document.execCommand('copy');
+        showStatusMessage('המידע הועתק ללוח. ניתן להדביק ולשלוח.', 'success');
+    } catch (err) {
+        console.error('Error copying text:', err);
+        showStatusMessage('לא ניתן להעתיק את המידע.', 'error');
+    }
+    
+    document.body.removeChild(textarea);
 }
 
 // Clear search function
@@ -983,7 +1045,6 @@ function clearSearch() {
 }
 
 // PWA Installation Logic
-let deferredPrompt;
 const installPrompt = document.getElementById('install-prompt');
 const installButtonAndroid = document.getElementById('install-button-android');
 const laterButton = document.getElementById('later-button');
@@ -1121,4 +1182,104 @@ if (closePromptButton) {
     closePromptButton.addEventListener('click', () => {
         hideInstallPrompt();
     });
+}
+
+// הוסף את זה בתחילת הקובץ, אחרי הגדרת המשתנים הגלובליים
+document.addEventListener('DOMContentLoaded', () => {
+    // הוסף סגנונות דינמיים
+    const style = document.createElement('style');
+    style.textContent = `
+        .visible-grid {
+            display: grid !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+            gap: 1rem !important;
+            padding: 1rem !important;
+        }
+    `;
+    document.head.appendChild(style);
+});
+
+// פונקציות לתקשורת עם ה-CMS
+async function fetchServices(filters = {}) {
+  try {
+    const queryParams = new URLSearchParams({
+      ...filters,
+      populate: '*'  // כולל קטגוריות ותגיות
+    });
+    
+    const response = await fetch(`${API_URL}/api/services?${queryParams}`, {
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) throw new Error('שגיאה בטעינת השירותים');
+    
+    const data = await response.json();
+    return data.data.map(processServiceData);
+  } catch (error) {
+    console.error('שגיאה בטעינת שירותים:', error);
+    throw error;
+  }
+}
+
+async function fetchCategories() {
+  try {
+    const response = await fetch(`${API_URL}/api/categories?sort=order:asc`, {
+      headers: {
+        'Authorization': `Bearer ${API_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) throw new Error('שגיאה בטעינת הקטגוריות');
+    
+    const data = await response.json();
+    return data.data.map(category => ({
+      id: category.id,
+      name: category.attributes.name,
+      icon: category.attributes.icon,
+      color: category.attributes.color
+    }));
+  } catch (error) {
+    console.error('שגיאה בטעינת קטגוריות:', error);
+    throw error;
+  }
+}
+
+// עיבוד נתונים מה-CMS
+function processServiceData(service) {
+  const { attributes } = service;
+  return {
+    id: service.id,
+    name: attributes.name,
+    description: attributes.description,
+    category: attributes.category?.data?.attributes?.name,
+    contact: {
+      phones: attributes.contact?.phone || [],
+      email: attributes.contact?.email,
+      website: attributes.contact?.website
+    },
+    address: attributes.address,
+    tags: attributes.tags?.data?.map(tag => tag.attributes.name) || [],
+    isAccessible: attributes.isAccessible,
+    isFree: attributes.isFree,
+    lastUpdated: new Date(attributes.updatedAt)
+  };
+}
+
+// עדכון פונקציית הטעינה הראשונית
+async function initializeApp() {
+  try {
+    const [categories, services] = await Promise.all([
+      fetchCategories(),
+      fetchServices()
+    ]);
+    
+    updateCategoriesUI(categories);
+    updateServicesUI(services);
+  } catch (error) {
+    showError('שגיאה בטעינת הנתונים');
+  }
 }
