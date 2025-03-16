@@ -120,9 +120,6 @@ const DATA_KEY = 'allServicesData';
 const LAST_UPDATED_KEY = 'lastUpdated';
 const VERSION_KEY = 'appVersion';
 
-// קונפיגורציה של ה-API
-const API_URL = process.env.STRAPI_API_URL || 'http://localhost:1337';
-const API_TOKEN = process.env.STRAPI_API_TOKEN;
 
 // DOM Elements
 const searchInput = document.getElementById('search-input');
