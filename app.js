@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.20'; // Updated version number
+const APP_VERSION = '1.997.21'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -1236,8 +1236,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelector('.toggle-icon').classList.add('rotated');
             }
         }
+        }
 });
-}
+
 function performSearch() {
     console.log('Performing search...');
     const query = searchInput.value.trim().toLowerCase();
