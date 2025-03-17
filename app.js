@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.9'; // Updated version number
+const APP_VERSION = '1.997.19'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -13,7 +13,7 @@ let currentServiceDetails = null;
 let isOnline = navigator.onLine;
 let storedVersion = null;
 let deferredPrompt = null;
-
+let isCategoriesCollapsed = true; // מצב התחלתי - קטגוריות מוסתרות
 // Data refresh function
 async function refreshData(showNotification = true) {
     if (!isOnline) {
@@ -150,6 +150,8 @@ const savedViewMode = localStorage.getItem('viewMode') || 'grid';
 function setViewMode(mode) {
     const container = document.getElementById('results-container');
     
+    if (!container) return;
+    
     // הסר מחלקות קודמות
     container.classList.remove('grid-view', 'list-view');
     gridViewButton.classList.remove('active');
@@ -157,7 +159,6 @@ function setViewMode(mode) {
     
     // הוסף את המחלקה המתאימה
     container.classList.add(mode + '-view');
-    container.classList.add('visible-grid');
     
     // סימון הכפתור המתאים כפעיל
     if (mode === 'grid') {
@@ -168,6 +169,8 @@ function setViewMode(mode) {
     
     // שמירת ההעדפה
     localStorage.setItem('viewMode', mode);
+    
+    console.log(`View mode set to ${mode}, container classes:`, container.className);
 }
 
 // הגדרת מצב התצוגה ההתחלתי
@@ -312,6 +315,23 @@ async function initApp() {
         // Show install prompt if applicable
         if (isInstallable()) {
             showInstallPrompt();
+        }
+
+         // Render initial UI
+        if (allServicesData && Array.isArray(allServicesData)) {
+            renderCategories();
+            renderDefaultResults();
+            updateLastUpdatedText();
+            
+            // אתחול מספר התוצאות
+            updateResultsCount(0);
+        } else {
+            console.log('No valid data available, showing empty state');
+            categoriesContainer.innerHTML = '<div class="category-loading">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
+            resultsContainer.innerHTML = '<div class="results-message">אין מידע זמין. אנא רענן כשיש חיבור לאינטרנט.</div>';
+            
+            // אתחול מספר התוצאות במצב ריק
+            updateResultsCount(0);
         }
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -665,8 +685,11 @@ function renderCategories() {
 }
 
 function renderDefaultResults() {
-    // אם אין חיפוש טקסט ואין קטגוריה נבחרת, הצג הודעה במקום כל התוצאות
+ // אם אין חיפוש טקסט ואין קטגוריה נבחרת, הצג הודעה במקום כל התוצאות
     resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה כדי להציג תוצאות</div>';
+    
+    // עדכון מספר התוצאות
+    updateResultsCount(0);
 }
 // Search functions
 function performSearch() {
@@ -1196,7 +1219,111 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
+    
+    // אתחול כפתור הToggle לקטגוריות
+     const toggleButton = document.getElementById('toggle-categories');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', toggleCategories);
+        
+        // וודא שהקטגוריות מוסתרות בטעינה הראשונית
+        const categoriesContainer = document.getElementById('categories-container');
+        if (categoriesContainer) {
+            if (isCategoriesCollapsed) {
+                categoriesContainer.classList.add('collapsed');
+                document.querySelector('.toggle-icon').classList.remove('rotated');
+            } else {
+                categoriesContainer.classList.remove('collapsed');
+                document.querySelector('.toggle-icon').classList.add('rotated');
+            }
+        }
 });
+
+function performSearch() {
+    console.log('Performing search...');
+    const query = searchInput.value.trim().toLowerCase();
+    currentSearchQuery = query;
+
+    // אם אין חיפוש ואין קטגוריה נבחרת, הצג את הודעת ברירת המחדל
+    if (!query && !activeCategory) {
+        renderDefaultResults();
+        updateResultsCount(0);
+        return;
+    }
+
+    let results = [];
+    if (allServicesData) {
+        console.log('Filtering services...');
+        console.log('Active category:', activeCategory);
+        console.log('Current query:', currentSearchQuery);
+        
+        results = allServicesData.filter(service => {
+            const matchesQuery = !query || 
+                service.name.toLowerCase().includes(query) ||
+                service.description.toLowerCase().includes(query) ||
+                (service.tags && service.tags.some(tag => tag.toLowerCase().includes(query)));
+
+            const matchesCategory = !activeCategory || service.category === activeCategory;
+
+            return matchesQuery && matchesCategory;
+        });
+
+        console.log('Found results:', results.length);
+    }
+
+    // רנדר את התוצאות
+    renderResults(results);
+    
+    // גלילה לתוצאות
+    scrollToResults();
+    
+    // הצגת מספר התוצאות
+    updateResultsCount(results.length);
+}
+
+function renderCategories() {
+    if (!allServicesData || !Array.isArray(allServicesData)) {
+        console.error('Invalid data format for categories');
+        return;
+    }
+
+    // Get unique categories
+    const categories = [...new Set(allServicesData.map(service => service.category))];
+    
+    const container = document.getElementById('categories-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    categories.forEach(category => {
+        if (!category) return;
+
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.setAttribute('data-category', category);
+
+        const icon = getCategoryIcon(category);
+        
+        card.innerHTML = `
+            <div class="category-icon">${icon}</div>
+            <div class="category-name">${category}</div>
+        `;
+
+        card.addEventListener('click', () => selectCategory(category));
+        
+        if (category === activeCategory) {
+            card.classList.add('active');
+        }
+
+        container.appendChild(card);
+    });
+    
+    // שמור על מצב הקטגוריות (פתוח/סגור)
+    if (isCategoriesCollapsed) {
+        container.classList.add('collapsed');
+    } else {
+        container.classList.remove('collapsed');
+    }
+}
 
 // פונקציות לתקשורת עם ה-CMS
 async function fetchServices(filters = {}) {
@@ -1279,4 +1406,39 @@ async function initializeApp() {
   } catch (error) {
     showError('שגיאה בטעינת הנתונים');
   }
+}
+
+// פונקציה לטוגל הקטגוריות
+function toggleCategories() {
+    const categoriesContainer = document.getElementById('categories-container');
+    const toggleIcon = document.querySelector('.toggle-icon');
+    
+    if (!categoriesContainer) return;
+    
+    isCategoriesCollapsed = !isCategoriesCollapsed;
+    
+    if (isCategoriesCollapsed) {
+        categoriesContainer.classList.add('collapsed');
+        toggleIcon.classList.remove('rotated');
+    } else {
+        categoriesContainer.classList.remove('collapsed');
+        toggleIcon.classList.add('rotated');
+    }
+}
+
+// פונקציה לגלילה לתוצאות
+function scrollToResults() {
+    const resultsSection = document.querySelector('.results-section');
+    if (resultsSection) {
+        // גלילה חלקה לתחילת התוצאות
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// פונקציה לעדכון מספר התוצאות
+function updateResultsCount(count) {
+    const resultsCount = document.getElementById('results-count');
+    if (resultsCount) {
+        resultsCount.textContent = `נמצאו ${count} תוצאות`;
+    }
 }
