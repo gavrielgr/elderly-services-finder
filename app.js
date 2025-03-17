@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.22'; // Updated version number
+const APP_VERSION = '1.997.23'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -690,7 +690,7 @@ function performSearch() {
     // רנדר את התוצאות
     renderResults(results);
 
-        / גלילה לתוצאות
+        // גלילה לתוצאות
     scrollToResults();
     
     // הצגת מספר התוצאות
