@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.26'; // Updated version number
+const APP_VERSION = '1.997.27'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
