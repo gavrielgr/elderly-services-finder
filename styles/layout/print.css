@@ -1,0 +1,23 @@
+@media print {
+    .app-header, 
+    .search-section, 
+    .categories-section, 
+    .results-header, 
+    .modal-actions, 
+    .status-bar {
+        display: none;
+    }
+    
+    .app-container, 
+    .results-section, 
+    .results-container {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .result-card {
+        box-shadow: none;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
+}

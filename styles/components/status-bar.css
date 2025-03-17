@@ -1,0 +1,50 @@
+.status-bar {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(-200%);  /* Change initial position to above viewport */
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 1000;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    width: calc(100% - 2rem);
+    max-width: 900px;
+    text-align: center;
+    color: white;
+}
+
+.status-bar.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.status-bar.error {
+    background-color: var(--error-color);
+}
+
+.status-bar.success {
+    background-color: var(--success-color);
+}
+
+.status-bar.warning {
+    background-color: var(--warning-color);
+    color: var(--text-color);
+}
+
+/* Add info state styling */
+.status-bar.info {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-50%) translateY(-200%);  /* Match initial position */
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}

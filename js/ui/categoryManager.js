@@ -70,18 +70,38 @@ export class CategoryManager {
 
     toggleCategories() {
         this.isCategoriesCollapsed = !this.isCategoriesCollapsed;
-        this.updateCategoriesVisibility();
+        const toggleIcon = document.querySelector('.toggle-icon');
+        const categoriesContainer = document.getElementById('categories-container');
+        const categoriesSection = document.querySelector('.categories-section');
+        
+        if (this.isCategoriesCollapsed) {
+            categoriesContainer?.classList.add('collapsed');
+            toggleIcon?.classList.remove('rotated');
+            categoriesSection?.classList.add('collapsed');
+        } else {
+            categoriesContainer?.classList.remove('collapsed');
+            toggleIcon?.classList.add('rotated');
+            categoriesSection?.classList.remove('collapsed');
+        }
+        
+        localStorage.setItem('categoriesCollapsed', this.isCategoriesCollapsed);
     }
 
     updateCategoriesVisibility() {
         const toggleIcon = document.querySelector('.toggle-icon');
+        const categoriesContainer = this.categoriesContainer;
+        const categoriesSection = document.querySelector('.categories-section');
+        
+        this.isCategoriesCollapsed = localStorage.getItem('categoriesCollapsed') === 'true';
         
         if (this.isCategoriesCollapsed) {
-            this.categoriesContainer.classList.add('collapsed');
+            categoriesContainer?.classList.add('collapsed');
             toggleIcon?.classList.remove('rotated');
+            categoriesSection?.classList.add('collapsed');
         } else {
-            this.categoriesContainer.classList.remove('collapsed');
+            categoriesContainer?.classList.remove('collapsed');
             toggleIcon?.classList.add('rotated');
+            categoriesSection?.classList.remove('collapsed');
         }
     }
 }

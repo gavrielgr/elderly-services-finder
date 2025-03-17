@@ -1,0 +1,30 @@
+.primary-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+h2 {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .primary-title {
+        font-size: 1.25rem;
+    }
+    
+    .subtitle {
+        font-size: 0.75rem;
+    }
+}
+
+.copyright {
+    text-align: center;
+    direction: rtl;
+}

@@ -1,0 +1,81 @@
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--bg-primary);
+    color: var(--text-color);
+    margin: 10% auto;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    padding: 1.5rem;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.close-modal {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.service-name {
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.service-detail {
+    margin-bottom: 0.75rem;
+}
+
+.service-detail-label {
+    font-weight: 500;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+}
+
+.service-detail-value {
+    line-height: 1.5;
+}
+
+.service-detail-value a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.action-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    font-family: Arial,Helvetica,sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
