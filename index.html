@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>שירותי+</title>
+    <title>שירותי+ מבית יד ביד | שירותי סיוע ותמיכה למשפחה המטפלת</title>
     
     <!-- PWA meta tags -->
     <meta name="theme-color" content="#4285f4">
@@ -31,7 +31,11 @@
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
-            <h1>שירותי+</h1>
+            <img src="icons/logo.png" alt="Logo" class="header-logo">
+            <div class="header-title">
+                <span class="primary-title">שירותי+</span>
+                <span class="subtitle">מבית יד ביד | שירותי סיוע ותמיכה למשפחה המטפלת</span>
+            </div>
             <div class="header-status">
                 <div class="last-updated">
                     <span id="last-updated-text">עודכן: טוען...</span>
@@ -63,7 +67,7 @@
                     <span class="toggle-icon">▼</span>
                 </button>
             </div>
-            <div id="categories-container" class="categories-container collapsed">
+            <div id="categories-container" class="categories-container">
                 <!-- Categories will be populated dynamically -->
                 <div class="category-loading">טוען קטגוריות...</div>
             </div>
@@ -158,10 +162,12 @@
     </script>
     
     <!-- Main Script -->
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
     <footer class="app-footer">
-        <div class="copyright">
-            © 2025 שירותי+ | כל הזכויות שמורות
+        <div class="footer-container">
+            <div class="copyright">
+                © 2025 שירותי+ | כל הזכויות שמורות
+            </div>
         </div>
     </footer>
 </body>
