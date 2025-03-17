@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.21'; // Updated version number
+const APP_VERSION = '1.997.22'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -646,43 +646,7 @@ function updateLastUpdatedText() {
     }
 }
 
-function renderCategories() {
-    if (!allServicesData || !Array.isArray(allServicesData)) {
-        console.error('Invalid data format for categories');
-        return;
-    }
 
-    // Get unique categories
-    const categories = [...new Set(allServicesData.map(service => service.category))];
-    
-    const container = document.getElementById('categories-container');
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    categories.forEach(category => {
-        if (!category) return;
-
-        const card = document.createElement('div');
-        card.className = 'category-card';
-        card.setAttribute('data-category', category);
-
-        const icon = getCategoryIcon(category);
-        
-        card.innerHTML = `
-            <div class="category-icon">${icon}</div>
-            <div class="category-name">${category}</div>
-        `;
-
-        card.addEventListener('click', () => selectCategory(category));
-        
-        if (category === activeCategory) {
-            card.classList.add('active');
-        }
-
-        container.appendChild(card);
-    });
-}
 
 function renderDefaultResults() {
  // אם אין חיפוש טקסט ואין קטגוריה נבחרת, הצג הודעה במקום כל התוצאות
@@ -725,6 +689,12 @@ function performSearch() {
 
     // רנדר את התוצאות
     renderResults(results);
+
+        / גלילה לתוצאות
+    scrollToResults();
+    
+    // הצגת מספר התוצאות
+    updateResultsCount(results.length);
 }
 
 function renderResults(results) {
@@ -1237,48 +1207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         }
 });
-
-function performSearch() {
-    console.log('Performing search...');
-    const query = searchInput.value.trim().toLowerCase();
-    currentSearchQuery = query;
-
-    // אם אין חיפוש ואין קטגוריה נבחרת, הצג את הודעת ברירת המחדל
-    if (!query && !activeCategory) {
-        renderDefaultResults();
-        updateResultsCount(0);
-        return;
-    }
-
-    let results = [];
-    if (allServicesData) {
-        console.log('Filtering services...');
-        console.log('Active category:', activeCategory);
-        console.log('Current query:', currentSearchQuery);
-        
-        results = allServicesData.filter(service => {
-            const matchesQuery = !query || 
-                service.name.toLowerCase().includes(query) ||
-                service.description.toLowerCase().includes(query) ||
-                (service.tags && service.tags.some(tag => tag.toLowerCase().includes(query)));
-
-            const matchesCategory = !activeCategory || service.category === activeCategory;
-
-            return matchesQuery && matchesCategory;
-        });
-
-        console.log('Found results:', results.length);
-    }
-
-    // רנדר את התוצאות
-    renderResults(results);
-    
-    // גלילה לתוצאות
-    scrollToResults();
-    
-    // הצגת מספר התוצאות
-    updateResultsCount(results.length);
-}
 
 function renderCategories() {
     if (!allServicesData || !Array.isArray(allServicesData)) {
