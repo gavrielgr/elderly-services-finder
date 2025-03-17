@@ -15,6 +15,18 @@ export class ResultsManager {
         if (!services) return;
 
         const activeCategory = this.uiManager.categoryManager.activeCategory;
+        
+        // Keep the last search query from the search input if no new query is provided
+        if (!searchQuery && this.uiManager.searchManager.currentQuery) {
+            searchQuery = this.uiManager.searchManager.currentQuery;
+        }
+        
+        // Only show default message if both search and category are empty
+        if (!searchQuery && !activeCategory) {
+            this.renderDefaultResults();
+            return;
+        }
+
         let results = services.filter(service => {
             const matchesQuery = !searchQuery || 
                 service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

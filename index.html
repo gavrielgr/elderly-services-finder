@@ -15,19 +15,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/main.css">
     <!-- Favicon -->
 <link rel="icon" href="icons/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
 </head>
 <body>
-    <div class="theme-toggle">
-      <button id="theme-switch" aria-label="החלף מצב תצוגה">
-        <span class="light-mode-icon">☀️</span>
-        <span class="dark-mode-icon">🌙</span>
-      </button>
-    </div>
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
@@ -50,6 +44,12 @@
 
         <!-- Search Section -->
         <section class="search-section">
+            <div class="theme-toggle">
+                <button id="theme-switch" aria-label="החלף מצב תצוגה">
+                    <span class="light-mode-icon">☀️</span>
+                    <span class="dark-mode-icon">🌙</span>
+                </button>
+            </div>
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="חיפוש פתרונות..." aria-label="חיפוש">
                 <button id="clear-search-button" aria-label="נקה חיפוש" class="hidden">✕</button>

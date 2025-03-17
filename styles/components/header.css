@@ -1,0 +1,66 @@
+.app-header {
+    max-width: 900px;
+    background-color: #F1F1F1;
+    color: black;
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    top: 0;
+    z-index: 100;
+}
+
+.header-logo {
+    height: 50px;
+    margin-right: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.header-title {
+    margin-right: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.last-updated {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #4b5563;
+    margin-right: 0.5rem;
+}
+
+#refresh-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 0.25rem;
+    font-size: 1rem;
+    color: white;
+    padding: 0.2rem;
+    transition: transform 0.2s;
+}
+
+#refresh-button:hover {
+    transform: rotate(45deg);
+}
+
+.connection-status {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+}
+
+.status-icon {
+    margin-right: 0.25rem;
+}

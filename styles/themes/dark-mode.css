@@ -1,0 +1,51 @@
+[data-theme="dark"] {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --text-color: #f1f5f9;
+    --text-light: #94a3b8;
+    --border-color: #334155;
+    --primary-color: #4ECDC4;
+    --card-bg: #1e293b;
+    --modal-bg: #1e293b;
+    --header-bg: #3e9e99;
+    --tag-bg: rgba(78, 205, 196, 0.1);
+    --tag-border: rgba(78, 205, 196, 0.3);
+    --tag-color: #80e0d8;
+}
+
+[data-theme="dark"] .app-header {
+    background: linear-gradient(135deg, #4ECDC4 0%, #3e9e99 100%);
+    color: white;
+}
+
+[data-theme="dark"] .category-card,
+[data-theme="dark"] .result-card {
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--modal-bg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .result-tag,
+[data-theme="dark"] .service-tag {
+    background-color: var(--tag-bg);
+    border-color: var(--tag-border);
+    color: var(--tag-color);
+}
+
+[data-theme="dark"] .install-prompt-content {
+    background-color: var(--modal-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .view-button.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+[data-theme="dark"] .view-button:hover:not(.active) {
+    background-color: var(--bg-secondary);
+}

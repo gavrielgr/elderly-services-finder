@@ -1,0 +1,96 @@
+/* Tablet and larger screens */
+@media (min-width: 768px) {
+    .app-container {
+        max-width: 900px;
+        margin: 0 auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .search-container {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .categories-container {
+        justify-content: center;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+}
+
+/* Mobile screens */
+@media (max-width: 768px) {
+    .header-status { gap: 0.5rem; }
+    .last-updated { font-size: 0.7rem; }
+    #refresh-button { font-size: 0.9rem; }
+    
+    .categories-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
+    }
+    
+    .category-card {
+        aspect-ratio: 1;
+        padding: 0.5rem;
+    }
+    
+    .status-bar {
+        bottom: 1rem;  /* Keep at bottom */
+        top: auto;     /* Remove top positioning */
+        transform: translateX(-50%) translateY(150%); /* Move below viewport initially */
+        width: calc(100% - 2rem);
+        padding: 0.75rem;
+        z-index: 1100;
+        position: fixed;
+    }
+
+    .status-bar.show {
+        transform: translateX(-50%) translateY(0); /* Move to bottom when shown */
+    }
+}
+
+/* Small mobile screens */
+@media (max-width: 480px) {
+    .categories-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .category-icon { font-size: 1.25rem; }
+    .category-name { font-size: 0.65rem; }
+    
+    .view-toggle { display: none; }
+}
+
+/* iOS specific adjustments */
+@supports (-webkit-touch-callout: none) {
+    #search-input {
+        font-size: 16px;
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Notch support */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .app-header {
+        padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+    }
+    
+    .modal-content {
+        padding-top: calc(env(safe-area-inset-top) + 1rem);
+        padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
