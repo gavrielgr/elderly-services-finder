@@ -1,6 +1,8 @@
-/* Global Styles */
+/* ===== CSS מאוחד ומאורגן לאפליקציית שירותי+ ===== */
+
+/* ==== משתני צבעים וערכים בסיסיים ==== */
 :root {
-    /* Colors - updated to match "יד ביד" logo */
+    /* צבעים */
     --primary-color: #4ECDC4; /* טורקיז בהיר כמו היד בלוגו */
     --primary-dark: #3e9e99; /* גרסה כהה יותר של הטורקיז */
     --secondary-color: #f8fafc;
@@ -15,23 +17,23 @@
     --accent-color: #9c9c9c; /* צבע האפור שמופיע בלוגו */
     --heart-color: #999999; /* צבע הלב בלוגו */
     
-    /* Shadows */
+    /* צללים */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     
-    /* Border Radius */
+    /* רדיוס שוליים */
     --radius-sm: 0.375rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
     
-    /* Transitions */
+    /* מעברים */
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Mode Colors */
+/* ==== מצב כהה ==== */
 [data-theme="dark"] {
     --bg-primary: #0f172a;
     --bg-secondary: #1e293b;
@@ -42,415 +44,12 @@
     --card-bg: #1e293b;
     --modal-bg: #1e293b;
     --header-bg: #3e9e99; /* כותרת במצב כהה */
-    --tag-bg: rgba(78, 205, 196, 0.1); /* עדכון רקע התגיות */
-    --tag-border: rgba(78, 205, 196, 0.3); /* עדכון מסגרת התגיות */
+    --tag-bg: rgba(78, 205, 196, 0.1); /* רקע התגיות */
+    --tag-border: rgba(78, 205, 196, 0.3); /* מסגרת התגיות */
     --tag-color: #80e0d8; /* צבע טקסט תגיות במצב כהה */
-    --accent-color: #9c9c9c;
-    --heart-color: #999999;
 }
 
-/* Base Styles */
-body {
-    background-color: var(--bg-secondary);
-    color: var(--text-color);
-    font-family: 'Heebo', sans-serif;
-    line-height: 1.5;
-    transition: background-color var(--transition-normal), color var(--transition-normal);
-}
-
-/* Cards */
-.result-card {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-    padding: 1.5rem;
-    opacity: 1 !important;
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.result-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
-
-/* Buttons */
-button {
-    border-radius: var(--radius-md);
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    transition: all var(--transition-fast);
-}
-
-.action-button {
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    transition: all var(--transition-fast);
-}
-
-.action-button:hover {
-    background-color: var(--primary-dark);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-/* Search Bar */
-.search-container {
-    width: 100% !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 0.5rem !important;
-    background-color: var(--bg-secondary) !important;
-    border-radius: 24px !important;
-    padding: 0.5rem 0.75rem !important;
-    height: 44px !important;
-}
-
-.search-container:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: var(--shadow-md);
-}
-
-#search-input {
-    flex: 1 !important;
-    min-width: 0 !important;
-    height: 100% !important;
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    color: var(--text-color) !important;
-    text-align: right !important;
-    direction: rtl !important;
-}
-
-#search-button,
-#voice-search-button,
-#clear-search-button {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 32px !important;
-    height: 32px !important;
-    padding: 0 !important;
-    background: none !important;
-    border: none !important;
-    cursor: pointer !important;
-    color: var(--text-light) !important;
-    transition: color 0.2s !important;
-    flex-shrink: 0 !important;
-    position: relative !important;
-    top: 0 !important;
-}
-
-#search-button:hover,
-#voice-search-button:hover,
-#clear-search-button:hover {
-    color: var(--primary-color) !important;
-}
-
-/* Tags */
-.result-tag, .service-tag {
-    background-color: rgba(78, 205, 196, 0.1);
-    border: 1px solid rgba(78, 205, 196, 0.3);
-    color: var(--primary-color);
-    border-radius: var(--radius-md);
-    padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
-    transition: all var(--transition-fast);
-}
-
-.result-tag:hover, .service-tag:hover {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-
-/* Modal */
-.modal-content {
-    background-color: var(--bg-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-    max-width: 90%;
-    width: 600px;
-    padding: 2rem;
-}
-
-/* Header */
-.app-header {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-    padding: 1.5rem;
-    color: white;
-    box-shadow: var(--shadow-md);
-}
-
-
-/* סגנונות לכפתורי תצוגה */
-.view-toggle {
-  display: flex;
-  margin-right: 1rem;
-}
-
-.view-button {
-  background: none;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 0.25rem 0.5rem;
-  margin: 0 0.25rem;
-  cursor: pointer;
-  color: var(--text-light);
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.view-button.active {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-.view-button:hover:not(.active) {
-  background-color: var(--secondary-color);
-}
-
-/* סגנונות למצב כהה */
-[data-theme="dark"] .view-button {
-  border-color: var(--border-color);
-  color: var(--text-light);
-}
-
-[data-theme="dark"] .view-button.active {
-  background-color: var(--primary-color);
-  color: white;
-  border-color: var(--primary-color);
-}
-
-/* סגנונות לתצוגות */
-.results-container.grid-view {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-.results-container.list-view {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-/* התאמות לתוצאות במצב רשימה */
-.list-view .result-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.list-view .result-name {
-  height: auto;
-  max-height: none;
-  overflow: visible;
-}
-
-/* הסתרת כפתורי ההחלפה במסכים קטנים */
-@media (max-width: 480px) {
-  .view-toggle {
-    display: none;
-  }
-}
-/* תיקונים למצב כהה - הוסף את הקוד הזה לקובץ styles.css */
-
-/* העדכונים הראשיים למצב כהה */
-[data-theme="dark"] body {
-  background-color: var(--bg-secondary);
-  color: var(--text-color);
-}
-
-/* תיקון רקע בראש האתר */
-[data-theme="dark"] .app-header {
-  background: linear-gradient(135deg, #4ECDC4 0%, #3e9e99 100%);
-}
-
-/* תיקון רקע כרטיסי קטגוריות */
-[data-theme="dark"] .category-card {
-  background-color: var(--card-bg);
-  border-color: var(--border-color);
-}
-
-/* תיקון רקע כרטיסי תוצאות */
-[data-theme="dark"] .result-card {
-  background-color: var(--card-bg);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* תיקון רקע חיפוש */
-[data-theme="dark"] .search-section {
-  background-color: var(--bg-primary);
-  border-color: var(--border-color);
-}
-
-/* תיקון רקע אזור קטגוריות */
-[data-theme="dark"] .categories-section {
-  background-color: var(--bg-primary);
-  border-color: var(--border-color);
-}
-
-
-/* תיקון רקע אזור קטגוריות */
-[data-theme="dark"] .results-section {
-  background-color: var(--bg-primary);
-  border-color: var(--border-color);
-}
-
-/* תיקון רקע כפתורים */
-[data-theme="dark"] button {
-  color: var(--text-color);
-}
-
-/* תיקון רקע חלונית מידע מלא */
-[data-theme="dark"] .modal-content {
-  background-color: var(--modal-bg);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-}
-
-/* תיקון רקע תגיות */
-[data-theme="dark"] .result-tag {
-  background-color: var(--tag-bg);
-  border-color: var(--tag-border);
-  color: var(--tag-color);
-}
-
-[data-theme="dark"] .service-tag {
-  background-color: var(--tag-bg);
-  border-color: var(--tag-border);
-  color: var(--tag-color);
-}
-
-/* תיקון רקע פופאפ התקנה */
-[data-theme="dark"] .install-prompt-content {
-  background-color: var(--modal-bg);
-  color: var(--text-color);
-}
-
-[data-theme="dark"] .install-instructions {
-  background-color: var(--bg-secondary);
-}
-
-/* תיקון רקע פוטר */
-[data-theme="dark"] .app-footer {
-  background-color: var(--bg-primary);
-  border-color: var(--border-color);
-}
-
-/* תיקון לתיבת החיפוש */
-[data-theme="dark"] #search-input {
-  color: var(--text-color);
-}
-
-/* תיקון סימון קטגוריה פעילה */
-[data-theme="dark"] .category-card.active {
-  background-color: #4ECDC4;
-  border-color: #4ECDC4;
-}
-
-[data-theme="dark"] .category-card:hover {
-  background-color: #2c4a7c;
-}
-
-/* תיקון צבעי קטגוריות במצב כהה */
-
-[data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
-  background-color: rgba(78, 205, 196, 0.2);
-  border-color: rgba(78, 205, 196, 0.4);
-  color: #80e0d8;
-}
-
-[data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-tag {
-  background-color: rgba(151, 151, 151, 0.2);
-  border-color: rgba(151, 151, 151, 0.4);
-  color: #cccccc;
-}
-
-[data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-tag {
-  background-color: rgba(42, 157, 143, 0.2);
-  border-color: rgba(42, 157, 143, 0.4);
-  color: #61d1c6;
-}
-
-[data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
-  background-color: rgba(134, 197, 194, 0.2);
-  border-color: rgba(134, 197, 194, 0.4);
-  color: #a3e0dd;
-}
-
-[data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
-  background-color: rgba(204, 204, 204, 0.2);
-  border-color: rgba(204, 204, 204, 0.4);
-  color: #dddddd;
-}
-
-[data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-tag {
-  background-color: rgba(78, 205, 196, 0.2);
-  border-color: rgba(78, 205, 196, 0.4);
-  color: #80e0d8;
-}
-
-[data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-tag {
-  background-color: rgba(102, 102, 102, 0.2);
-  border-color: rgba(102, 102, 102, 0.4);
-  color: #aaaaaa;
-}
-
-/* תיקון העיצוב של תגיות הקטגוריות בכרטיסי התוצאות */
-[data-theme="dark"] .result-category-tag {
-  background-color: var(--bg-secondary);
-  color: var(--text-light);
-}
-
-/* צבעי קטגוריה לתגיות במצב כהה */
-[data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-category-tag {
-  background-color: rgba(66, 133, 244, 0.2);
-  color: #87b3ff;
-}
-
-[data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-category-tag {
-  background-color: rgba(251, 188, 4, 0.2);
-  color: #ffd54f;
-}
-
-[data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-category-tag {
-  background-color: rgba(15, 157, 88, 0.2);
-  color: #66bb6a;
-}
-
-[data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-category-tag {
-  background-color: rgba(156, 39, 176, 0.2);
-  color: #ce93d8;
-}
-
-[data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-category-tag {
-  background-color: rgba(255, 112, 67, 0.2);
-  color: #ffab91;
-}
-
-[data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-category-tag {
-  background-color: rgba(3, 169, 244, 0.2);
-  color: #81d4fa;
-}
-
-[data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-category-tag {
-  background-color: rgba(233, 30, 99, 0.2);
-  color: #f48fb1;
-}
-
-
+/* ==== סגנונות בסיסיים ==== */
 * {
     margin: 0;
     padding: 0;
@@ -460,10 +59,11 @@ button {
 body {
     font-family: 'Heebo', sans-serif;
     color: var(--text-color);
-  background-color: var(--bg-secondary);
+    background-color: var(--bg-secondary);
     direction: rtl;
     text-align: right;
     line-height: 1.6;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 .app-container {
@@ -473,14 +73,15 @@ body {
     flex-direction: column;
 }
 
+/* ==== ראש הדף וניווט ==== */
 .app-header {
-    background: linear-gradient(135deg, #4285f4 0%, #34a0a4 100%);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
     color: white;
     padding: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
     position: relative;
     top: 0;
     z-index: 100;
@@ -489,6 +90,35 @@ body {
 .app-header h1 {
     font-size: 1.25rem;
     font-weight: 500;
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.last-updated {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 0.5rem;
+}
+
+#refresh-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 0.25rem;
+    font-size: 1rem;
+    color: white;
+    padding: 0.2rem;
+    transition: transform 0.2s;
+}
+
+#refresh-button:hover {
+    transform: rotate(45deg);
 }
 
 .connection-status {
@@ -501,12 +131,29 @@ body {
     margin-right: 0.25rem;
 }
 
-.hidden {
-    display: none;
+/* ==== חלונית החלפת תצוגה יום/לילה ==== */
+.theme-toggle {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 101;
 }
 
-/* Search Section */
-/* קיבוע שורת החיפוש בחלק העליון בזמן גלילה */
+#theme-switch {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: white;
+    padding: 0.25rem;
+    transition: transform 0.2s;
+}
+
+#theme-switch:hover {
+    transform: scale(1.1);
+}
+
+/* ==== חיפוש ==== */
 .search-section {
     position: sticky;
     top: 0;
@@ -518,46 +165,121 @@ body {
     transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-/* צל מוגדל כאשר השורה "דבוקה" */
 .search-section.is-sticky {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* מרווח תחתון לשמירת המרחק משאר התוכן */
-.search-section.is-sticky + .categories-section {
-    margin-top: 0.5rem;
-}
-
-.filter-options {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
-.checkbox-container {
+.search-container {
+    width: 100%;
     display: flex;
     align-items: center;
+    gap: 0.5rem;
+    background-color: var(--bg-secondary);
+    border-radius: 24px;
+    padding: 0.5rem 0.75rem;
+    height: 44px;
+}
+
+.search-container:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-md);
+}
+
+#search-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-color);
+    text-align: right;
+    direction: rtl;
+    font-size: 1rem;
+}
+
+#search-button,
+#voice-search-button,
+#clear-search-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: none;
+    border: none;
     cursor: pointer;
+    color: var(--text-light);
+    transition: color 0.2s;
+    flex-shrink: 0;
+    position: relative;
+    top: 0;
+}
+
+#search-button:hover,
+#voice-search-button:hover,
+#clear-search-button:hover {
+    color: var(--primary-color);
+}
+
+.results-count {
+    display: none;
     font-size: 0.9rem;
     color: var(--text-light);
+    margin-top: 0.5rem;
+    text-align: right;
+    padding: 0 0.5rem;
 }
 
-.checkbox-text {
-    margin-right: 0.25rem;
+.results-count.has-results {
+    display: block;
+    animation: fadeIn 0.3s ease;
 }
 
-/* Categories Section */
+/* ==== קטגוריות ==== */
 .categories-section {
     padding: 1rem;
-    background-color: white;
+    background-color: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
 }
 
-.categories-section h2 {
+.categories-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.categories-header h2 {
     font-size: 1rem;
     color: var(--text-light);
     margin-bottom: 0.5rem;
+}
+
+.toggle-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--text-light);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.toggle-button:hover {
+    background-color: var(--bg-secondary);
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform var(--transition-normal);
+}
+
+.toggle-icon.rotated {
+    transform: rotate(180deg);
 }
 
 .categories-container {
@@ -565,6 +287,10 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
     padding: 1rem 0;
+}
+
+.categories-container.collapsed {
+    display: none;
 }
 
 .category-card {
@@ -582,7 +308,6 @@ body {
     overflow: hidden;
 }
 
-/* Category Colors */
 .category-card::before {
     content: '';
     position: absolute;
@@ -611,7 +336,6 @@ body {
     border-color: var(--primary-color);
 }
 
-
 .category-card.active .category-name,
 .category-card.active .category-icon {
     color: white;
@@ -627,36 +351,8 @@ body {
     transform: scale(1.1);
 }
 
-.category-card[data-category="שירותים ומסגרות בזקנה"] {
-  --category-color: #4ECDC4; /* טורקיז */
-}
-
-.category-card[data-category="ניצולי שואה"] {
-  --category-color: #979797; /* אפור כהה */
-}
-
-.category-card[data-category="מוקדים ממשלתיים"] {
-  --category-color: #2a9d8f; /* טורקיז כהה */
-}
-
-.category-card[data-category="תוכניות משרד לשיוון חברתי"] {
-  --category-color: #86c5c2; /* טורקיז בהיר */
-}
-
-.category-card[data-category="מנועי חיפוש לזקנה"] {
-  --category-color: #cccccc; /* אפור בהיר */
-}
-
-.category-card[data-category="בעלי מקצוע"] {
-  --category-color: #4ECDC4; /* טורקיז */
-}
-
-.category-card[data-category="הטפול בזקן בישראל"] {
-  --category-color: #666666; /* אפור כהה */
-}
-
 .category-name {
-    font-size: 0.7rem; /* Smaller font size */
+    font-size: 0.7rem;
     text-align: center;
     line-height: 1.2;
     width: 100%;
@@ -665,10 +361,9 @@ body {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
-      position: relative;
-  z-index: 1;
-  color: var(--text-light);
-
+    position: relative;
+    z-index: 1;
+    color: var(--text-light);
 }
 
 .category-loading {
@@ -678,200 +373,278 @@ body {
     padding: 1rem;
 }
 
-/* Results Section */
+/* צבעי קטגוריות */
+.category-card[data-category="שירותים ומסגרות בזקנה"] {
+    --category-color: #4ECDC4;
+}
+
+.category-card[data-category="ניצולי שואה"] {
+    --category-color: #979797;
+}
+
+.category-card[data-category="מוקדים ממשלתיים"] {
+    --category-color: #2a9d8f;
+}
+
+.category-card[data-category="תוכניות משרד לשיוון חברתי"] {
+    --category-color: #86c5c2;
+}
+
+.category-card[data-category="מנועי חיפוש לזקנה"] {
+    --category-color: #cccccc;
+}
+
+.category-card[data-category="בעלי מקצוע"] {
+    --category-color: #4ECDC4;
+}
+
+.category-card[data-category="הטפול בזקן בישראל"] {
+    --category-color: #666666;
+}
+
+/* ==== אזור תוצאות ==== */
 .results-section {
     flex: 1;
     padding: 1rem;
-    background-color: #f8f9fa;
+    background-color: var(--bg-primary);
 }
 
 .results-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-bottom: 1rem;
 }
 
-.results-header h2 {
-    font-size: 1rem;
-    color: var(--text-light);
-}
-
-.last-updated {
+/* כפתורי החלפת תצוגה */
+.view-toggle {
     display: flex;
-    align-items: center;
-    font-size: 0.75rem;
-    color: var(--text-light);
+    margin-right: 1rem;
 }
 
-#refresh-button {
+.view-button {
     background: none;
-    border: none;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    margin: 0 0.25rem;
     cursor: pointer;
-    margin-right: 0.5rem;
+    color: var(--text-light);
     font-size: 1rem;
+    transition: all 0.2s;
 }
 
+.view-button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.view-button:hover:not(.active) {
+    background-color: var(--secondary-color);
+}
+
+/* תצוגות רשימה וגריד */
 .results-container {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-      transition: opacity 0.3s ease;
-
+    transition: opacity 0.3s ease;
 }
 
-.fade-enter {
-  opacity: 0;
+.results-container.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
 }
 
-.fade-enter-active {
-  opacity: 1;
+.results-container.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
-@keyframes slide-up {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+
+/* כרטיסי תוצאה */
 .result-card {
-     animation: slide-up 0.3s ease forwards;
-  opacity: 0;
-  transform: translateY(20px);
-  background-color: var(--bg-primary);
-  color: var(--text-color);
-    border-radius: 8px;
-    padding: 1rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 1.5rem;
     cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s;
-    
-}
-/* ביטול הגדרות קודמות שעלולות להפריע */
-.result-card .result-name {
-  height: auto;        /* גובה אוטומטי */
-  -webkit-line-clamp: unset;  /* ביטול הגבלת מספר שורות */
-  -webkit-box-orient: unset;  /* ביטול הגבלת כיוון הקופסה */
-}
-.service-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
-}
-
-.service-tag {
-  display: inline-block;
-  background-color: rgba(66, 133, 244, 0.1);
-  color: var(--primary-color);
-  padding: 0.3rem 0.6rem;
-  border-radius: 16px;
-  font-size: 0.85rem;
-  white-space: nowrap;
-  border: 1px solid rgba(66, 133, 244, 0.3);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    animation: fadeIn 0.3s ease-in-out;
+    color: var(--text-color);
+    position: relative;
+    border-right: 4px solid transparent;
 }
 
 .result-card:hover {
     transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
 }
-.result-description {
-  color: var(--text-light);
-}
+
 .result-name {
-  font-weight: 500;
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  min-height: 1.5em;   /* גובה מינימלי למקרים של שמות קצרים */
-  max-height: none;    /* ללא הגבלת גובה מקסימלי */
-  line-height: 1.3;    /* מרווח שורות נוח */
-  overflow: visible;   /* מאפשר לתוכן לזלוג למטה */
-  display: block;      /* מאפשר לאלמנט לתפוס את המקום הדרוש */
-}
-
-
-.result-type {
-    color: var(--text-light);
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-}
-
-/* Contact styles with icons */
-.result-contact {
     font-weight: 500;
-    margin-top: 0.5rem;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
 }
 
-/* Common styles for contact information with icons */
-.result-email, .result-phone {
-    margin-top: 0.5rem;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
+.result-description {
+    color: var(--text-light);
 }
 
-.email-icon, .phone-icon {
-    margin-left: 0.3rem;
-    font-size: 0.9rem;
-}
-
-.email-link, .phone-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    word-break: break-all;
-}
-
-.email-link:hover, .phone-link:hover {
-    text-decoration: underline;
-}
-
-/* Phone specific styles */
-.result-phone {
-    margin-top: 0.5rem;
-}
-
-.phone-link {
-    direction: ltr;
+.result-category-tag {
     display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    background-color: #f0f0f0;
+    color: var(--text-color);
 }
 
 .result-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
 }
 
-.result-tag {
-  display: inline-block;
-  background-color: rgba(66, 133, 244, 0.1);
-  color: var(--primary-color);
-  padding: 0.25rem 0.5rem;
-  border-radius: 16px;
-  font-size: 0.75rem;
-  margin: 0.15rem;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-  border: 1px solid rgba(66, 133, 244, 0.3);
+.result-tag, .service-tag {
+    display: inline-block;
+    background-color: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    color: var(--primary-color);
+    border-radius: var(--radius-md);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    margin: 0.15rem;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
 }
 
-.result-tag:hover {
-  background-color: rgba(66, 133, 244, 0.2);
-  transform: translateY(-1px);
+.result-tag:hover, .service-tag:hover {
+    background-color: var(--primary-color);
+    color: white;
 }
 
-.results-message {
+.results-message, .no-results {
     text-align: center;
     color: var(--text-light);
     padding: 2rem 0;
 }
 
-.no-results {
-    text-align: center;
-    color: var(--text-light);
-    padding: 2rem 0;
+/* צבעי תגיות ותיחום לפי קטגוריה */
+.result-card[data-category="שירותים ומסגרות בזקנה"] {
+    border-right-color: #4ECDC4;
 }
 
-/* Modal */
+.result-card[data-category="ניצולי שואה"] {
+    border-right-color: #979797;
+}
+
+.result-card[data-category="מוקדים ממשלתיים"] {
+    border-right-color: #2a9d8f;
+}
+
+.result-card[data-category="תוכניות משרד לשיוון חברתי"] {
+    border-right-color: #86c5c2;
+}
+
+.result-card[data-category="מנועי חיפוש לזקנה"] {
+    border-right-color: #cccccc;
+}
+
+.result-card[data-category="בעלי מקצוע"] {
+    border-right-color: #4ECDC4;
+}
+
+.result-card[data-category="הטפול בזקן בישראל"] {
+    border-right-color: #666666;
+}
+
+/* עיצוב תגיות לפי קטגוריה */
+.result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
+    background-color: rgba(78, 205, 196, 0.1);
+    border-color: rgba(78, 205, 196, 0.3);
+    color: #4ECDC4;
+}
+
+.result-card[data-category="ניצולי שואה"] .result-tag {
+    background-color: rgba(151, 151, 151, 0.1);
+    border-color: rgba(151, 151, 151, 0.3);
+    color: #979797;
+}
+
+.result-card[data-category="מוקדים ממשלתיים"] .result-tag {
+    background-color: rgba(42, 157, 143, 0.1);
+    border-color: rgba(42, 157, 143, 0.3);
+    color: #2a9d8f;
+}
+
+.result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
+    background-color: rgba(134, 197, 194, 0.1);
+    border-color: rgba(134, 197, 194, 0.3);
+    color: #86c5c2;
+}
+
+.result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
+    background-color: rgba(204, 204, 204, 0.1);
+    border-color: rgba(204, 204, 204, 0.3);
+    color: #999999;
+}
+
+.result-card[data-category="בעלי מקצוע"] .result-tag {
+    background-color: rgba(78, 205, 196, 0.1);
+    border-color: rgba(78, 205, 196, 0.3);
+    color: #4ECDC4;
+}
+
+.result-card[data-category="הטפול בזקן בישראל"] .result-tag {
+    background-color: rgba(102, 102, 102, 0.1);
+    border-color: rgba(102, 102, 102, 0.3);
+    color: #666666;
+}
+
+/* צבעי תגית קטגוריה */
+.result-card[data-category="שירותים ומסגרות בזקנה"] .result-category-tag {
+    background-color: rgba(66, 133, 244, 0.15);
+    color: #4285f4;
+}
+
+.result-card[data-category="ניצולי שואה"] .result-category-tag {
+    background-color: rgba(251, 188, 4, 0.15);
+    color: #b06000;
+}
+
+.result-card[data-category="מוקדים ממשלתיים"] .result-category-tag {
+    background-color: rgba(15, 157, 88, 0.15);
+    color: #0f9d58;
+}
+
+.result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-category-tag {
+    background-color: rgba(156, 39, 176, 0.15);
+    color: #9c27b0;
+}
+
+.result-card[data-category="מנועי חיפוש לזקנה"] .result-category-tag {
+    background-color: rgba(255, 112, 67, 0.15);
+    color: #e64a19;
+}
+
+.result-card[data-category="בעלי מקצוע"] .result-category-tag {
+    background-color: rgba(3, 169, 244, 0.15);
+    color: #0288d1;
+}
+
+.result-card[data-category="הטפול בזקן בישראל"] .result-category-tag {
+    background-color: rgba(233, 30, 99, 0.15);
+    color: #e91e63;
+}
+
+/* ==== חלונית פרטי שירות ==== */
 .modal {
     display: none;
     position: fixed;
@@ -885,8 +658,9 @@ body {
 
 .modal-content {
     position: relative;
-  background-color: var(--bg-primary);
-  color: var(--text-color);    margin: 10% auto;
+    background-color: var(--bg-primary);
+    color: var(--text-color);
+    margin: 10% auto;
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
@@ -929,6 +703,17 @@ body {
     text-decoration: none;
 }
 
+.service-detail-value a:hover {
+    text-decoration: underline;
+}
+
+.service-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
 .modal-actions {
     display: flex;
     justify-content: space-around;
@@ -938,17 +723,25 @@ body {
 }
 
 .action-button {
-    padding: 0.75rem 1.5rem;
+    background-color: var(--primary-color);
+    color: white;
     border: none;
-    border-radius: 24px;
-    font-size: 1rem;
-    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
     cursor: pointer;
     font-family: 'Heebo', sans-serif;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+}
+
+.action-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .call-button {
@@ -961,167 +754,7 @@ body {
     color: white;
 }
 
-/* Status Bar */
-.status-bar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 0.75rem;
-    background-color: var(--primary-dark);
-    color: white;
-    text-align: center;
-    transform: translateY(100%);
-    transition: transform 0.3s;
-    z-index: 1000;
-}
-
-.status-bar.show {
-    transform: translateY(0);
-}
-
-.status-bar.error {
-    background-color: var(--error-color);
-}
-
-.status-bar.success {
-    background-color: var(--success-color);
-}
-
-.status-bar.warning {
-    background-color: var(--warning-color);
-    color: var(--text-color);
-}
-
-/* Mobile optimization */
-@media (max-width: 480px) {
-    .category-card {
-        width: 85px; /* Even more optimal width for mobile */
-        height: 85px;
-    }
-    
-    .category-icon {
-        font-size: 1.5rem;
-    }
-    
-    .category-name {
-        font-size: 0.65rem;
-          color: var(--text-light);
-
-    }
-    
-    .modal-content {
-        margin: 5% auto;
-        width: 95%;
-        max-height: 90vh;
-    }
-}
-
-/* Desktop enhancements with grid layout for results */
-@media (min-width: 768px) {
-    .app-container {
-        max-width: 900px;
-        margin: 0 auto;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-    
-    .app-header h1 {
-        font-size: 1.5rem;
-    }
-    
-    .search-container {
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    .categories-container {
-        justify-content: center;
-        max-width: 800px;
-        margin: 0 auto;
-    }
-    
-    .result-card {
-        height: auto;
-        min-height: 150px;
-        display: flex;
-        flex-direction: column;
-    }
-    
-    .result-name {
-        height: auto;
-        overflow: visible;
-        display: block;
-    }
-    
-    .results-container {
-        grid-auto-rows: minmax(150px, auto);
-        align-items: stretch;
-    }
-    
-    .results-message,
-    .no-results {
-        grid-column: 1 / -1;
-    }
-}
-
-/* Print styles */
-@media print {
-    .app-header, 
-    .search-section, 
-    .categories-section, 
-    .results-header, 
-    .modal-actions, 
-    .status-bar {
-        display: none;
-    }
-    
-    .app-container, 
-    .results-section, 
-    .results-container {
-        padding: 0;
-        margin: 0;
-    }
-    
-    .result-card {
-        box-shadow: none;
-        border: 1px solid #000;
-        page-break-inside: avoid;
-    }
-}
-
-/* Footer styles */
-.app-footer {
-    text-align: center;
-    padding: 1rem;
-    margin-top: auto;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    background-color: white;
-    border-top: 1px solid var(--border-color);
-}
-
-.copyright {
-    direction: rtl;
-}
-/* Clear button styles */
-#clear-search-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 0.25rem;
-    color: var(--text-light);
-    transition: color 0.2s;
-}
-
-#clear-search-button:hover {
-    color: var(--error-color);
-}
-
-#clear-search-button.hidden {
-    display: none;
-}
-/* Install Prompt Styles */
+/* ==== חלונית התקנת PWA ==== */
 .install-prompt {
     display: none;
     position: fixed;
@@ -1142,7 +775,7 @@ body {
 
 .install-prompt-content {
     position: relative;
-    background-color: white;
+    background-color: var(--bg-primary);
     margin: auto;
     width: 90%;
     max-width: 500px;
@@ -1231,114 +864,75 @@ body {
     color: var(--text-color);
 }
 
-.hidden {
-    display: none;
-}
-/* סממן צבע לתוצאות לפי קטגוריה */
-.result-card {
-    position: relative;
-    border-right: 4px solid transparent;
-}
-
-
-/* צבע תגית לפי קטגוריה */
-.result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
-  background-color: rgba(78, 205, 196, 0.1);
-  border-color: rgba(78, 205, 196, 0.3);
-  color: #4ECDC4;
-}
-
-.result-card[data-category="ניצולי שואה"] .result-tag {
-  background-color: rgba(151, 151, 151, 0.1);
-  border-color: rgba(151, 151, 151, 0.3);
-  color: #979797;
+/* ==== שורת סטטוס ==== */
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    background-color: var(--primary-dark);
+    color: white;
+    text-align: center;
+    transform: translateY(100%);
+    transition: transform 0.3s;
+    z-index: 1000;
+    border-radius: var(--radius-md);
+    margin: 1rem;
+    animation: slideIn 0.3s ease-out;
+    box-shadow: var(--shadow-md);
 }
 
-.result-card[data-category="מוקדים ממשלתיים"] .result-tag {
-  background-color: rgba(42, 157, 143, 0.1);
-  border-color: rgba(42, 157, 143, 0.3);
-  color: #2a9d8f;
+.status-bar.show {
+    transform: translateY(0);
 }
 
-.result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
-  background-color: rgba(134, 197, 194, 0.1);
-  border-color: rgba(134, 197, 194, 0.3);
-  color: #86c5c2;
+.status-bar.error {
+    background-color: var(--error-color);
 }
 
-.result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
-  background-color: rgba(204, 204, 204, 0.1);
-  border-color: rgba(204, 204, 204, 0.3);
-  color: #999999;
+.status-bar.success {
+    background-color: var(--success-color);
 }
 
-.result-card[data-category="בעלי מקצוע"] .result-tag {
-  background-color: rgba(78, 205, 196, 0.1);
-  border-color: rgba(78, 205, 196, 0.3);
-  color: #4ECDC4;
-}
-
-.result-card[data-category="הטפול בזקן בישראל"] .result-tag {
-  background-color: rgba(102, 102, 102, 0.1);
-  border-color: rgba(102, 102, 102, 0.3);
-  color: #666666;
-}
-
-
-/* סגנון תגית קטגוריה */
-.result-category-tag {
-    display: inline-block;
-    font-size: 0.75rem;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    background-color: #f0f0f0;
+.status-bar.warning {
+    background-color: var(--warning-color);
     color: var(--text-color);
 }
 
-/* צבעי קטגוריה לתגיות */
-.result-card[data-category="שירותים ומסגרות בזקנה"] .result-category-tag {
-    background-color: rgba(66, 133, 244, 0.15);
-    color: #4285f4;
+/* ==== פוטר ==== */
+.app-footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: auto;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
 }
 
-.result-card[data-category="ניצולי שואה"] .result-category-tag {
-    background-color: rgba(251, 188, 4, 0.15);
-    color: #b06000;
+.copyright {
+    direction: rtl;
 }
 
-.result-card[data-category="מוקדים ממשלתיים"] .result-category-tag {
-    background-color: rgba(15, 157, 88, 0.15);
-    color: #0f9d58;
+/* ==== תמיכה במצבים שונים ==== */
+.hidden {
+    display: none;
 }
 
-.result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-category-tag {
-    background-color: rgba(156, 39, 176, 0.15);
-    color: #9c27b0;
+.screen-reader-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
-.result-card[data-category="מנועי חיפוש לזקנה"] .result-category-tag {
-    background-color: rgba(255, 112, 67, 0.15);
-    color: #e64a19;
-}
-
-.result-card[data-category="בעלי מקצוע"] .result-category-tag {
-    background-color: rgba(3, 169, 244, 0.15);
-    color: #0288d1;
-}
-
-.result-card[data-category="הטפול בזקן בישראל"] .result-category-tag {
-    background-color: rgba(233, 30, 99, 0.15);
-    color: #e91e63;
-}
-
-[data-theme="dark"] .service-detail-value a,
-[data-theme="dark"] .email-link {
-    color: var(--primary-color);
-    text-decoration: none;
-}
-
-/* Results Animation */
+/* ==== אנימציות ==== */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -1348,53 +942,6 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-.result-card {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* Search Input */
-#search-input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: none;
-    background: transparent;
-    color: var(--text-color);
-    font-size: 1rem;
-    outline: none;
-}
-
-#search-input::placeholder {
-    color: var(--text-light);
-}
-
-/* Voice Search Button Animation */
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.1);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-#voice-search-button.recording {
-    animation: pulse 1.5s infinite;
-    background-color: var(--error-color);
-    color: white;
-}
-
-/* Status Messages */
-.status-bar {
-    border-radius: var(--radius-md);
-    padding: 1rem;
-    margin: 1rem;
-    animation: slideIn 0.3s ease-out;
-    box-shadow: var(--shadow-md);
 }
 
 @keyframes slideIn {
@@ -1408,7 +955,18 @@ body {
     }
 }
 
-/* Loading States */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 @keyframes shimmer {
     0% {
         background-position: -200% 0;
@@ -1428,653 +986,186 @@ body {
     animation: shimmer 1.5s infinite;
 }
 
-/* Responsive Design Improvements */
-@media (max-width: 768px) {
-    .categories-container {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    }
-
-    .modal-content {
-        padding: 1.5rem;
-        margin: 1rem;
-    }
-
-    .action-button {
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
+#voice-search-button.recording {
+    animation: pulse 1.5s infinite;
+    background-color: var(--error-color);
+    color: white;
 }
 
-@media (max-width: 480px) {
-    .categories-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
+/* ==== תמיכה במצב כהה - תיקונים נוספים ==== */
+[data-theme="dark"] .app-header {
+    background: linear-gradient(135deg, #4ECDC4 0%, #3e9e99 100%);
+}
 
-    .category-card {
-        padding: 1rem;
-    }
+[data-theme="dark"] .category-card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
 
-    .category-icon {
+[data-theme="dark"] .result-card {
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="dark"] .search-section,
+[data-theme="dark"] .categories-section,
+[data-theme="dark"] .results-section {
+    background-color: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--modal-bg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .result-tag,
+[data-theme="dark"] .service-tag {
+    background-color: var(--tag-bg);
+    border-color: var(--tag-border);
+    color: var(--tag-color);
+}
+
+[data-theme="dark"] .install-prompt-content {
+    background-color: var(--modal-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .install-instructions {
+    background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .service-detail-value a {
+    color: var(--primary-color);
+}
+
+/* צבעי תגיות במצב כהה */
+[data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
+    background-color: rgba(78, 205, 196, 0.2);
+    border-color: rgba(78, 205, 196, 0.4);
+    color: #80e0d8;
+}
+
+[data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-tag {
+    background-color: rgba(151, 151, 151, 0.2);
+    border-color: rgba(151, 151, 151, 0.4);
+    color: #cccccc;
+}
+
+[data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-tag {
+    background-color: rgba(42, 157, 143, 0.2);
+    border-color: rgba(42, 157, 143, 0.4);
+    color: #61d1c6;
+}
+
+[data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
+    background-color: rgba(134, 197, 194, 0.2);
+    border-color: rgba(134, 197, 194, 0.4);
+    color: #a3e0dd;
+}
+
+[data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
+    background-color: rgba(204, 204, 204, 0.2);
+    border-color: rgba(204, 204, 204, 0.4);
+    color: #dddddd;
+}
+
+[data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-tag {
+    background-color: rgba(78, 205, 196, 0.2);
+    border-color: rgba(78, 205, 196, 0.4);
+    color: #80e0d8;
+}
+
+[data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-tag {
+    background-color: rgba(102, 102, 102, 0.2);
+    border-color: rgba(102, 102, 102, 0.4);
+    color: #aaaaaa;
+}
+
+[data-theme="dark"] .result-category-tag {
+    background-color: var(--bg-secondary);
+    color: var(--text-light);
+}
+
+/* צבעי קטגוריה לתגיות במצב כהה */
+[data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-category-tag {
+    background-color: rgba(66, 133, 244, 0.2);
+    color: #87b3ff;
+}
+
+[data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-category-tag {
+    background-color: rgba(251, 188, 4, 0.2);
+    color: #ffd54f;
+}
+
+[data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-category-tag {
+    background-color: rgba(15, 157, 88, 0.2);
+    color: #66bb6a;
+}
+
+[data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-category-tag {
+    background-color: rgba(156, 39, 176, 0.2);
+    color: #ce93d8;
+}
+
+[data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-category-tag {
+    background-color: rgba(255, 112, 67, 0.2);
+    color: #ffab91;
+}
+
+[data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-category-tag {
+    background-color: rgba(3, 169, 244, 0.2);
+    color: #81d4fa;
+}
+
+[data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-category-tag {
+    background-color: rgba(233, 30, 99, 0.2);
+    color: #f48fb1;
+}
+
+/* ==== תגובתיות (Responsive) ==== */
+/* למסכים בגודל ביניים */
+@media (min-width: 768px) {
+    .app-container {
+        max-width: 900px;
+        margin: 0 auto;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .app-header h1 {
         font-size: 1.5rem;
     }
-
-    .search-container {
-        flex-direction: column;
-    }
-}
-
-/* Accessibility Improvements */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-    }
-}
-
-.screen-reader-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Mobile Responsive Styles */
-@media screen and (max-width: 768px) {
-    .category-card {
-        width: calc(50% - 1rem) !important;
-        margin: 0.5rem !important;
-        padding: 0.75rem !important;
-        min-height: 80px !important;
-    }
-
-    .categories-container {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-        padding: 0.5rem !important;
-    }
-
-    .category-icon {
-        font-size: 1.5rem !important;
-        margin-bottom: 0.25rem !important;
-    }
-
-    .category-name {
-        font-size: 0.9rem !important;
-        line-height: 1.2 !important;
-    }
-
-    .result-card {
-        margin: 0.5rem 0 !important;
-        padding: 1rem !important;
-    }
-
-    .results-container {
-        padding: 0.5rem !important;
-    }
-
-    .result-name {
-        font-size: 1.1rem !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    .result-description {
-        font-size: 0.9rem !important;
-        line-height: 1.4 !important;
-    }
-
-    .result-tags {
-        margin-top: 0.5rem !important;
-    }
-
-    .result-tag {
-        font-size: 0.8rem !important;
-        padding: 0.25rem 0.5rem !important;
-        margin: 0.25rem !important;
-    }
-
-    /* Search bar improvements */
-    .search-container {
-        padding: 0.5rem !important;
-    }
-
-    #search-input {
-        font-size: 1rem !important;
-        padding: 0.5rem 1rem !important;
-    }
-
-    /* Modal improvements */
-    .modal-content {
-        width: 95% !important;
-        margin: 1rem auto !important;
-        padding: 1rem !important;
-    }
-
-    .service-name {
-        font-size: 1.2rem !important;
-        margin-bottom: 1rem !important;
-    }
-
-    .service-detail {
-        margin-bottom: 0.75rem !important;
-    }
-
-    .service-detail-label {
-        font-size: 0.9rem !important;
-    }
-
-    .service-detail-value {
-        font-size: 1rem !important;
-    }
-}
-
-/* Fix for iOS Safari */
-@supports (-webkit-touch-callout: none) {
-    .modal-content {
-        max-height: 85vh !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
     
-    #search-input {
-        font-size: 16px !important; /* Prevents zoom on focus in iOS */
-    }
-}
-
-/* Mobile Header and Search Improvements */
-@media screen and (max-width: 768px) {
-    .app-header {
-        padding: 0.75rem !important;
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 100 !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-    }
-
-    .app-header h1 {
-        font-size: 1.5rem !important;
-        margin: 0 !important;
-    }
-
-    .connection-status {
-        margin-left: auto !important;
-        margin-right: 1rem !important;
-    }
-
-    .theme-toggle {
-        margin-right: 0 !important;
-        position: static !important;
-    }
-
-    .search-section {
-        position: sticky !important;
-        top: 3.5rem !important;
-        z-index: 99 !important;
-        background-color: var(--bg-primary) !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-        padding: 0.75rem !important;
-    }
-
     .search-container {
-        margin: 0 !important;
-        height: 44px !important;
-        flex-direction: row !important;
-    }
-
-    #search-input {
-        order: 2 !important;
-    }
-
-    #search-button {
-        order: 1 !important;
-    }
-
-    #voice-search-button {
-        order: 3 !important;
-    }
-
-    #clear-search-button {
-        order: 4 !important;
-    }
-
-    /* Fix for iOS input zoom */
-    @supports (-webkit-touch-callout: none) {
-        #search-input {
-            font-size: 16px !important;
-        }
-    }
-}
-
-/* Mobile Categories and Results Improvements */
-@media screen and (max-width: 768px) {
-    .categories-section {
-        padding: 0.5rem !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    .categories-container {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 0.5rem !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .category-card {
-        width: 100% !important;
-        height: auto !important;
-        min-height: 0 !important;
-        aspect-ratio: 1 !important;
-        padding: 0.5rem !important;
-        margin: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
-        border-radius: 12px !important;
-    }
-
-    .category-icon {
-        font-size: 1.5rem !important;
-        margin-bottom: 0.25rem !important;
-    }
-
-    .category-name {
-        font-size: 0.7rem !important;
-        line-height: 1.2 !important;
-        text-align: center !important;
-        margin: 0 !important;
-        max-height: none !important;
-    }
-
-    .results-section {
-        padding: 0.5rem !important;
-    }
-
-    .results-container {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 0.75rem !important;
-        padding: 0 !important;
-    }
-
-    .result-card {
-        margin: 0 !important;
-        padding: 1rem !important;
-        border-radius: 12px !important;
-    }
-
-    .result-name {
-        font-size: 1rem !important;
-        margin-bottom: 0.5rem !important;
-        line-height: 1.3 !important;
-    }
-
-    .result-description {
-        font-size: 0.9rem !important;
-        line-height: 1.4 !important;
-        margin-bottom: 0.5rem !important;
-    }
-
-    .result-tags {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 0.25rem !important;
-        margin-top: 0.5rem !important;
-    }
-
-    .result-tag {
-        font-size: 0.75rem !important;
-        padding: 0.25rem 0.5rem !important;
-        margin: 0 !important;
-        border-radius: 12px !important;
-    }
-
-    .result-category-tag {
-        font-size: 0.7rem !important;
-        padding: 0.15rem 0.4rem !important;
-        margin-bottom: 0.5rem !important;
-        border-radius: 8px !important;
-    }
-
-    /* Modal improvements */
-    .modal-content {
-        width: 100% !important;
-        height: 100% !important;
-        margin: 0 !important;
-        border-radius: 0 !important;
-        padding: 1rem !important;
-        display: flex !important;
-        flex-direction: column !important;
-    }
-
-    .service-name {
-        font-size: 1.25rem !important;
-        margin-bottom: 1rem !important;
-        line-height: 1.3 !important;
-    }
-
-    .service-detail {
-        margin-bottom: 1rem !important;
-    }
-
-    .modal-actions {
-        margin-top: auto !important;
-        padding: 1rem !important;
-    }
-
-    .action-button {
-        width: 100% !important;
-        margin-bottom: 0.5rem !important;
-        height: 3rem !important;
-        font-size: 1rem !important;
-    }
-}
-
-/* Extra Small Screen Improvements */
-@media screen and (max-width: 360px) {
-    .categories-container {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
-
-    .category-icon {
-        font-size: 1.25rem !important;
-    }
-
-    .category-name {
-        font-size: 0.65rem !important;
-    }
-
-    .app-header h1 {
-        font-size: 1.25rem !important;
-    }
-
-    .search-container {
-        padding: 0.25rem 0.5rem !important;
-    }
-
-    #search-input {
-        font-size: 0.9rem !important;
-        height: 1.75rem !important;
-    }
-
-    .result-card {
-        padding: 0.75rem !important;
-    }
-
-    .result-name {
-        font-size: 0.9rem !important;
-    }
-
-    .result-description {
-        font-size: 0.8rem !important;
-    }
-
-    .result-tag {
-        font-size: 0.7rem !important;
-        padding: 0.2rem 0.4rem !important;
-    }
-}
-
-/* Fix for notched phones */
-@supports (padding-top: env(safe-area-inset-top)) {
-    .app-header {
-        padding-top: calc(env(safe-area-inset-top) + 0.75rem) !important;
-    }
-
-    .modal-content {
-        padding-top: calc(env(safe-area-inset-top) + 1rem) !important;
-        padding-bottom: calc(env(safe-area-inset-bottom) + 1rem) !important;
-    }
-}
-/* עיצוב סקציית הקטגוריות */
-.categories-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.toggle-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    color: var(--text-light);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
-}
-
-.toggle-button:hover {
-    background-color: var(--bg-secondary);
-}
-
-.toggle-icon {
-    display: inline-block;
-    transition: transform var(--transition-normal);
-}
-
-.toggle-icon.rotated {
-    transform: rotate(180deg);
-}
-
-/* סגנונות לקטגוריות במצב מוסתר */
-.categories-container.collapsed {
-    display: none;
-}
-
-/* סגנון למספר התוצאות */
-.results-count {
-    font-size: 0.9rem;
-    color: var(--text-light);
-    margin-bottom: 0.5rem;
-}
-
-/* סגנונות רספונסיביים */
-.results-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-top: 0.5rem;
-}
-
-/* סגנונות לתצוגות (וודא שהם קיימים) */
-.results-container.grid-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-}
-
-.results-container.list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-/* התאמות למובייל */
-@media (max-width: 768px) {
-    .results-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .results-actions {
-        flex-direction: row;
-        justify-content: space-between;
         width: 100%;
+        margin: 0;
     }
     
-    .last-updated {
-        font-size: 0.7rem;
+    .categories-container {
+        justify-content: center;
+        max-width: 800px;
+        margin: 0 auto;
     }
     
-    .toggle-button {
-        padding: 0.3rem 0.6rem;
-    }
-}
-
-/* התאמות למסכים קטנים */
-@media (max-width: 480px) {
-    .view-toggle {
-        margin-right: 0;
+    .result-card {
+        height: auto;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
     }
     
-    .view-button {
-        padding: 0.2rem 0.4rem;
-        margin: 0 0.1rem;
+    .results-container {
+        grid-auto-rows: minmax(150px, auto);
+        align-items: stretch;
     }
     
-    .results-count {
-        font-size: 0.8rem;
+    .results-message,
+    .no-results {
+        grid-column: 1 / -1;
     }
 }
 
-/* עדכון לכותרת האפליקציה */
-.header-status {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.last-updated {
-    display: flex;
-    align-items: center;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-right: 0.5rem;
-}
-
-#refresh-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    color: white;
-    margin-right: 0.25rem;
-    padding: 0.2rem;
-    transition: transform 0.2s;
-}
-
-#refresh-button:hover {
-    transform: rotate(45deg);
-}
-
-/* עדכון לסקציית החיפוש - מספר תוצאות */
-.results-count {
-    font-size: 0.9rem;
-    color: var(--text-light);
-    margin-top: 0.5rem;
-    text-align: right;
-    padding: 0 0.5rem;
-}
-
-/* עיצוב סקציית הקטגוריות */
-.categories-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.toggle-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    color: var(--text-light);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
-}
-
-.toggle-button:hover {
-    background-color: var(--bg-secondary);
-}
-
-.toggle-icon {
-    display: inline-block;
-    transition: transform var(--transition-normal);
-}
-
-.toggle-icon.rotated {
-    transform: rotate(180deg);
-}
-
-/* סגנונות לקטגוריות במצב מוסתר */
-.categories-container.collapsed {
-    display: none;
-}
-
-/* עדכון לסקציית התוצאות */
-.results-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-/* סגנונות לכפתורי תצוגה */
-.view-toggle {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.view-button {
-    background: none;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 0.25rem 0.5rem;
-    cursor: pointer;
-    color: var(--text-light);
-    font-size: 1rem;
-    transition: all 0.2s;
-}
-
-.view-button.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.view-button:hover:not(.active) {
-    background-color: var(--secondary-color);
-}
-
-/* סגנונות לתצוגות */
-.results-container.grid-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-}
-
-.results-container.list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-/* התאמות למובייל */
+/* למסכים ניידים */
 @media (max-width: 768px) {
     .header-status {
         gap: 0.5rem;
@@ -2092,85 +1183,263 @@ body {
         padding: 0.75rem;
     }
     
+    .categories-container {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .category-card {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        aspect-ratio: 1;
+        padding: 0.5rem;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 12px;
+    }
+    
+    .category-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .category-name {
+        font-size: 0.7rem;
+        line-height: 1.2;
+        text-align: center;
+        margin: 0;
+        max-height: none;
+    }
+    
+    .results-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .results-actions {
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .view-toggle {
+        margin-right: 0;
+    }
+    
     .results-count {
         font-size: 0.8rem;
     }
     
     .toggle-button {
-        padding: 0.2rem 0.4rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .action-button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 1rem auto;
+        padding: 1rem;
+    }
+}
+
+/* למסכים קטנים יותר */
+@media (max-width: 480px) {
+    .category-card {
+        width: calc(50% - 1rem);
+        margin: 0.5rem;
+        padding: 0.75rem;
+        min-height: 80px;
+    }
+    
+    .categories-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .view-toggle {
+        display: none;
     }
     
     .view-button {
         padding: 0.2rem 0.4rem;
-    }
-}
-
-/* התאמות למסכים קטנים מאוד */
-@media (max-width: 480px) {
-    .header-status {
-        margin-top: 0.5rem;
-        width: 100%;
-        justify-content: flex-end;
+        margin: 0 0.1rem;
     }
     
     .app-header {
-        flex-wrap: wrap;
+        padding: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 100;
     }
     
-    .last-updated {
+    .app-header h1 {
+        font-size: 1.25rem;
+        margin: 0;
+    }
+    
+    .connection-status {
+        margin-left: auto;
+        margin-right: 1rem;
+    }
+    
+    .search-section {
+        position: sticky;
+        top: 3.5rem;
+        z-index: 99;
+        padding: 0.75rem;
+    }
+    
+    .search-container {
+        height: 44px;
+        flex-direction: row;
+    }
+    
+    .result-card {
+        margin: 0;
+        padding: 1rem;
+        border-radius: 12px;
+    }
+    
+    .result-name {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+    
+    .result-description {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+    }
+    
+    .result-tag {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0;
+        border-radius: 12px;
+    }
+    
+    .result-category-tag {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.4rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+    }
+}
+
+/* למסכים קטנים מאוד */
+@media (max-width: 360px) {
+    .categories-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .category-icon {
+        font-size: 1.25rem;
+    }
+    
+    .category-name {
         font-size: 0.65rem;
     }
     
-    .results-count {
-        font-size: 0.75rem;
+    .search-container {
+        padding: 0.25rem 0.5rem;
+    }
+    
+    #search-input {
+        font-size: 0.9rem;
+        height: 1.75rem;
+    }
+    
+    .result-card {
+        padding: 0.75rem;
+    }
+    
+    .result-name {
+        font-size: 0.9rem;
+    }
+    
+    .result-description {
+        font-size: 0.8rem;
+    }
+    
+    .result-tag {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
     }
 }
 
-/* הסתרה בסיסית של מספר התוצאות */
-.results-count {
-    display: none;
-    font-size: 0.9rem;
-    color: var(--text-light);
-    margin-top: 0.5rem;
-    text-align: right;
-    padding: 0 0.5rem;
+/* התאמות למכשירי iOS */
+@supports (-webkit-touch-callout: none) {
+    #search-input {
+        font-size: 16px; /* מונע זום בעת הקלדה באייפון */
+    }
+    
+    .modal-content {
+        max-height: 85vh;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
-/* הצגת מספר התוצאות רק כאשר יש חיפוש פעיל */
-.results-count.has-results {
-    display: block;
-    animation: fadeIn 0.3s ease;
+/* התאמות למכשירים עם notch (גריעה) */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .app-header {
+        padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+    }
+    
+    .modal-content {
+        padding-top: calc(env(safe-area-inset-top) + 1rem);
+        padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+    }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+/* התאמות למשתמשים שמעדיפים הנפשות מופחתות */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
-.result-card[data-category="שירותים ומסגרות בזקנה"] {
-  border-right-color: #4ECDC4;
-}
-
-.result-card[data-category="ניצולי שואה"] {
-  border-right-color: #979797;
-}
-
-.result-card[data-category="מוקדים ממשלתיים"] {
-  border-right-color: #2a9d8f;
-}
-
-.result-card[data-category="תוכניות משרד לשיוון חברתי"] {
-  border-right-color: #86c5c2;
-}
-
-.result-card[data-category="מנועי חיפוש לזקנה"] {
-  border-right-color: #cccccc;
-}
-
-.result-card[data-category="בעלי מקצוע"] {
-  border-right-color: #4ECDC4;
-}
-
-.result-card[data-category="הטפול בזקן בישראל"] {
-  border-right-color: #666666;
+/* ==== הדפסה ==== */
+@media print {
+    .app-header, 
+    .search-section, 
+    .categories-section, 
+    .results-header, 
+    .modal-actions, 
+    .status-bar {
+        display: none;
+    }
+    
+    .app-container, 
+    .results-section, 
+    .results-container {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .result-card {
+        box-shadow: none;
+        border: 1px solid #000;
+        page-break-inside: avoid;
+    }
 }
