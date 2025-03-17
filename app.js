@@ -1210,7 +1210,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
     style.textContent = `
         .visible-grid {
-            display: grid !important;
             opacity: 1 !important;
             visibility: visible !important;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
