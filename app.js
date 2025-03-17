@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.23'; // Updated version number
+const APP_VERSION = '1.997.24'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -1175,39 +1175,48 @@ if (closePromptButton) {
 }
 
 // הוסף את זה בתחילת הקובץ, אחרי הגדרת המשתנים הגלובליים
-document.addEventListener('DOMContentLoaded', () => {
-    // הוסף סגנונות דינמיים
-    const style = document.createElement('style');
-    style.textContent = `
-        .visible-grid {
-            opacity: 1 !important;
-            visibility: visible !important;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-            gap: 1rem !important;
-            padding: 1rem !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // אתחול כפתור הToggle לקטגוריות
-     const toggleButton = document.getElementById('toggle-categories');
-    if (toggleButton) {
-        toggleButton.addEventListener('click', toggleCategories);
-        
-        // וודא שהקטגוריות מוסתרות בטעינה הראשונית
-        const categoriesContainer = document.getElementById('categories-container');
-        if (categoriesContainer) {
-            if (isCategoriesCollapsed) {
-                categoriesContainer.classList.add('collapsed');
-                document.querySelector('.toggle-icon').classList.remove('rotated');
-            } else {
-                categoriesContainer.classList.remove('collapsed');
-                document.querySelector('.toggle-icon').classList.add('rotated');
+    document.addEventListener('DOMContentLoaded', function() {
+        // אתחול כפתור הToggle לקטגוריות
+        const toggleButton = document.getElementById('toggle-categories');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', toggleCategories);
+            
+            // וודא שהקטגוריות מוסתרות בטעינה הראשונית
+            const categoriesContainer = document.getElementById('categories-container');
+            if (categoriesContainer) {
+                if (isCategoriesCollapsed) {
+                    categoriesContainer.classList.add('collapsed');
+                    document.querySelector('.toggle-icon').classList.remove('rotated');
+                } else {
+                    categoriesContainer.classList.remove('collapsed');
+                    document.querySelector('.toggle-icon').classList.add('rotated');
+                }
             }
         }
+        
+        // אתחול כפתורי תצוגת התוצאות
+        const gridViewButton = document.getElementById('grid-view-button');
+        const listViewButton = document.getElementById('list-view-button');
+        const resultsContainer = document.getElementById('results-container');
+        
+        // מאזיני אירועים לכפתורי התצוגה
+        if (gridViewButton && listViewButton && resultsContainer) {
+            gridViewButton.addEventListener('click', function() {
+                setViewMode('grid');
+            });
+            
+            listViewButton.addEventListener('click', function() {
+                setViewMode('list');
+            });
+            
+            // הגדרת התצוגה הראשונית מהאחסון המקומי
+            const savedViewMode = localStorage.getItem('viewMode') || 'grid';
+            setViewMode(savedViewMode);
         }
-});
-
+        
+        // אתחול הטיפול בקיבוע שורת החיפוש
+        handleStickySearch();
+    });
 function renderCategories() {
     if (!allServicesData || !Array.isArray(allServicesData)) {
         console.error('Invalid data format for categories');
