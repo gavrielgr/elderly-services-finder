@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.24'; // Updated version number
+const APP_VERSION = '1.997.25'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -1217,6 +1217,24 @@ if (closePromptButton) {
         // אתחול הטיפול בקיבוע שורת החיפוש
         handleStickySearch();
     });
+
+// פונקציה חדשה לטיפול באפקט הקיבוע של שורת החיפוש
+function handleStickySearch() {
+    const searchSection = document.querySelector('.search-section');
+    if (!searchSection) return;
+    
+    // כאשר גוללים את הדף, הוסף או הסר את המחלקה 'is-sticky'
+    window.addEventListener('scroll', function() {
+        const scrollPosition = window.scrollY;
+        
+        if (scrollPosition > 50) {
+            searchSection.classList.add('is-sticky');
+        } else {
+            searchSection.classList.remove('is-sticky');
+        }
+    });
+}
+
 function renderCategories() {
     if (!allServicesData || !Array.isArray(allServicesData)) {
         console.error('Invalid data format for categories');
@@ -1375,7 +1393,18 @@ function scrollToResults() {
 // פונקציה לעדכון מספר התוצאות
 function updateResultsCount(count) {
     const resultsCount = document.getElementById('results-count');
-    if (resultsCount) {
+    if (!resultsCount) return;
+    
+    // בדיקה אם יש חיפוש פעיל (טקסט או קטגוריה)
+    const hasActiveSearch = currentSearchQuery || activeCategory;
+    
+    if (hasActiveSearch) {
+        // הצג את מספר התוצאות
         resultsCount.textContent = `נמצאו ${count} תוצאות`;
+        resultsCount.classList.add('has-results');
+    } else {
+        // הסתר את מספר התוצאות
+        resultsCount.classList.remove('has-results');
     }
 }
+
