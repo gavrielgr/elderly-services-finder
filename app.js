@@ -1,4 +1,4 @@
-const APP_VERSION = '1.997.19'; // Updated version number
+const APP_VERSION = '1.997.20'; // Updated version number
 
 // At the beginning of your app.js, after defining APP_VERSION
 console.log('App Version:', APP_VERSION);
@@ -1237,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 });
-
+}
 function performSearch() {
     console.log('Performing search...');
     const query = searchInput.value.trim().toLowerCase();
