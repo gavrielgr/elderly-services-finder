@@ -499,11 +499,26 @@ body {
 }
 
 /* Search Section */
+/* קיבוע שורת החיפוש בחלק העליון בזמן גלילה */
 .search-section {
-    padding: 1rem !important;
-    width: 100% !important;
-    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    padding: 1rem;
+    background-color: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* צל מוגדל כאשר השורה "דבוקה" */
+.search-section.is-sticky {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* מרווח תחתון לשמירת המרחק משאר התוכן */
+.search-section.is-sticky + .categories-section {
+    margin-top: 0.5rem;
 }
 
 .filter-options {
@@ -2064,6 +2079,10 @@ body {
         font-size: 0.9rem;
     }
     
+    .search-section {
+        padding: 0.75rem;
+    }
+    
     .results-count {
         font-size: 0.8rem;
     }
@@ -2096,4 +2115,25 @@ body {
     .results-count {
         font-size: 0.75rem;
     }
+}
+
+/* הסתרה בסיסית של מספר התוצאות */
+.results-count {
+    display: none;
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: 0.5rem;
+    text-align: right;
+    padding: 0 0.5rem;
+}
+
+/* הצגת מספר התוצאות רק כאשר יש חיפוש פעיל */
+.results-count.has-results {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
