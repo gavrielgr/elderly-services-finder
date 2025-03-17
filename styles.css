@@ -1,17 +1,19 @@
 /* Global Styles */
 :root {
-    /* Colors */
-    --primary-color: #2563eb;
-    --primary-dark: #1d4ed8;
+    /* Colors - updated to match "יד ביד" logo */
+    --primary-color: #4ECDC4; /* טורקיז בהיר כמו היד בלוגו */
+    --primary-dark: #3e9e99; /* גרסה כהה יותר של הטורקיז */
     --secondary-color: #f8fafc;
     --bg-primary: #ffffff;
     --bg-secondary: #f1f5f9;
     --text-color: #0f172a;
     --text-light: #64748b;
     --border-color: #e2e8f0;
-    --success-color: #10b981;
+    --success-color: #4ECDC4; /* טורקיז גם לצבע ההצלחה */
     --error-color: #ef4444;
     --warning-color: #f59e0b;
+    --accent-color: #9c9c9c; /* צבע האפור שמופיע בלוגו */
+    --heart-color: #999999; /* צבע הלב בלוגו */
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -36,13 +38,15 @@
     --text-color: #f1f5f9;
     --text-light: #94a3b8;
     --border-color: #334155;
-    --primary-color: #3b82f6;
+    --primary-color: #4ECDC4; /* שמירה על הטורקיז גם במצב כהה */
     --card-bg: #1e293b;
     --modal-bg: #1e293b;
-    --header-bg: #1e40af;
-    --tag-bg: rgba(59, 130, 246, 0.1);
-    --tag-border: rgba(59, 130, 246, 0.3);
-    --tag-color: #60a5fa;
+    --header-bg: #3e9e99; /* כותרת במצב כהה */
+    --tag-bg: rgba(78, 205, 196, 0.1); /* עדכון רקע התגיות */
+    --tag-border: rgba(78, 205, 196, 0.3); /* עדכון מסגרת התגיות */
+    --tag-color: #80e0d8; /* צבע טקסט תגיות במצב כהה */
+    --accent-color: #9c9c9c;
+    --heart-color: #999999;
 }
 
 /* Base Styles */
@@ -154,10 +158,10 @@ button {
 
 /* Tags */
 .result-tag, .service-tag {
-    background-color: var(--tag-bg);
-    border: 1px solid var(--tag-border);
+    background-color: rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(78, 205, 196, 0.3);
     color: var(--primary-color);
-    border-radius: var(--radius-full);
+    border-radius: var(--radius-md);
     padding: 0.25rem 0.75rem;
     font-size: 0.875rem;
     transition: all var(--transition-fast);
@@ -167,6 +171,7 @@ button {
     background-color: var(--primary-color);
     color: white;
 }
+
 
 /* Modal */
 .modal-content {
@@ -186,6 +191,7 @@ button {
     color: white;
     box-shadow: var(--shadow-md);
 }
+
 
 /* סגנונות לכפתורי תצוגה */
 .view-toggle {
@@ -269,7 +275,7 @@ button {
 
 /* תיקון רקע בראש האתר */
 [data-theme="dark"] .app-header {
-  background: linear-gradient(135deg, #1a73e8 0%, #236b6e 100%);
+  background: linear-gradient(135deg, #4ECDC4 0%, #3e9e99 100%);
 }
 
 /* תיקון רקע כרטיסי קטגוריות */
@@ -350,8 +356,8 @@ button {
 
 /* תיקון סימון קטגוריה פעילה */
 [data-theme="dark"] .category-card.active {
-  background-color: #2c4a7c;
-  border-color: var(--primary-color);
+  background-color: #4ECDC4;
+  border-color: #4ECDC4;
 }
 
 [data-theme="dark"] .category-card:hover {
@@ -359,46 +365,47 @@ button {
 }
 
 /* תיקון צבעי קטגוריות במצב כהה */
+
 [data-theme="dark"] .result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
-  background-color: rgba(66, 133, 244, 0.2);
-  border-color: rgba(66, 133, 244, 0.4);
-  color: #87b3ff;
+  background-color: rgba(78, 205, 196, 0.2);
+  border-color: rgba(78, 205, 196, 0.4);
+  color: #80e0d8;
 }
 
 [data-theme="dark"] .result-card[data-category="ניצולי שואה"] .result-tag {
-  background-color: rgba(251, 188, 4, 0.2);
-  border-color: rgba(251, 188, 4, 0.4);
-  color: #ffd54f;
+  background-color: rgba(151, 151, 151, 0.2);
+  border-color: rgba(151, 151, 151, 0.4);
+  color: #cccccc;
 }
 
 [data-theme="dark"] .result-card[data-category="מוקדים ממשלתיים"] .result-tag {
-  background-color: rgba(15, 157, 88, 0.2);
-  border-color: rgba(15, 157, 88, 0.4);
-  color: #66bb6a;
+  background-color: rgba(42, 157, 143, 0.2);
+  border-color: rgba(42, 157, 143, 0.4);
+  color: #61d1c6;
 }
 
 [data-theme="dark"] .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
-  background-color: rgba(156, 39, 176, 0.2);
-  border-color: rgba(156, 39, 176, 0.4);
-  color: #ce93d8;
+  background-color: rgba(134, 197, 194, 0.2);
+  border-color: rgba(134, 197, 194, 0.4);
+  color: #a3e0dd;
 }
 
 [data-theme="dark"] .result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
-  background-color: rgba(255, 112, 67, 0.2);
-  border-color: rgba(255, 112, 67, 0.4);
-  color: #ffab91;
+  background-color: rgba(204, 204, 204, 0.2);
+  border-color: rgba(204, 204, 204, 0.4);
+  color: #dddddd;
 }
 
 [data-theme="dark"] .result-card[data-category="בעלי מקצוע"] .result-tag {
-  background-color: rgba(3, 169, 244, 0.2);
-  border-color: rgba(3, 169, 244, 0.4);
-  color: #81d4fa;
+  background-color: rgba(78, 205, 196, 0.2);
+  border-color: rgba(78, 205, 196, 0.4);
+  color: #80e0d8;
 }
 
 [data-theme="dark"] .result-card[data-category="הטפול בזקן בישראל"] .result-tag {
-  background-color: rgba(233, 30, 99, 0.2);
-  border-color: rgba(233, 30, 99, 0.4);
-  color: #f48fb1;
+  background-color: rgba(102, 102, 102, 0.2);
+  border-color: rgba(102, 102, 102, 0.4);
+  color: #aaaaaa;
 }
 
 /* תיקון העיצוב של תגיות הקטגוריות בכרטיסי התוצאות */
@@ -575,6 +582,7 @@ body {
     overflow: hidden;
 }
 
+/* Category Colors */
 .category-card::before {
     content: '';
     position: absolute;
@@ -603,6 +611,7 @@ body {
     border-color: var(--primary-color);
 }
 
+
 .category-card.active .category-name,
 .category-card.active .category-icon {
     color: white;
@@ -618,33 +627,32 @@ body {
     transform: scale(1.1);
 }
 
-/* צבעים ייחודיים לכל קטגוריה */
 .category-card[data-category="שירותים ומסגרות בזקנה"] {
-  --category-color: #4285f4; /* כחול */
+  --category-color: #4ECDC4; /* טורקיז */
 }
 
 .category-card[data-category="ניצולי שואה"] {
-  --category-color: #fbbc04; /* צהוב */
+  --category-color: #979797; /* אפור כהה */
 }
 
 .category-card[data-category="מוקדים ממשלתיים"] {
-  --category-color: #0f9d58; /* ירוק */
+  --category-color: #2a9d8f; /* טורקיז כהה */
 }
 
 .category-card[data-category="תוכניות משרד לשיוון חברתי"] {
-  --category-color: #9c27b0; /* סגול */
+  --category-color: #86c5c2; /* טורקיז בהיר */
 }
 
 .category-card[data-category="מנועי חיפוש לזקנה"] {
-  --category-color: #ff7043; /* כתום */
+  --category-color: #cccccc; /* אפור בהיר */
 }
 
 .category-card[data-category="בעלי מקצוע"] {
-  --category-color: #03a9f4; /* תכלת */
+  --category-color: #4ECDC4; /* טורקיז */
 }
 
 .category-card[data-category="הטפול בזקן בישראל"] {
-  --category-color: #e91e63; /* ורוד */
+  --category-color: #666666; /* אפור כהה */
 }
 
 .category-name {
@@ -1235,46 +1243,47 @@ body {
 
 /* צבע תגית לפי קטגוריה */
 .result-card[data-category="שירותים ומסגרות בזקנה"] .result-tag {
-  background-color: rgba(66, 133, 244, 0.1);
-  border-color: rgba(66, 133, 244, 0.3);
-  color: #4285f4;
+  background-color: rgba(78, 205, 196, 0.1);
+  border-color: rgba(78, 205, 196, 0.3);
+  color: #4ECDC4;
 }
 
 .result-card[data-category="ניצולי שואה"] .result-tag {
-  background-color: rgba(251, 188, 4, 0.1);
-  border-color: rgba(251, 188, 4, 0.3);
-  color: #b06000;
+  background-color: rgba(151, 151, 151, 0.1);
+  border-color: rgba(151, 151, 151, 0.3);
+  color: #979797;
 }
 
 .result-card[data-category="מוקדים ממשלתיים"] .result-tag {
-  background-color: rgba(15, 157, 88, 0.1);
-  border-color: rgba(15, 157, 88, 0.3);
-  color: #0f9d58;
+  background-color: rgba(42, 157, 143, 0.1);
+  border-color: rgba(42, 157, 143, 0.3);
+  color: #2a9d8f;
 }
 
 .result-card[data-category="תוכניות משרד לשיוון חברתי"] .result-tag {
-  background-color: rgba(156, 39, 176, 0.1);
-  border-color: rgba(156, 39, 176, 0.3);
-  color: #9c27b0;
+  background-color: rgba(134, 197, 194, 0.1);
+  border-color: rgba(134, 197, 194, 0.3);
+  color: #86c5c2;
 }
 
 .result-card[data-category="מנועי חיפוש לזקנה"] .result-tag {
-  background-color: rgba(255, 112, 67, 0.1);
-  border-color: rgba(255, 112, 67, 0.3);
-  color: #e64a19;
+  background-color: rgba(204, 204, 204, 0.1);
+  border-color: rgba(204, 204, 204, 0.3);
+  color: #999999;
 }
 
 .result-card[data-category="בעלי מקצוע"] .result-tag {
-  background-color: rgba(3, 169, 244, 0.1);
-  border-color: rgba(3, 169, 244, 0.3);
-  color: #0288d1;
+  background-color: rgba(78, 205, 196, 0.1);
+  border-color: rgba(78, 205, 196, 0.3);
+  color: #4ECDC4;
 }
 
 .result-card[data-category="הטפול בזקן בישראל"] .result-tag {
-  background-color: rgba(233, 30, 99, 0.1);
-  border-color: rgba(233, 30, 99, 0.3);
-  color: #e91e63;
+  background-color: rgba(102, 102, 102, 0.1);
+  border-color: rgba(102, 102, 102, 0.3);
+  color: #666666;
 }
+
 
 /* סגנון תגית קטגוריה */
 .result-category-tag {
@@ -2136,4 +2145,32 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+.result-card[data-category="שירותים ומסגרות בזקנה"] {
+  border-right-color: #4ECDC4;
+}
+
+.result-card[data-category="ניצולי שואה"] {
+  border-right-color: #979797;
+}
+
+.result-card[data-category="מוקדים ממשלתיים"] {
+  border-right-color: #2a9d8f;
+}
+
+.result-card[data-category="תוכניות משרד לשיוון חברתי"] {
+  border-right-color: #86c5c2;
+}
+
+.result-card[data-category="מנועי חיפוש לזקנה"] {
+  border-right-color: #cccccc;
+}
+
+.result-card[data-category="בעלי מקצוע"] {
+  border-right-color: #4ECDC4;
+}
+
+.result-card[data-category="הטפול בזקן בישראל"] {
+  border-right-color: #666666;
 }
