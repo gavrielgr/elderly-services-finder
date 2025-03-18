@@ -54,6 +54,15 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js')
             .then(registration => {
                 console.log('Service Worker registered successfully');
+                
+                // Listen for updates from the service worker
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data.type === 'SERVICE_WORKER_UPDATED') {
+                        console.log('New service worker version available:', event.data.version);
+                        // Force reload to get the latest version
+                        window.location.reload(true);
+                    }
+                });
             })
             .catch(error => {
                 console.log('Service Worker registration failed:', error);
