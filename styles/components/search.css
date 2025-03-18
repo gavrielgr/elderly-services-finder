@@ -11,7 +11,7 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-    background-image: url('/icons/search.png'); /* Updated to use the correct image path */
+    background-image: url('/icons/search.png'); /* Correct path to the root icons folder */
     background-size: cover; /* Ensure the image covers the entire section */
     background-position: center; /* Center the image */
 }
