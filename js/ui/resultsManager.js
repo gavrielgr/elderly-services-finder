@@ -36,43 +36,22 @@ export class ResultsManager {
             return;
         }
 
-        // Check if debug mode is enabled
-        const urlParams = new URLSearchParams(window.location.search);
-        const isDebugMode = urlParams.get('debug') === 'true';
-
-        // Configure Fuse.js options
-        const fuse = new Fuse(services, {
-            keys: ['name', 'description', 'tags'], // Fields to search
-            threshold: 0.2, // Lower threshold for stricter matching
-            distance: 40, // Smaller distance for closer matches
-            ignoreLocation: true, // Ignore match location
-            includeMatches: isDebugMode, // Include match details only in debug mode
-        });
-
-        let results = searchQuery ? fuse.search(searchQuery) : services;
-
-        // Log why each result was found if debug mode is enabled
-        if (isDebugMode) {
-            results.forEach(result => {
-                if (result.matches) {
-                    console.log(`Result found: ${result.item.name}`);
-                    result.matches.forEach(match => {
-                        console.log(`  Matched field: ${match.key}`);
-                        console.log(`  Matched value: ${match.value}`);
-                        console.log(`  Matched indices:`, match.indices);
-                    });
-                }
+        let results;
+        
+        // If we have a search query, use Fuse.js
+        if (searchQuery) {
+            const fuse = new Fuse(services, {
+                keys: ['name', 'description', 'tags'],
+                threshold: 0.2,
+                distance: 40,
+                ignoreLocation: true
             });
-        }
 
-        // Extract items from Fuse.js results
-        results = results.map(result => {
-            if (isDebugMode && result.matches) {
-                // Highlight matched text only in debug mode
-                result.item.highlightedFields = this.getHighlightedFields(result.matches);
-            }
-            return result.item;
-        });
+            results = fuse.search(searchQuery).map(result => result.item);
+        } else {
+            // If no search query, use all services
+            results = services;
+        }
 
         // Filter by category if active
         if (activeCategory) {
