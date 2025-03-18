@@ -22,6 +22,16 @@ if (process.argv.includes('--bump')) {
     packageJson.version = newVersion;
     writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
     console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
+    
+    // Update constants.js with new version
+    const CONSTANTS_PATH = join(__dirname, 'js', 'config', 'constants.js');
+    const constantsContent = readFileSync(CONSTANTS_PATH, 'utf8');
+    const newConstantsContent = constantsContent.replace(
+        /BUILD_TIMESTAMP = .*?;/,
+        `BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`
+    );
+    writeFileSync(CONSTANTS_PATH, newConstantsContent);
+
     process.exit(0);
 }
 
