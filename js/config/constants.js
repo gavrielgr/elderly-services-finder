@@ -1,6 +1,12 @@
-export const APP_VERSION = '1.997.27';
-export const BUILD_TIMESTAMP = new Date().toISOString();
-export const CACHE_VERSION = `${APP_VERSION}-${BUILD_TIMESTAMP}`;
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8'));
+
+export const BUILD_TIMESTAMP = '2025-03-18T04:18:14.758Z';
+export const CACHE_VERSION = `${packageJson.version}-${BUILD_TIMESTAMP}`;
 export const DB_NAME = 'elderlyServicesDB';
 export const DB_VERSION = 2;
 export const STORE_NAME = 'servicesData';
