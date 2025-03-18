@@ -1,4 +1,4 @@
-import { APP_VERSION } from './js/config/constants.js';
+import { APP_VERSION, CACHE_VERSION } from './js/config/constants.js';
 import { dataService } from './js/services/dataService.js';
 import { UIManager } from './js/ui/uiManager.js';
 import { InstallManager } from './js/pwa/installManager.js';
