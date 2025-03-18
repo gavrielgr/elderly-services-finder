@@ -83,8 +83,6 @@ export class CategoryManager {
             toggleIcon?.classList.add('rotated');
             categoriesSection?.classList.remove('collapsed');
         }
-        
-        localStorage.setItem('categoriesCollapsed', this.isCategoriesCollapsed);
     }
 
     updateCategoriesVisibility() {
@@ -92,16 +90,11 @@ export class CategoryManager {
         const categoriesContainer = this.categoriesContainer;
         const categoriesSection = document.querySelector('.categories-section');
         
-        this.isCategoriesCollapsed = localStorage.getItem('categoriesCollapsed') === 'true';
+        // Always start expanded
+        this.isCategoriesCollapsed = false;
         
-        if (this.isCategoriesCollapsed) {
-            categoriesContainer?.classList.add('collapsed');
-            toggleIcon?.classList.remove('rotated');
-            categoriesSection?.classList.add('collapsed');
-        } else {
-            categoriesContainer?.classList.remove('collapsed');
-            toggleIcon?.classList.add('rotated');
-            categoriesSection?.classList.remove('collapsed');
-        }
+        categoriesContainer?.classList.remove('collapsed');
+        toggleIcon?.classList.add('rotated');
+        categoriesSection?.classList.remove('collapsed');
     }
 }

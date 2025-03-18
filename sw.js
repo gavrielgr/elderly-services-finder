@@ -1,17 +1,43 @@
 // Service Worker for Elderly Services Finder
 
-// This version number should match APP_VERSION in app.js
-const CACHE_VERSION = '1.997.27';
+// This version is injected during build
+const CACHE_VERSION = '__APP_VERSION__'; // Will be replaced during build
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/favicon.ico',
+  './',
+  './index.html',
+  './styles/main.css',
+  './styles/base/reset.css',
+  './styles/base/variables.css',
+  './styles/base/typography.css',
+  './styles/components/header.css',
+  './styles/components/search.css',
+  './styles/components/categories.css',
+  './styles/components/results.css',
+  './styles/components/modal.css',
+  './styles/components/install-prompt.css',
+  './styles/components/status-bar.css',
+  './styles/layout/responsive.css',
+  './styles/layout/print.css',
+  './styles/themes/dark-mode.css',
+  './app.js',
+  './js/ui/uiManager.js',
+  './js/ui/searchManager.js',
+  './js/ui/categoryManager.js',
+  './js/ui/resultsManager.js',
+  './js/ui/modalManager.js',
+  './js/services/dataService.js',
+  './js/services/storageService.js',
+  './js/utils/helpers.js',
+  './js/config/constants.js',
+  './js/config/api.js',
+  './js/pwa/installManager.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/favicon.ico',
+  './icons/favicon-32x32.png',
+  './icons/favicon-16x16.png',
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap'
 ];
 
