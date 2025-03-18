@@ -140,3 +140,30 @@
     opacity: 1;
     visibility: visible;
 }
+
+.results-count {
+    display: block;
+    font-size: 1.1rem;
+    color: var(--text-light);
+    padding: 0.5rem;
+    text-align: right;
+    margin-bottom: 1rem;
+}
+
+/* Mobile screens */
+@media (max-width: 768px) {
+    .results-count {
+        font-size: 0.8rem; /* Reduce font size */
+        height: auto; /* Adjust height to fit content */
+        padding: 0.25rem 0.5rem; /* Adjust padding */
+    }
+}
+
+/* Desktop screens */
+@media (min-width: 769px) {
+    .results-count {
+        font-size: 1.1rem; /* Ensure font size is appropriate for desktop */
+        height: auto; /* Adjust height to fit content */
+        padding: 0.5rem; /* Adjust padding */
+    }
+}
