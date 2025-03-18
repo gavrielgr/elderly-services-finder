@@ -1,9 +1,10 @@
 {
   "name": "elderly-services-finder",
-  "version": "1.99.28",
+  "version": "1.99.29",
   "type": "module",
   "scripts": {
     "build": "node build.js",
-    "push": "git add . && git commit -m \"v$npm_package_version\" && git push"
+    "bump": "node build.js --bump",
+    "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"
   }
 }
