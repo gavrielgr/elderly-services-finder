@@ -1,4 +1,6 @@
 export const APP_VERSION = '1.997.27';
+export const BUILD_TIMESTAMP = new Date().toISOString();
+export const CACHE_VERSION = `${APP_VERSION}-${BUILD_TIMESTAMP}`;
 export const DB_NAME = 'elderlyServicesDB';
 export const DB_VERSION = 2;
 export const STORE_NAME = 'servicesData';
