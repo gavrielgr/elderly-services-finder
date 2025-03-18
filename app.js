@@ -1,7 +1,4 @@
-import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import { CACHE_VERSION } from './js/config/constants.js';
+import { CACHE_VERSION, APP_VERSION } from './js/config/constants.js';
 import { dataService } from './js/services/dataService.js';
 import { UIManager } from './js/ui/uiManager.js';
 import { InstallManager } from './js/pwa/installManager.js';
@@ -14,14 +11,11 @@ let deferredPrompt = null;
 const uiManager = new UIManager();
 const installManager = new InstallManager();
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
-
 // Initialize the application
 document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
-    console.log(`Elderly Services Finder v${packageJson.version}`);
+    console.log(`Elderly Services Finder v${APP_VERSION}`);
     console.log(`Cache Version: ${CACHE_VERSION}`);
     
     uiManager.updateConnectionStatus(isOnline);
