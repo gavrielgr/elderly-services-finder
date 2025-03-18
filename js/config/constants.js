@@ -1,5 +1,5 @@
-// NOTE: These values are injected during build
-export const BUILD_TIMESTAMP = '2025-03-18T04:20:52.708Z';
+// These values are injected during build
+export const BUILD_TIMESTAMP = '2025-03-18T04:22:41.116Z';
 export const APP_VERSION = '1.99.33';
 export const CACHE_VERSION = `${APP_VERSION}-${BUILD_TIMESTAMP}`;
 
