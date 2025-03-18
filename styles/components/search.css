@@ -2,7 +2,7 @@
     position: sticky;
     top: 0;
     z-index: 90;
-    padding: 1rem;
+    padding: 1rem; /* Adjust padding */
     background-color: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -14,6 +14,10 @@
     background-image: url('../../icons/search.png'); /* Navigate up two levels to reach root */
     background-size: cover; /* Ensure the image covers the entire section */
     background-position: center; /* Center the image */
+    min-height: 100px; /* Reduce overall height */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Align items to top */
 }
 
 .search-container {
@@ -25,9 +29,10 @@
     background-color: var(--bg-secondary);
     border-radius: 24px;
     padding: 0.5rem 0.75rem;
-    height: 52px;
+    height: 48px; /* Keep original height */
     order: 1;
     min-width: 0;
+    margin-bottom: 0.5rem; /* Add consistent spacing */
 }
 
 #search-input {
@@ -64,21 +69,31 @@
 }
 
 .results-count {
-    display: none;
+    display: block; /* Always show to maintain space */
     font-size: 1.1rem;
     color: var(--text-light);
-    margin-top: 0.5rem;
     text-align: right;
     padding: 0 0.5rem;
     order: 3;
     width: 100%;
     background-color: rgba(255, 255, 255, 0.7); /* Add transparent white background */
     border-radius: 8px; /* Add slight rounding for better aesthetics */
+    height: 24px; /* Fixed height for results area */
+    margin: 0; /* Remove margin that causes jumping */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s;
+    position: relative; /* Adjust positioning */
+    bottom: 0; /* Adjust bottom position */
+    left: 0;
+    right: 0;
 }
 
 .results-count.has-results {
     display: block;
-    animation: fadeIn 0.3s ease;
+    opacity: 1;
+    visibility: visible;
+    animation: none; /* Remove animation to prevent layout shifts */
 }
 
 .theme-toggle {
