@@ -124,7 +124,9 @@ export class ResultsManager {
                               this.uiManager.categoryManager.activeCategory;
         
         if (hasActiveSearch) {
-            this.resultsCount.textContent = `נמצאו ${count} תוצאות`;
+            const activeCategory = this.uiManager.categoryManager.activeCategory;
+            const categoryText = activeCategory ? ` בקטגוריה: ${activeCategory}` : '';
+            this.resultsCount.textContent = `נמצאו ${count} תוצאות${categoryText}`;
             this.resultsCount.classList.add('has-results');
         } else {
             this.resultsCount.classList.remove('has-results');
@@ -134,7 +136,9 @@ export class ResultsManager {
     scrollToResults() {
         const resultsSection = document.querySelector('.results-section');
         if (resultsSection) {
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const offset = 130; // Adjust this value to leave space for the view toggle
+            const top = resultsSection.offsetTop - offset;
+            window.scrollTo({ top, behavior: 'smooth' });
         }
     }
 }

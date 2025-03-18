@@ -42,7 +42,6 @@
 }
 
 #search-button,
-#voice-search-button,
 #clear-search-button {
     display: inline-flex;
     align-items: center;

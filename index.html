@@ -53,10 +53,9 @@
                 </button>
             </div>
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="חיפוש פתרונות..." aria-label="חיפוש">
+                <input type="text" id="search-input" placeholder="חיפוש" aria-label="חיפוש">
                 <button id="clear-search-button" aria-label="נקה חיפוש" class="hidden">✕</button>
                 <button id="search-button" aria-label="חפש">🔍</button>
-                <button id="voice-search-button" aria-label="חיפוש קולי">🎤</button>
             </div>
             <div id="results-count" class="results-count">נמצאו 0 תוצאות</div>
         </section>
@@ -64,9 +63,9 @@
         <!-- Categories Section -->
        <section class="categories-section">
             <div class="categories-header">
-                <h2>קטגוריות</h2>
                 <button id="toggle-categories" class="toggle-button" aria-label="הצג/הסתר קטגוריות">
                     <span class="toggle-icon">▼</span>
+                    <span id="categories-title">קטגוריות</span>
                 </button>
             </div>
             <div id="categories-container" class="categories-container">
@@ -110,6 +109,10 @@
         <!-- App Status Bar -->
         <div id="status-bar" class="status-bar"></div>
     </div>
+
+    <!-- Scroll Up Button -->
+    <button id="scroll-up-button" class="scroll-up-button hidden" aria-label="גלול למעלה">⬆️</button>
+
     <!-- Install Prompt -->
 <div id="install-prompt" class="install-prompt">
     <div class="install-prompt-content">
