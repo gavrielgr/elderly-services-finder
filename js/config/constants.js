@@ -1,12 +1,9 @@
-import { readFileSync } from 'fs';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+// NOTE: These values are injected during build
+export const BUILD_TIMESTAMP = '2025-03-18T04:20:52.708Z';
+export const APP_VERSION = '1.99.33';
+export const CACHE_VERSION = `${APP_VERSION}-${BUILD_TIMESTAMP}`;
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJson = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8'));
-
-export const BUILD_TIMESTAMP = '2025-03-18T04:18:14.758Z';
-export const CACHE_VERSION = `${packageJson.version}-${BUILD_TIMESTAMP}`;
+// Database constants
 export const DB_NAME = 'elderlyServicesDB';
 export const DB_VERSION = 2;
 export const STORE_NAME = 'servicesData';
@@ -14,6 +11,7 @@ export const DATA_KEY = 'allServicesData';
 export const LAST_UPDATED_KEY = 'lastUpdated';
 export const VERSION_KEY = 'appVersion';
 
+// Icons mapping
 export const categoryIcons = {
     'שירותים ומסגרות בזקנה': '🏠',
     'ניצולי שואה': '🕯️',

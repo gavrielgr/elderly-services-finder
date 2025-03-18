@@ -26,10 +26,9 @@ if (process.argv.includes('--bump')) {
     // Update constants.js with new version
     const CONSTANTS_PATH = join(__dirname, 'js', 'config', 'constants.js');
     const constantsContent = readFileSync(CONSTANTS_PATH, 'utf8');
-    const newConstantsContent = constantsContent.replace(
-        /BUILD_TIMESTAMP = .*?;/,
-        `BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`
-    );
+    const newConstantsContent = constantsContent
+        .replace(/BUILD_TIMESTAMP = .*?;/, `BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`)
+        .replace(/APP_VERSION = .*?;/, `APP_VERSION = '${packageJson.version}';`);
     writeFileSync(CONSTANTS_PATH, newConstantsContent);
 
     process.exit(0);
@@ -45,3 +44,11 @@ const newContent = swContent.replace(
 writeFileSync(SW_PATH, newContent);
 
 console.log(`Updated service worker version to ${APP_VERSION}-${BUILD_TIMESTAMP}`);
+
+// Update constants.js
+const CONSTANTS_PATH = join(__dirname, 'js', 'config', 'constants.js');
+const constantsContent = readFileSync(CONSTANTS_PATH, 'utf8');
+const newConstantsContent = constantsContent
+    .replace(/BUILD_TIMESTAMP = .*?;/, `BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`)
+    .replace(/APP_VERSION = .*?;/, `APP_VERSION = '${packageJson.version}';`);
+writeFileSync(CONSTANTS_PATH, newConstantsContent);
