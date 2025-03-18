@@ -15,7 +15,8 @@ const installManager = new InstallManager();
 document.addEventListener('DOMContentLoaded', initApp);
 
 async function initApp() {
-    console.log('App Version:', APP_VERSION);
+    console.log(`Elderly Services Finder v${APP_VERSION}`);
+    console.log(`Cache Version: ${CACHE_VERSION}`);
     
     uiManager.updateConnectionStatus(isOnline);
     
