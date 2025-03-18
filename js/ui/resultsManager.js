@@ -45,8 +45,8 @@ export class ResultsManager {
     }
 
     renderDefaultResults() {
-        this.resultsContainer.innerHTML = '<div class="results-message">הזן מילות חיפוש או בחר קטגוריה</div>';
-        this.updateResultsCount(0);
+        this.resultsContainer.innerHTML = '';
+        this.updateResultsCount(0, false);
     }
 
     initializeViewToggle() {
@@ -67,7 +67,7 @@ export class ResultsManager {
         container.innerHTML = '';
         
         if (results.length === 0) {
-            container.innerHTML = '<div class="no-results">לא נמצאו תוצאות</div>';
+            this.updateResultsCount(0);
             return;
         }
 
@@ -116,19 +116,17 @@ export class ResultsManager {
         }
     }
 
-    updateResultsCount(count) {
+    updateResultsCount(count, hasActiveSearch = true) {
         if (!this.resultsCount) return;
-        
-        const hasActiveSearch = this.uiManager.searchManager.currentQuery || 
-                              this.uiManager.categoryManager.activeCategory;
-        
-        if (hasActiveSearch) {
+
+        if (!hasActiveSearch) {
+            this.resultsCount.textContent = 'קלידו מילות חיפוש או בחרו קטגוריה'; // Default text
+        } else {
             const activeCategory = this.uiManager.categoryManager.activeCategory;
             const categoryText = activeCategory ? ` בקטגוריה: ${activeCategory}` : '';
             this.resultsCount.textContent = `נמצאו ${count} תוצאות${categoryText}`;
-            this.resultsCount.classList.add('has-results');
-        } else {
-            this.resultsCount.classList.remove('has-results');
         }
+
+        this.resultsCount.classList.add('has-results'); // Always show results-count
     }
 }
