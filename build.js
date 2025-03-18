@@ -36,8 +36,7 @@ function updateFile(path, replacements) {
 updateFile(
     join(__dirname, 'sw.js'),
     [
-        ['const CACHE_VERSION = .*?;', `const CACHE_VERSION = '${APP_VERSION}';`],
-        ['const CACHE_NAME = `elderly-services-cache-v.*?`;', `const CACHE_NAME = \`elderly-services-cache-v${APP_VERSION}\`;`]
+        [/const CACHE_VERSION = .*?;/, `const CACHE_VERSION = '${APP_VERSION}';`]
     ]
 );
 
