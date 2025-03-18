@@ -11,7 +11,7 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
-    background-image: url('/elderly-services-finder/icons/search.png'); /* Absolute path for both environments */
+    background-image: url('../../icons/search.png'); /* Navigate up two levels to reach root */
     background-size: cover; /* Ensure the image covers the entire section */
     background-position: center; /* Center the image */
 }
