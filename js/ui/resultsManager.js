@@ -187,14 +187,13 @@ export class ResultsManager {
         if (!this.resultsCount) return;
 
         if (!hasActiveSearch) {
-            this.resultsCount.textContent = 'קלידו מילות חיפוש או בחרו קטגוריה'; // Default text
+            this.resultsCount.textContent = 'הקלידו מילות חיפוש או בחרו קטגוריה'; // Default text
         } else {
             const activeCategory = this.uiManager.categoryManager.activeCategory;
             const categoryText = activeCategory ? ` בקטגוריה: ${activeCategory}` : '';
             this.resultsCount.textContent = `נמצאו ${count} תוצאות${categoryText}`;
         }
 
-        this.resultsCount.classList.add('has-results'); // Always show results-count
     }
 
     showHebrewSuggestion(hebrewText) {
@@ -206,7 +205,6 @@ export class ResultsManager {
                 ${hebrewText}
             </span>?
         `;
-        this.resultsCount.classList.add('has-results');
 
         // Add click handler for the suggestion
         const suggestionElement = this.resultsCount.querySelector('.hebrew-suggestion');
