@@ -70,3 +70,24 @@
     color: black;
     text-decoration: none;
 }
+
+.theme-switch {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+    margin-left: 1rem;
+    color: var(--text-light);
+    transition: color 0.2s;
+}
+
+.theme-switch:hover {
+    color: var(--primary-color);
+}
+
+@media (max-width: 768px) {
+    .theme-switch {
+        font-size: 1.2rem;
+        margin-left: 0.5rem;
+    }
+}
