@@ -35,7 +35,10 @@ function updateFile(path, replacements) {
 // Update service worker
 updateFile(
     join(__dirname, 'sw.js'),
-    [['"__APP_VERSION__"', `"${APP_VERSION}-${BUILD_TIMESTAMP}"`]]
+    [
+        ['const CACHE_VERSION = .*?;', `const CACHE_VERSION = '${APP_VERSION}';`],
+        ['const CACHE_NAME = `elderly-services-cache-v.*?`;', `const CACHE_NAME = \`elderly-services-cache-v${APP_VERSION}\`;`]
+    ]
 );
 
 // Update constants.js with more specific replacements
