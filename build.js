@@ -38,12 +38,12 @@ updateFile(
     [['"__APP_VERSION__"', `"${APP_VERSION}-${BUILD_TIMESTAMP}"`]]
 );
 
-// Update constants.js
+// Update constants.js with more specific replacements
 updateFile(
     join(__dirname, 'js', 'config', 'constants.js'),
     [
-        [/'__BUILD_TIMESTAMP__'/, `'${BUILD_TIMESTAMP}'`],
-        [/'__APP_VERSION__'/, `'${APP_VERSION}'`]
+        [/export const BUILD_TIMESTAMP = .*?;/, `export const BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`],
+        [/export const APP_VERSION = .*?;/, `export const APP_VERSION = '${APP_VERSION}';`]
     ]
 );
 
