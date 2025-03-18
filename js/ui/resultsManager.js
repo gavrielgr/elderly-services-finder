@@ -76,6 +76,9 @@ export class ResultsManager {
 
         if (hebrewText.length > 3) {
             const services = dataService.getData();
+            const activeCategory = this.uiManager.categoryManager.activeCategory;
+
+            // Create Fuse instance just like in performSearch
             const fuse = new Fuse(services, {
                 keys: ['name', 'description', 'tags'],
                 threshold: 0.2,
@@ -83,7 +86,13 @@ export class ResultsManager {
                 ignoreLocation: true
             });
 
-            const results = fuse.search(hebrewText);
+            let results = fuse.search(hebrewText).map(result => result.item);
+
+            // Filter by category if active, just like in performSearch
+            if (activeCategory) {
+                results = results.filter(service => service.category === activeCategory);
+            }
+
             if (results.length > 0) {
                 return hebrewText; // Suggest only if results are found
             }
