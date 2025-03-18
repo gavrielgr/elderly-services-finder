@@ -58,6 +58,20 @@
     text-decoration: none;
 }
 
+.service-tag {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    margin: 0.25rem; /* Add margin to create spacing between tags */
+}
+
 .modal-actions {
     display: flex;
     justify-content: space-around;
