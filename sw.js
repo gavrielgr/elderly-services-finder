@@ -1,7 +1,7 @@
 // Service Worker for Elderly Services Finder
 
 // This version is injected during build
-const CACHE_VERSION = '1.99.53'; // Updated version
+const CACHE_VERSION = '1.99.54'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 const ASSETS_TO_CACHE = [
   './',
@@ -38,6 +38,8 @@ const ASSETS_TO_CACHE = [
   './icons/favicon.ico',
   './icons/favicon-32x32.png',
   './icons/favicon-16x16.png',
+  './icons/search.png',  
+  './icons/logo.png',    
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap'
 ];
 
@@ -205,7 +207,6 @@ self.addEventListener('push', (event) => {
     const options = {
       body: data.body || 'יש עדכון חדש במידע!',
       icon: '/icons/icon-192.png',
-      badge: '/icons/badge.png',
       dir: 'rtl', // Right-to-left for Hebrew
       lang: 'he'
     };
