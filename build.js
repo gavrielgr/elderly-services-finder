@@ -22,33 +22,33 @@ if (process.argv.includes('--bump')) {
     packageJson.version = newVersion;
     writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
     console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
-    
-    // Update constants.js with new version
-    const CONSTANTS_PATH = join(__dirname, 'js', 'config', 'constants.js');
-    const constantsContent = readFileSync(CONSTANTS_PATH, 'utf8');
-    const newConstantsContent = constantsContent
-        .replace(/BUILD_TIMESTAMP = .*?;/, `BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`)
-        .replace(/APP_VERSION = .*?;/, `APP_VERSION = '${packageJson.version}';`);
-    writeFileSync(CONSTANTS_PATH, newConstantsContent);
-
-    process.exit(0);
 }
 
-// Update sw.js
-const SW_PATH = join(__dirname, 'sw.js');
-const swContent = readFileSync(SW_PATH, 'utf8');
-const newContent = swContent.replace(
-    '"__APP_VERSION__"',
-    `"${APP_VERSION}-${BUILD_TIMESTAMP}"`
-);
-writeFileSync(SW_PATH, newContent);
+// Update all version/timestamp references
+function updateFile(path, replacements) {
+    const content = readFileSync(path, 'utf8');
+    const newContent = replacements.reduce((acc, [search, replace]) => 
+        acc.replace(search, replace), content);
+    writeFileSync(path, newContent);
+}
 
-console.log(`Updated service worker version to ${APP_VERSION}-${BUILD_TIMESTAMP}`);
+// Update service worker
+updateFile(
+    join(__dirname, 'sw.js'),
+    [['"__APP_VERSION__"', `"${APP_VERSION}-${BUILD_TIMESTAMP}"`]]
+);
 
 // Update constants.js
-const CONSTANTS_PATH = join(__dirname, 'js', 'config', 'constants.js');
-const constantsContent = readFileSync(CONSTANTS_PATH, 'utf8');
-const newConstantsContent = constantsContent
-    .replace(/BUILD_TIMESTAMP = .*?;/, `BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`)
-    .replace(/APP_VERSION = .*?;/, `APP_VERSION = '${packageJson.version}';`);
-writeFileSync(CONSTANTS_PATH, newConstantsContent);
+updateFile(
+    join(__dirname, 'js', 'config', 'constants.js'),
+    [
+        [/'__BUILD_TIMESTAMP__'/, `'${BUILD_TIMESTAMP}'`],
+        [/'__APP_VERSION__'/, `'${APP_VERSION}'`]
+    ]
+);
+
+console.log(`Updated builds with version ${APP_VERSION} and timestamp ${BUILD_TIMESTAMP}`);
+
+if (process.argv.includes('--bump')) {
+    process.exit(0);
+}
