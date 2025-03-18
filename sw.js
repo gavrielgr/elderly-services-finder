@@ -1,7 +1,7 @@
 // Service Worker for Elderly Services Finder
 
 // This version is injected during build
-const CACHE_VERSION = '1.99.64'; // Updated version
+const CACHE_VERSION = '1.99.65'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 const ASSETS_TO_CACHE = [
   './',
@@ -40,7 +40,8 @@ const ASSETS_TO_CACHE = [
   './icons/favicon-16x16.png',
   './icons/search.png',  
   './icons/logo.png',    
-  'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap',
+  'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
 ];
 
 // Install event - cache static assets
