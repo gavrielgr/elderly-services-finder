@@ -42,7 +42,6 @@ export class ResultsManager {
 
         this.renderResults(results);
         this.updateResultsCount(results.length);
-        this.scrollToResults();
     }
 
     renderDefaultResults() {
@@ -130,15 +129,6 @@ export class ResultsManager {
             this.resultsCount.classList.add('has-results');
         } else {
             this.resultsCount.classList.remove('has-results');
-        }
-    }
-
-    scrollToResults() {
-        const resultsSection = document.querySelector('.results-section');
-        if (resultsSection) {
-            const offset = 130; // Adjust this value to leave space for the view toggle
-            const top = resultsSection.offsetTop - offset;
-            window.scrollTo({ top, behavior: 'smooth' });
         }
     }
 }
