@@ -26,7 +26,7 @@
     padding: 0;
     overflow: hidden;
     transition: max-height 0.3s ease-out;
-    max-height: 400px; /* Set fixed expanded height */
+    max-height: 600px; /* Increased height to show all categories */
 }
 
 .categories-container.collapsed {
