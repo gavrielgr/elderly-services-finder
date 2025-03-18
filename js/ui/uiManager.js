@@ -15,9 +15,11 @@ export class UIManager {
         this.statusBar = document.getElementById('status-bar');
         this.connectionStatus = document.getElementById('connection-status');
         this.lastUpdatedText = document.getElementById('last-updated-text');
+        this.scrollUpButton = document.getElementById('scroll-up-button');
         
         this.initThemeToggle();
         this.initRefreshButton();
+        this.initScrollUpButton();
     }
 
     updateConnectionStatus(isOnline) {
@@ -127,6 +129,20 @@ export class UIManager {
             } catch (error) {
                 console.error('Error during data refresh:', error);
                 this.showStatusMessage('שגיאה בעדכון הנתונים', 'error');
+            }
+        });
+    }
+
+    initScrollUpButton() {
+        this.scrollUpButton.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                this.scrollUpButton.classList.add('show');
+            } else {
+                this.scrollUpButton.classList.remove('show');
             }
         });
     }

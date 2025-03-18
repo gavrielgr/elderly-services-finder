@@ -8,15 +8,24 @@
     padding: 0.5rem 1rem;
 }
 
+.categories-section.collapsed #categories-title {
+    display: block;
+}
+
 .categories-section:not(.collapsed) {
     padding: 1rem;
 }
 
+.categories-section:not(.collapsed) #categories-title {
+    display: none;
+}
+
 .categories-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Align items to the start */
     align-items: center;
     margin-bottom: 0.5rem;
+    direction: rtl; /* Ensure proper alignment for RTL */
 }
 
 .categories-container {
@@ -93,7 +102,13 @@
     transition: color 0.2s;
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 0.5rem; /* Add spacing between the arrow and text */
+}
+
+#categories-title {
+    font-size: 1rem;
+    color: var(--text-light);
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
 .toggle-button:hover {

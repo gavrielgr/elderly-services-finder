@@ -8,7 +8,6 @@ export class SearchManager {
         this.searchInput = document.getElementById('search-input');
         this.searchButton = document.getElementById('search-button');
         this.clearButton = document.getElementById('clear-search-button');
-        this.voiceButton = document.getElementById('voice-search-button');
         
         this.initializeListeners();
     }
@@ -17,7 +16,6 @@ export class SearchManager {
         this.searchInput.addEventListener('input', debounce(() => this.handleSearch(), 300));
         this.searchButton.addEventListener('click', () => this.handleSearch());
         this.clearButton.addEventListener('click', () => this.clearSearch());
-        this.voiceButton.addEventListener('click', () => this.startVoiceSearch());
         this.searchInput.addEventListener('keyup', (e) => {
             if (e.key === 'Enter') this.handleSearch();
         });
@@ -53,38 +51,5 @@ export class SearchManager {
         } else {
             this.clearButton.classList.add('hidden');
         }
-    }
-
-    startVoiceSearch() {
-        if (!('webkitSpeechRecognition' in window)) {
-            this.uiManager.showStatusMessage('חיפוש קולי אינו נתמך בדפדפן זה', 'warning');
-            return;
-        }
-
-        const recognition = new webkitSpeechRecognition();
-        recognition.lang = 'he-IL';
-        recognition.interimResults = false;
-
-        recognition.onstart = () => {
-            this.voiceButton.textContent = '🔴';
-            this.uiManager.showStatusMessage('מקשיב... דבר עכשיו');
-        };
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            this.searchInput.value = transcript;
-            this.handleSearch();
-        };
-
-        recognition.onerror = () => {
-            this.voiceButton.textContent = '🎤';
-            this.uiManager.showStatusMessage('שגיאה בזיהוי קולי', 'error');
-        };
-
-        recognition.onend = () => {
-            this.voiceButton.textContent = '🎤';
-        };
-
-        recognition.start();
     }
 }
