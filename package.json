@@ -1,6 +1,6 @@
 {
   "name": "elderly-services-finder",
-  "version": "1.99.61",
+  "version": "1.99.62",
   "type": "module",
   "scripts": {
     "build": "node build.js",
