@@ -1,5 +1,5 @@
 import { dataService } from '../services/dataService.js';
-import Fuse from '../../node_modules/fuse.js/dist/fuse.esm.js'; // Update this import
+import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js';
 
 export class ResultsManager {
     constructor(uiManager) {
