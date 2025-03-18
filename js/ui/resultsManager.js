@@ -1,4 +1,5 @@
 import { dataService } from '../services/dataService.js';
+import Fuse from '../../node_modules/fuse.js/dist/fuse.esm.js'; // Update this import
 
 export class ResultsManager {
     constructor(uiManager) {
@@ -27,21 +28,70 @@ export class ResultsManager {
             return;
         }
 
-        let results = services.filter(service => {
-            const matchesQuery = !searchQuery || 
-                service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (service.tags && service.tags.some(tag => 
-                    tag.toLowerCase().includes(searchQuery.toLowerCase())
-                ));
+        // Check if debug mode is enabled
+        const urlParams = new URLSearchParams(window.location.search);
+        const isDebugMode = urlParams.get('debug') === 'true';
 
-            const matchesCategory = !activeCategory || service.category === activeCategory;
-
-            return matchesQuery && matchesCategory;
+        // Configure Fuse.js options
+        const fuse = new Fuse(services, {
+            keys: ['name', 'description', 'tags'], // Fields to search
+            threshold: 0.2, // Lower threshold for stricter matching
+            distance: 40, // Smaller distance for closer matches
+            ignoreLocation: true, // Ignore match location
+            includeMatches: isDebugMode, // Include match details only in debug mode
         });
+
+        let results = searchQuery ? fuse.search(searchQuery) : services;
+
+        // Log why each result was found if debug mode is enabled
+        if (isDebugMode) {
+            results.forEach(result => {
+                if (result.matches) {
+                    console.log(`Result found: ${result.item.name}`);
+                    result.matches.forEach(match => {
+                        console.log(`  Matched field: ${match.key}`);
+                        console.log(`  Matched value: ${match.value}`);
+                        console.log(`  Matched indices:`, match.indices);
+                    });
+                }
+            });
+        }
+
+        // Extract items from Fuse.js results
+        results = results.map(result => {
+            if (isDebugMode && result.matches) {
+                // Highlight matched text only in debug mode
+                result.item.highlightedFields = this.getHighlightedFields(result.matches);
+            }
+            return result.item;
+        });
+
+        // Filter by category if active
+        if (activeCategory) {
+            results = results.filter(service => service.category === activeCategory);
+        }
 
         this.renderResults(results);
         this.updateResultsCount(results.length);
+    }
+
+    getHighlightedFields(matches) {
+        const highlighted = {};
+        matches.forEach(match => {
+            const { key, value, indices } = match;
+            let highlightedValue = '';
+            let lastIndex = 0;
+
+            indices.forEach(([start, end]) => {
+                highlightedValue += value.substring(lastIndex, start);
+                highlightedValue += `<mark>${value.substring(start, end + 1)}</mark>`;
+                lastIndex = end + 1;
+            });
+
+            highlightedValue += value.substring(lastIndex);
+            highlighted[key] = highlightedValue;
+        });
+        return highlighted;
     }
 
     renderDefaultResults() {
@@ -88,11 +138,11 @@ export class ResultsManager {
         
         card.innerHTML = `
             <div class="result-category-tag">${service.category}</div>
-            <h3 class="result-name">${service.name}</h3>
-            <p class="result-description">${service.description}</p>
+            <h3 class="result-name">${service.highlightedFields?.name || service.name}</h3>
+            <p class="result-description">${service.highlightedFields?.description || service.description}</p>
             ${service.tags ? `
                 <div class="result-tags">
-                    ${service.tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+                    ${service.tags.map(tag => service.highlightedFields?.tags?.includes(tag) ? `<mark>${tag}</mark>` : `<span class="result-tag">${tag}</span>`).join('')}
                 </div>
             ` : ''}
         `;
