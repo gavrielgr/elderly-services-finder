@@ -22,7 +22,7 @@
     background-color: var(--bg-secondary);
     border-radius: 24px;
     padding: 0.5rem 0.75rem;
-    height: 44px;
+    height: 52px;
     order: 1;
     min-width: 0;
 }
@@ -38,7 +38,7 @@
     color: var(--text-color);
     text-align: right;
     direction: rtl;
-    font-size: 1rem;
+    font-size: 1.2rem;
 }
 
 #search-button,
@@ -47,8 +47,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     background: none;
     border: none;
@@ -58,11 +58,12 @@
     flex-shrink: 0;
     position: relative;
     top: 0;
+    font-size: 1.2rem;
 }
 
 .results-count {
     display: none;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     color: var(--text-light);
     margin-top: 0.5rem;
     text-align: right;
