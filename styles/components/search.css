@@ -11,6 +11,9 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+    background-image: url('/icons/search.png'); /* Updated to use the correct image path */
+    background-size: cover; /* Ensure the image covers the entire section */
+    background-position: center; /* Center the image */
 }
 
 .search-container {
@@ -69,9 +72,15 @@
     padding: 0 0.5rem;
     order: 3;
     width: 100%;
+    background-color: rgba(255, 255, 255, 0.7); /* Add transparent white background */
+    border-radius: 8px; /* Add slight rounding for better aesthetics */
 }
 
 .results-count.has-results {
     display: block;
     animation: fadeIn 0.3s ease;
+}
+
+.theme-toggle {
+    display: none; /* Remove the theme toggle from the search section */
 }
