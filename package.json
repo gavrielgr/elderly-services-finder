@@ -1,10 +1,13 @@
 {
   "name": "elderly-services-finder",
-  "version": "1.99.60",
+  "version": "1.99.61",
   "type": "module",
   "scripts": {
     "build": "node build.js",
     "bump": "node build.js --bump",
     "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"
+  },
+  "dependencies": {
+    "fuse.js": "^6.6.2"
   }
 }
