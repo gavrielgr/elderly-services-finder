@@ -20,11 +20,11 @@
     background: none;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem;
     margin: 0 0.25rem;
     cursor: pointer;
     color: var(--text-light);
-    font-size: 1rem;
+    font-size: 1.2rem;
     transition: all 0.2s;
 }
 
@@ -67,13 +67,15 @@
 
 .result-name {
     font-weight: 500;
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.3;
+    font-size: 1.3rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
 }
 
 .result-description {
     color: var(--text-light);
+    font-size: 1.1rem;
+    line-height: 1.5;
 }
 
 .result-tags {
@@ -81,6 +83,19 @@
     flex-wrap: wrap;
     gap: 0.25rem;
     margin-top: 0.5rem;
+}
+
+.result-tag {
+    font-size: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: var(--radius-md);
+    color: white;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
 }
 
 /* Category-specific styling for result cards */
