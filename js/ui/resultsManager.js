@@ -11,17 +11,25 @@ export class ResultsManager {
         this.initializeViewToggle();
     }
 
-    performSearch(searchQuery = '') {
+    async performSearch(searchQuery = '') {
         const services = dataService.getData();
         if (!services) return;
 
         const activeCategory = this.uiManager.categoryManager.activeCategory;
         
-        // Keep the last search query from the search input if no new query is provided
         if (!searchQuery && this.uiManager.searchManager.currentQuery) {
             searchQuery = this.uiManager.searchManager.currentQuery;
         }
         
+        // Modified regex to allow non-Hebrew characters including punctuation
+        if (!/[\u0590-\u05FF]/.test(searchQuery)) {
+            const hebrewEquivalent = await this.getHebrewEquivalent(searchQuery);
+            if (hebrewEquivalent) {
+                this.showHebrewSuggestion(hebrewEquivalent);
+                return;
+            }
+        }
+
         // Only show default message if both search and category are empty
         if (!searchQuery && !activeCategory) {
             this.renderDefaultResults();
@@ -73,6 +81,36 @@ export class ResultsManager {
 
         this.renderResults(results);
         this.updateResultsCount(results.length);
+    }
+
+    async getHebrewEquivalent(englishText) {
+        const keyboardMap = {
+            q: '/', w: "'", e: 'ק', r: 'ר', t: 'א', y: 'ט', u: 'ו', i: 'ן', o: 'ם', p: 'פ',
+                a: 'ש', s: 'ד', d: 'ג', f: 'כ', g: 'ע', h: 'י', j: 'ח', k: 'ל', l: 'ך',
+                z: 'ז', x: 'ס', c: 'ב', v: 'ה', b: 'נ', n: 'מ', m: 'צ', ',': 'ת', '.': 'ץ', ';': 'ף'
+        };
+
+        const hebrewText = englishText
+            .split('')
+            .map(char => keyboardMap[char.toLowerCase()] || char)
+            .join('');
+
+        if (hebrewText.length > 3) {
+            const services = dataService.getData();
+            const fuse = new Fuse(services, {
+                keys: ['name', 'description', 'tags'],
+                threshold: 0.2,
+                distance: 40,
+                ignoreLocation: true
+            });
+
+            const results = fuse.search(hebrewText);
+            if (results.length > 0) {
+                return hebrewText; // Suggest only if results are found
+            }
+        }
+
+        return null; // No suggestion if no results or text is too short
     }
 
     getHighlightedFields(matches) {
@@ -178,5 +216,26 @@ export class ResultsManager {
         }
 
         this.resultsCount.classList.add('has-results'); // Always show results-count
+    }
+
+    showHebrewSuggestion(hebrewText) {
+        if (!this.resultsCount) return;
+        
+        this.resultsCount.innerHTML = `
+            האם התכוונת ל: 
+            <span class="hebrew-suggestion" style="color: var(--primary-color); cursor: pointer; text-decoration: underline;">
+                ${hebrewText}
+            </span>?
+        `;
+        this.resultsCount.classList.add('has-results');
+
+        // Add click handler for the suggestion
+        const suggestionElement = this.resultsCount.querySelector('.hebrew-suggestion');
+        if (suggestionElement) {
+            suggestionElement.addEventListener('click', () => {
+                this.uiManager.searchManager.searchInput.value = hebrewText;
+                this.performSearch(hebrewText);
+            });
+        }
     }
 }
