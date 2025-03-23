@@ -71,6 +71,7 @@
     text-decoration: none;
 }
 
+/* Style for the theme switch and install button */
 .theme-switch {
     background: none;
     border: none;
@@ -85,9 +86,25 @@
     color: var(--primary-color);
 }
 
+/* Install button specific styles */
+#header-install-button {
+    display: none; /* Hidden by default */
+    font-size: 1.3rem; /* Slightly smaller than theme icon */
+    margin-left: 0.5rem;
+}
+
+#header-install-button.available {
+    display: block;
+}
+
 @media (max-width: 768px) {
     .theme-switch {
         font-size: 1.2rem;
         margin-left: 0.5rem;
+    }
+    
+    #header-install-button {
+        font-size: 1.1rem;
+        margin-left: 0.3rem;
     }
 }

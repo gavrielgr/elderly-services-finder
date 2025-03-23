@@ -117,6 +117,32 @@
     color: var(--text-color);
 }
 
+/* New styles for android instructions and preloader */
+#android-instructions {
+    background-color: transparent;
+    transition: opacity 0.3s ease;
+    opacity: 1;
+}
+
+#android-instructions.hidden {
+    opacity: 0;
+}
+
+#android-instructions-preloader {
+    text-align: center;
+    padding: 15px;
+    font-weight: 500;
+    color: var(--text-color, #333);
+}
+
+.install-instructions-preloader {
+    margin-bottom: 1rem;
+    background-color: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
 /* Responsive adjustments */
 @media (min-width: 768px) {
     .install-prompt-content {
