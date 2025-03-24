@@ -179,5 +179,12 @@
             <div id="app-version" class="app-version"></div> <!-- Add this element -->
         </div>
     </footer>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const appVersionElement = document.getElementById('app-version');
+        if (!urlParams.has('test')) {
+            appVersionElement.style.display = 'none';
+        }
+    </script>
 </body>
 </html>
