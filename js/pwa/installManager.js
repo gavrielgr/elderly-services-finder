@@ -175,8 +175,14 @@ export class InstallManager {
     }
 
     isMobileDevice() {
-        // Improved detection for iOS and Android devices
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+        // Check for mobile user agents and touch capability
+        return (
+            /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent) &&
+            isTouchDevice
+        );
     }
 
     isStandalone() {
