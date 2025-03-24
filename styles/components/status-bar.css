@@ -4,6 +4,7 @@
     left: 50%;
     transform: translateX(-50%) translateY(-200%);  /* Change initial position to above viewport */
     opacity: 0;
+    pointer-events: none; /* Prevent interaction when hidden */
     transition: transform 0.3s, opacity 0.3s;
     z-index: 1000;
     border-radius: var(--radius-md);
@@ -18,6 +19,7 @@
 .status-bar.show {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
+    pointer-events: auto; /* Allow interaction when shown */
 }
 
 .status-bar.error {
