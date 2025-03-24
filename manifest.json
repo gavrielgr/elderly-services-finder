@@ -1,6 +1,6 @@
 {
-  "name": "Elderly Services Finder",
-  "short_name": "Services Finder",
+  "name": "שירותי+",
+  "short_name": "שירותי+",
   "description": "אפליקציה למציאת פתרונות לאזרחים ותיקים",
   "start_url": "./index.html",
   "display": "standalone",
