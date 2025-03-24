@@ -144,9 +144,9 @@ export class InstallManager {
         if (!lastDismissed) return true;
 
         const now = new Date().getTime();
-        const dismissedTime = parseInt(lastDismissed);
+        const dismissedTime = parseInt(lastDismissed, 10);
         const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        
+
         return now - dismissedTime > sevenDays;
     }
 
@@ -165,12 +165,14 @@ export class InstallManager {
     }
 
     isMobileDevice() {
+        // Improved detection for iOS and Android devices
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
 
     isStandalone() {
+        // Check for standalone mode on iOS and other platforms
         return window.matchMedia('(display-mode: standalone)').matches || 
-               window.navigator.standalone === true;
+               window.navigator.standalone === true; // iOS-specific check
     }
 
     saveDismissalTime() {
