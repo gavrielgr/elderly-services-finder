@@ -18,6 +18,12 @@ async function initApp() {
     console.log(`Elderly Services Finder v${APP_VERSION}`);
     console.log(`Cache Version: ${CACHE_VERSION}`);
     
+    // Inject app version into the footer
+    const appVersionElement = document.getElementById('app-version');
+    if (appVersionElement) {
+        appVersionElement.textContent = `גרסה: ${APP_VERSION}`;
+    }
+    
     uiManager.updateConnectionStatus(isOnline);
     
     try {
