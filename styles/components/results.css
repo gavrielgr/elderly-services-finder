@@ -76,6 +76,10 @@
     color: var(--text-light);
     font-size: 1.1rem;
     line-height: 1.5;
+    word-wrap: break-word; /* Ensure long words break */
+    overflow-wrap: break-word; /* Handle word wrapping */
+    overflow: hidden; /* Prevent overflow */
+    text-overflow: ellipsis; /* Add ellipsis for overflowed text */
 }
 
 .result-tags {
