@@ -89,12 +89,22 @@
 /* Install button specific styles */
 #header-install-button {
     display: none; /* Hidden by default */
-    font-size: 1.3rem; /* Slightly smaller than theme icon */
-    margin-left: 0.5rem;
+    background: none;
+    border: none;
+    color: #4285f4;
+    font-size: 1.5rem; /* Adjust size for icon */
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: transform 0.2s, color 0.2s;
 }
 
 #header-install-button.available {
-    display: block;
+    display: inline-block; /* Show when available */
+}
+
+#header-install-button:hover {
+    color: #2a6ebd;
+    transform: scale(1.1); /* Slight zoom effect on hover */
 }
 
 @media (max-width: 768px) {
