@@ -8,6 +8,9 @@
     "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"
   },
   "dependencies": {
+    "@firebase/auth": "^1.9.1",
+    "@firebase/firestore": "^4.7.10",
+    "firebase": "^11.5.0",
     "fuse.js": "^6.6.2"
   }
 }
