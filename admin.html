@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול דירוגים | שירותי+</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/admin.css">
+</head>
+<body class="admin-page">
+    <!-- Login Form -->
+    <div id="login-container" class="login-container">
+        <div class="login-box">
+            <h2>כניסת מנהל</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">דוא"ל</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">סיסמה</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit">כניסה</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="admin-dashboard hidden">
+        <header class="admin-header">
+            <div class="header-content">
+                <h1>ניהול דירוגים</h1>
+                <div class="admin-info">
+                    <span id="admin-email"></span>
+                    <button id="logout-button">יציאה</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-main">
+            <!-- Filters -->
+            <section class="filters-section">
+                <div class="filters-container">
+                    <select id="status-filter">
+                        <option value="all">כל הדירוגים</option>
+                        <option value="pending">ממתין לאישור</option>
+                        <option value="approved">מאושר</option>
+                        <option value="rejected">נדחה</option>
+                        <option value="flagged">מסומן</option>
+                    </select>
+
+                    <div class="date-filters">
+                        <input type="date" id="date-from" aria-label="מתאריך">
+                        <input type="date" id="date-to" aria-label="עד תאריך">
+                    </div>
+
+                    <input type="text" 
+                           id="search-filter" 
+                           placeholder="חיפוש בדירוגים">
+                </div>
+            </section>
+
+            <!-- Ratings Table -->
+            <section class="ratings-section">
+                <table class="ratings-table">
+                    <thead>
+                        <tr>
+                            <th>תאריך</th>
+                            <th>שירות</th>
+                            <th>דירוג</th>
+                            <th>תוכן</th>
+                            <th>סטטוס</th>
+                            <th>פעולות</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ratings-tbody">
+                        <!-- Ratings will be populated dynamically -->
+                    </tbody>
+                </table>
+
+                <div id="load-more-container" class="load-more-container hidden">
+                    <button id="load-more-button">טען עוד</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Moderation Modal -->
+    <div id="moderation-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>סיבת הדחייה</h3>
+            <textarea id="rejection-reason" 
+                      placeholder="הזן את סיבת הדחייה"
+                      rows="4"></textarea>
+            <div class="modal-actions">
+                <button id="confirm-reject">אישור</button>
+                <button id="cancel-reject">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="status-message" class="status-message hidden"></div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/admin/admin.js"></script>
+</body>
+</html> 
