@@ -49,12 +49,15 @@ export class ModalManager {
         }
 
         if (service.website) {
-            const url = service.website.startsWith('http') ? 
-                service.website : `https://${service.website}`;
-            detailsHTML += this.createDetailSection(
-                'אתר אינטרנט',
-                `<a href="${url}" target="_blank" rel="noopener noreferrer">${service.website}</a>`
-            );
+            const websiteLinks = service.website.split(',')
+                .map(w => w.trim())
+                .map(website => {
+                    const cleanWebsite = website.replace(/\s+/g, '');
+                    const url = cleanWebsite.startsWith('http') ? cleanWebsite : `https://${cleanWebsite}`;
+                    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${website}</a>`;
+                })
+                .join(', ');
+            detailsHTML += this.createDetailSection('אתר אינטרנט', websiteLinks);
         }
 
         if (service.tags?.length > 0) {
