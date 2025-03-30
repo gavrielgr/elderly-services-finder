@@ -1,5 +1,3 @@
-import { collection, getDocs, doc, getDoc, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
-import { db } from './firebase.js';
 import { getFromIndexedDB, saveToIndexedDB, LAST_UPDATED_KEY, SERVICES_KEY, CATEGORIES_KEY, INTEREST_AREAS_KEY } from '../services/storageService.js';
 
 // קבלת נתונים מהמטמון המקומי
@@ -38,141 +36,97 @@ async function saveToCache(data) {
     }
 }
 
-// המרת תאריך Firestore לפורמט אחיד
+// המרת תאריך לפורמט אחיד
 function normalizeTimestamp(timestamp) {
     if (!timestamp) return null;
-    
-    // אם זה Timestamp של Firestore
-    if (timestamp instanceof Timestamp) {
-        return timestamp.toDate().toISOString();
-    }
     
     // אם זה כבר string
     if (typeof timestamp === 'string') {
         return timestamp;
     }
     
-    // אם זה אובייקט עם seconds ו-nanoseconds
-    if (timestamp.seconds) {
-        return new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate().toISOString();
+    // אם זה Date
+    if (timestamp instanceof Date) {
+        return timestamp.toISOString();
     }
     
     return null;
 }
 
-// בדיקה האם הנתונים במטמון מעודכנים
+// בדיקה האם המידע עדיין טרי
 function isDataFresh(localTimestamp) {
-    if (!localTimestamp) {
-        console.log('No local timestamp available');
-        return false;
-    }
-
-    // בדיקה שהתאריך המקומי הוא בטווח סביר (לא יותר מיום)
+    if (!localTimestamp) return false;
+    
     const localDate = new Date(localTimestamp);
     const now = new Date();
-    const oneDayInMs = 24 * 60 * 60 * 1000;
+    const diffInHours = (now - localDate) / (1000 * 60 * 60);
     
-    console.log('Checking if cache is fresh:', {
-        localTimestamp,
-        localDate,
-        now,
-        differenceInHours: (now - localDate) / (60 * 60 * 1000)
-    });
-    
-    return now - localDate < oneDayInMs;
+    // המידע נחשב טרי עד 24 שעות
+    return diffInHours < 24;
 }
 
-export async function fetchFromAPI() {
+// קבלת נתונים מהשרת
+async function fetchFromServer() {
     try {
-        // בדיקת מטמון ראשית
-        const cachedData = await getFromCache();
+        const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+        const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+        const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/services`;
         
-        if (cachedData) {
-            // בדיקה שהנתונים במטמון לא ישנים מדי
-            if (isDataFresh(cachedData.lastUpdated)) {
-                console.log('Using cached data - cache is fresh');
-                return {
-                    data: cachedData.services,
-                    lastUpdated: cachedData.lastUpdated,
-                    source: 'cache'
-                };
-            } else {
-                console.log('Cache is stale, fetching fresh data');
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
             }
-        } else {
-            console.log('No cache available, fetching fresh data');
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        console.log('Fetching fresh data from server...');
-        
-        // קבל את כל הקטגוריות
-        const categoriesSnapshot = await getDocs(collection(db, 'categories'));
-        const categories = categoriesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-
-        // קבל את כל תחומי העניין
-        const interestAreasSnapshot = await getDocs(collection(db, 'interest-areas'));
-        const interestAreas = interestAreasSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-
-        // קבל את כל השירותים
-        const servicesSnapshot = await getDocs(collection(db, 'services'));
-
-        // קבל את כל הקישורים בין שירותים לתחומי עניין
-        const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
-        const serviceInterestAreasMap = {};
-        serviceAreasSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!serviceInterestAreasMap[data.serviceId]) {
-                serviceInterestAreasMap[data.serviceId] = [];
-            }
-            serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
-        });
-
-        // עיבוד השירותים עם המידע הנלווה
-        const services = servicesSnapshot.docs.map(doc => {
-            const serviceData = doc.data();
-            
-            // קבלת תחומי העניין לשירות
-            const serviceInterestAreas = (serviceInterestAreasMap[doc.id] || [])
-                .map(areaId => interestAreas.find(area => area.id === areaId))
-                .filter(area => area !== undefined);
-
-            return {
-                id: doc.id,
-                ...serviceData,
-                categoryName: categories.find(category => category.id === serviceData.category)?.name || 'כללי',
-                interestAreas: serviceInterestAreas
-            };
-        });
-
-        const currentTime = new Date().toISOString();
-        const result = {
-            data: services,
-            categories,
-            interestAreas,
-            serviceInterestAreasMap,
-            lastUpdated: currentTime,
-            source: 'server'
-        };
-
-        // שמירה במטמון
-        await saveToCache({
-            services,
-            categories,
-            interestAreas,
-            lastUpdated: currentTime
-        });
-
-        console.log(`Fetched and processed: ${services.length} services with their related data`);
-        return result;
-
+        const data = await response.json();
+        return data.documents.map(doc => doc.fields);
     } catch (error) {
-        console.error('Error fetching data from Firestore:', error);
-        throw error;
+        console.error('Error fetching from server:', error);
+        return null;
+    }
+}
+
+// פונקציה ראשית לקבלת נתונים
+export async function fetchFromAPI() {
+    try {
+        // נסה לקבל מהמטמון תחילה
+        const cachedData = await getFromCache();
+        if (cachedData && isDataFresh(cachedData.lastUpdated)) {
+            console.log('Using fresh cached data');
+            return { data: cachedData, source: 'cache' };
+        }
+
+        // אם אין מידע במטמון או שהוא לא טרי, נטען מהשרת
+        const serverData = await fetchFromServer();
+        if (serverData) {
+            const timestamp = new Date().toISOString();
+            const data = {
+                services: serverData,
+                categories: serverData.categories || [],
+                interestAreas: serverData.interestAreas || [],
+                lastUpdated: timestamp
+            };
+            
+            // שמירה במטמון
+            await saveToCache(data);
+            
+            return { data, source: 'server' };
+        }
+
+        // אם לא הצלחנו לקבל נתונים מהשרת, נשתמש במטמון (אם יש)
+        if (cachedData) {
+            console.log('Using stale cached data');
+            return { data: cachedData, source: 'cache' };
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Error in fetchFromAPI:', error);
+        return null;
     }
 }

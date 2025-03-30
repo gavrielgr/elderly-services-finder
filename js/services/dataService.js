@@ -10,7 +10,6 @@ export class DataService {
         this.lastUpdateCheck = null;
         this.UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
         this.categories = []; // אתחול מערך ריק
-        this.db = window.firebaseDb;
     }
 
     async refreshData(forceRefresh = false) {
@@ -31,24 +30,17 @@ export class DataService {
 
             // אם אין מידע במטמון או שביקשנו רענון, נטען מהשרת
             if (navigator.onLine) {
-                if (this.db) {
-                    const servicesRef = this.db.collection('services');
-                    const snapshot = await servicesRef.get();
-                    const rawData = snapshot.docs.map(doc => doc.data());
+                const { data, source } = await fetchFromAPI();
+                if (data) {
+                    this.allServicesData = transformData(data.services);
+                    this.lastUpdated = data.lastUpdated;
+                    this.categories = Array.isArray(data.categories) ? data.categories : [];
+                    console.log('Categories from server:', this.categories);
                     
-                    if (rawData) {
-                        this.allServicesData = transformData(rawData);
-                        this.lastUpdated = new Date().toISOString();
-                        this.categories = Array.isArray(rawData.categories) ? rawData.categories : [];
-                        console.log('Categories from Firestore:', this.categories);
-                        
-                        // שמירה במטמון
-                        await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
-                        await saveToIndexedDB(LAST_UPDATED_KEY, this.lastUpdated);
-                        await saveToIndexedDB(CATEGORIES_KEY, this.categories);
-                    }
-                } else {
-                    console.error('Firebase not initialized');
+                    // שמירה במטמון
+                    await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
+                    await saveToIndexedDB(LAST_UPDATED_KEY, this.lastUpdated);
+                    await saveToIndexedDB(CATEGORIES_KEY, this.categories);
                 }
             }
         } catch (error) {
