@@ -30,7 +30,6 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    exclude: ['fsevents'],
-    include: ['firebase/app', 'firebase/firestore', 'firebase/auth']
+    exclude: ['fsevents']
   }
 }); 
