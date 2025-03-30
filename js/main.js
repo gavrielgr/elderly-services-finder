@@ -25,6 +25,11 @@ try {
     auth = firebase.auth();
     console.log('Using existing Firebase app');
   }
+
+  // Export Firebase instances
+  window.firebaseApp = app;
+  window.firebaseDb = db;
+  window.firebaseAuth = auth;
 } catch (error) {
   console.error('Error initializing Firebase:', error);
 }

@@ -10,6 +10,7 @@ export class DataService {
         this.lastUpdateCheck = null;
         this.UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
         this.categories = []; // אתחול מערך ריק
+        this.db = window.firebaseDb;
     }
 
     async refreshData(forceRefresh = false) {
@@ -30,17 +31,24 @@ export class DataService {
 
             // אם אין מידע במטמון או שביקשנו רענון, נטען מהשרת
             if (navigator.onLine) {
-                const rawData = await fetchFromAPI();
-                if (rawData) {
-                    this.allServicesData = transformData(rawData);
-                    this.lastUpdated = new Date().toISOString();
-                    this.categories = Array.isArray(rawData.categories) ? rawData.categories : [];
-                    console.log('Categories from API:', this.categories);
+                if (this.db) {
+                    const servicesRef = this.db.collection('services');
+                    const snapshot = await servicesRef.get();
+                    const rawData = snapshot.docs.map(doc => doc.data());
                     
-                    // שמירה במטמון
-                    await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
-                    await saveToIndexedDB(LAST_UPDATED_KEY, this.lastUpdated);
-                    await saveToIndexedDB(CATEGORIES_KEY, this.categories);
+                    if (rawData) {
+                        this.allServicesData = transformData(rawData);
+                        this.lastUpdated = new Date().toISOString();
+                        this.categories = Array.isArray(rawData.categories) ? rawData.categories : [];
+                        console.log('Categories from Firestore:', this.categories);
+                        
+                        // שמירה במטמון
+                        await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
+                        await saveToIndexedDB(LAST_UPDATED_KEY, this.lastUpdated);
+                        await saveToIndexedDB(CATEGORIES_KEY, this.categories);
+                    }
+                } else {
+                    console.error('Firebase not initialized');
                 }
             }
         } catch (error) {
