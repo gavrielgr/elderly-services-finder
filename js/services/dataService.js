@@ -1,7 +1,7 @@
 import { fetchFromAPI } from '../config/api.js';
 import { saveToIndexedDB, getFromIndexedDB } from './storageService.js';
 import { transformData } from '../utils/helpers.js';
-import { DATA_KEY, LAST_UPDATED_KEY } from '../config/constants.js';
+import { DATA_KEY, LAST_UPDATED_KEY, ALL_SERVICES_KEY, CATEGORIES_KEY } from '../config/constants.js';
 
 export class DataService {
     constructor() {
@@ -9,69 +9,42 @@ export class DataService {
         this.lastUpdated = null;
         this.lastUpdateCheck = null;
         this.UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+        this.categories = []; // אתחול מערך ריק
     }
 
     async refreshData(forceRefresh = false) {
         try {
-            // First try to get data from IndexedDB
+            // נסה לטעון מהמטמון תחילה
             if (!forceRefresh) {
-                const cachedData = await getFromIndexedDB(DATA_KEY);
-                const cachedTimestamp = await getFromIndexedDB(LAST_UPDATED_KEY);
-                
+                const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);
                 if (cachedData) {
                     this.allServicesData = cachedData;
-                    this.lastUpdated = cachedTimestamp;
-                    console.log('Using cached data from:', cachedTimestamp);
-                    
-                    // If we're online, check for updates in background (with throttling)
-                    if (navigator.onLine) {
-                        const now = Date.now();
-                        if (!this.lastUpdateCheck || (now - this.lastUpdateCheck) > this.UPDATE_CHECK_INTERVAL) {
-                            this.lastUpdateCheck = now;
-                            this.checkForUpdates();
-                        } else {
-                            console.log('Skipping update check - too soon since last check');
-                        }
-                    }
-                    return true;
+                    this.lastUpdated = await getFromIndexedDB(LAST_UPDATED_KEY);
+                    const cachedCategories = await getFromIndexedDB(CATEGORIES_KEY);
+                    this.categories = Array.isArray(cachedCategories) ? cachedCategories : [];
+                    console.log('Using cached data from:', this.lastUpdated);
+                    console.log('Categories from cache:', this.categories);
+                    return;
                 }
             }
 
-            // If no cached data or force refresh, fetch from API
-            if (!navigator.onLine) {
-                throw new Error('No internet connection');
+            // אם אין מידע במטמון או שביקשנו רענון, נטען מהשרת
+            if (navigator.onLine) {
+                const rawData = await fetchFromAPI();
+                if (rawData) {
+                    this.allServicesData = transformData(rawData);
+                    this.lastUpdated = new Date().toISOString();
+                    this.categories = Array.isArray(rawData.categories) ? rawData.categories : [];
+                    console.log('Categories from API:', this.categories);
+                    
+                    // שמירה במטמון
+                    await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
+                    await saveToIndexedDB(LAST_UPDATED_KEY, this.lastUpdated);
+                    await saveToIndexedDB(CATEGORIES_KEY, this.categories);
+                }
             }
-
-            const { data: rawData, source } = await fetchFromAPI();
-            if (source === 'cache') {
-                console.log('Using data from API cache');
-                this.allServicesData = transformData(rawData);
-                return true;
-            }
-
-            console.log('Got fresh data from API');
-            const transformedData = transformData(rawData);
-            const timestamp = new Date().toISOString();
-
-            await this.updateLocalData(transformedData, timestamp);
-            return true;
         } catch (error) {
-            console.error('Error in refreshData:', error);
-            
-            // If offline and we have cached data, use it
-            const cachedData = await getFromIndexedDB(DATA_KEY);
-            if (cachedData) {
-                this.allServicesData = cachedData;
-                this.lastUpdated = await getFromIndexedDB(LAST_UPDATED_KEY);
-                return true;
-            }
-            
-            // If we have data in memory, use it
-            if (this.allServicesData) {
-                return true;
-            }
-            
-            return false;
+            console.error('Error refreshing data:', error);
         }
     }
 
@@ -132,6 +105,14 @@ export class DataService {
 
     getLastUpdated() {
         return this.lastUpdated;
+    }
+
+    getCategory(categoryId) {
+        if (!Array.isArray(this.categories)) {
+            console.warn('Categories is not an array:', this.categories);
+            this.categories = [];
+        }
+        return this.categories.find(cat => cat.id === categoryId);
     }
 }
 

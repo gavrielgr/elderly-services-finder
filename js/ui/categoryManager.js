@@ -28,8 +28,14 @@ export class CategoryManager {
             }
         });
 
-        // קבלת קטגוריות ייחודיות
+        // קבלת קטגוריות ייחודיות ומיון לפי א-ב
         const categories = [...new Set(services.map(service => service.category))].filter(Boolean);
+        categories.sort((a, b) => {
+            const nameA = this.categoryMap.get(a) || '';
+            const nameB = this.categoryMap.get(b) || '';
+            return nameA.localeCompare(nameB, 'he');
+        });
+
         this.categoriesContainer.innerHTML = '';
 
         categories.forEach(categoryId => {
@@ -48,7 +54,8 @@ export class CategoryManager {
         card.className = 'category-card';
         card.setAttribute('data-category', categoryId);
         
-        const icon = categoryIcons[categoryName] || categoryIcons['default'];
+        const category = dataService.getCategory(categoryId);
+        const icon = category?.icon || categoryIcons[categoryName] || categoryIcons['default'];
         
         card.innerHTML = `
             <div class="category-icon">${icon}</div>

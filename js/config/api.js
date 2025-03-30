@@ -105,57 +105,57 @@ export async function fetchFromAPI() {
 
         console.log('Fetching fresh data from server...');
         
-        // קבלת כל הנתונים בקריאות מקבילות
-        const [categoriesSnap, interestAreasSnap, servicesSnap] = await Promise.all([
-            getDocs(collection(db, 'categories')),
-            getDocs(collection(db, 'interest-areas')),
-            getDocs(collection(db, 'services'))
-        ]);
+        // קבל את כל הקטגוריות
+        const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+        const categories = categoriesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
-        // יצירת מפות lookup
-        const categories = Object.fromEntries(
-            categoriesSnap.docs.map(doc => [doc.id, doc.data().name])
-        );
+        // קבל את כל תחומי העניין
+        const interestAreasSnapshot = await getDocs(collection(db, 'interest-areas'));
+        const interestAreas = interestAreasSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
-        const interestAreas = Object.fromEntries(
-            interestAreasSnap.docs.map(doc => [doc.id, doc.data().name])
-        );
+        // קבל את כל השירותים
+        const servicesSnapshot = await getDocs(collection(db, 'services'));
+
+        // קבל את כל הקישורים בין שירותים לתחומי עניין
+        const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
+        const serviceInterestAreasMap = {};
+        serviceAreasSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (!serviceInterestAreasMap[data.serviceId]) {
+                serviceInterestAreasMap[data.serviceId] = [];
+            }
+            serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
+        });
 
         // עיבוד השירותים עם המידע הנלווה
-        const services = await Promise.all(
-            servicesSnap.docs.map(async doc => {
-                const serviceData = doc.data();
-                
-                // קבלת תחומי העניין לשירות
-                const serviceInterestAreasSnap = await getDocs(
-                    query(
-                        collection(db, 'service-interest-areas'),
-                        where('serviceId', '==', doc.id)
-                    )
-                );
-                
-                const serviceInterestAreas = serviceInterestAreasSnap.docs
-                    .map(areaDoc => {
-                        const areaId = areaDoc.data().interestAreaId;
-                        return interestAreas[areaId] ? {
-                            id: areaId,
-                            name: interestAreas[areaId]
-                        } : null;
-                    })
-                    .filter(area => area !== null);
+        const services = servicesSnapshot.docs.map(doc => {
+            const serviceData = doc.data();
+            
+            // קבלת תחומי העניין לשירות
+            const serviceInterestAreas = (serviceInterestAreasMap[doc.id] || [])
+                .map(areaId => interestAreas.find(area => area.id === areaId))
+                .filter(area => area !== undefined);
 
-                return {
-                    id: doc.id,
-                    ...serviceData,
-                    categoryName: categories[serviceData.category] || 'כללי',
-                    interestAreas: serviceInterestAreas
-                };
-            })
-        );
+            return {
+                id: doc.id,
+                ...serviceData,
+                categoryName: categories.find(category => category.id === serviceData.category)?.name || 'כללי',
+                interestAreas: serviceInterestAreas
+            };
+        });
 
         const currentTime = new Date().toISOString();
         const result = {
             data: services,
+            categories,
+            interestAreas,
+            serviceInterestAreasMap,
             lastUpdated: currentTime,
             source: 'server'
         };

@@ -92,6 +92,7 @@
                                         <tr>
                                             <th>שם</th>
                                             <th>תיאור</th>
+                                            <th>אייקון</th>
                                             <th>פעולות</th>
                                         </tr>
                                     </thead>
@@ -327,15 +328,20 @@
                 </div>
                 <div class="modal-body">
                     <form id="categoryForm">
-                        <input type="hidden" id="categoryId">
                         <div class="mb-3">
                             <label for="categoryName" class="form-label">שם</label>
                             <input type="text" class="form-control" id="categoryName" required>
                         </div>
                         <div class="mb-3">
                             <label for="categoryDescription" class="form-label">תיאור</label>
-                            <textarea class="form-control" id="categoryDescription" rows="3" required></textarea>
+                            <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
                         </div>
+                        <div class="mb-3">
+                            <label for="categoryIcon" class="form-label">אייקון</label>
+                            <input type="text" class="form-control" id="categoryIcon" placeholder="לדוגמה: 🏛️">
+                            <div class="form-text">הכנס אייקון emoji</div>
+                        </div>
+                        <input type="hidden" id="categoryId">
                     </form>
                 </div>
                 <div class="modal-footer">

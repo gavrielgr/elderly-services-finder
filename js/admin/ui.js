@@ -132,6 +132,7 @@ export async function loadCategories() {
                 <tr>
                     <td>${category.name}</td>
                     <td>${category.description || ''}</td>
+                    <td>${category.icon || ''}</td>
                     <td>
                         <div class="btn-group" role="group">
                             <button class="btn btn-sm btn-primary" onclick="editCategory('${doc.id}')">

@@ -60,6 +60,11 @@ export class ResultsManager {
             results = results.filter(service => service.category === activeCategory);
         }
 
+        // מיון התוצאות לפי א-ב
+        results.sort((a, b) => {
+            return a.name.localeCompare(b.name, 'he');
+        });
+
         this.renderResults(results);
         this.updateResultsCount(results.length);
     }
@@ -170,9 +175,9 @@ export class ResultsManager {
             <div class="result-category-tag">${categoryName}</div>
             <h3 class="result-name">${service.name}</h3>
             <p class="result-description">${service.description}</p>
-            ${service.interestAreas?.length > 0 ? `
+            ${service.tags?.length > 0 ? `
                 <div class="result-tags">
-                    ${service.interestAreas.map(area => `<span class="result-tag">${area.name}</span>`).join('')}
+                    ${service.tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
                 </div>
             ` : ''}
         `;

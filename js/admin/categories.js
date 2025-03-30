@@ -21,6 +21,7 @@ export function showCategoryModal(categoryId = null) {
             document.getElementById('categoryId').value = category.id;
             document.getElementById('categoryName').value = category.name;
             document.getElementById('categoryDescription').value = category.description || '';
+            document.getElementById('categoryIcon').value = category.icon || '';
         }).catch(error => {
             console.error('Error loading category:', error);
             showStatus('שגיאה בטעינת פרטי הקטגוריה', 'error');
@@ -46,6 +47,7 @@ export async function saveCategory() {
     const categoryData = {
         name: document.getElementById('categoryName').value,
         description: document.getElementById('categoryDescription').value,
+        icon: document.getElementById('categoryIcon').value,
         updatedAt: new Date().toISOString()
     };
 
