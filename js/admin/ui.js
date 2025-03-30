@@ -259,6 +259,7 @@ export function showUserModal(userId = null) {
             document.getElementById('userRole').value = user.role;
             document.getElementById('userStatus').value = user.status;
             document.getElementById('userPhone').value = user.metadata?.phoneNumber || '';
+            document.getElementById('userAddress').value = user.metadata?.address || '';
         }).catch(error => {
             showStatus('שגיאה בטעינת פרטי המשתמש', 'error');
             console.error('Error loading user:', error);

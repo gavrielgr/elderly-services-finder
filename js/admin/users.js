@@ -1,5 +1,5 @@
 import { showStatus } from './ui.js';
-import { collection, getDocs, doc, getDoc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase.js';
 import { signInWithPopup, GoogleAuthProvider, getAuth } from 'firebase/auth';
 
@@ -68,20 +68,14 @@ export async function saveUser(userData) {
         let userRef;
         if (userData.id) {
             userRef = doc(db, 'users', userData.id);
-            // עדכון משתמש קיים
-            await setDoc(userRef, {
-                ...userData,
-                updatedAt: new Date().toISOString()
-            });
         } else {
-            // יצירת משתמש חדש
-            userRef = await addDoc(collection(db, 'users'), {
-                ...userData,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            });
+            userRef = doc(collection(db, 'users'));
         }
         
+        await setDoc(userRef, {
+            ...userData,
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
         showStatus('המשתמש נשמר בהצלחה', 'success');
         await loadUsers();
     } catch (error) {
@@ -111,7 +105,8 @@ export async function createNewUser() {
             email: document.getElementById('userEmail').value,
             role: document.getElementById('userRole').value,
             status: document.getElementById('userStatus').value,
-            phone: document.getElementById('userPhone').value
+            phone: document.getElementById('userPhone').value,
+            createdAt: new Date().toISOString()
         };
 
         if (!userData.name || !userData.email || !userData.role || !userData.status) {
@@ -119,22 +114,14 @@ export async function createNewUser() {
             return;
         }
 
-        // בדיקה אם המשתמש כבר קיים רק אם זה משתמש חדש
-        const userId = document.getElementById('userId').value;
-        if (!userId) {
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            const existingUser = usersSnapshot.docs.find(doc => doc.data().email === userData.email);
-            
-            if (existingUser) {
-                showStatus('משתמש עם אימייל זה כבר קיים במערכת', 'error');
-                return;
-            }
-        }
+        // יצירת משתמש עם Google
+        const googleProvider = new GoogleAuthProvider();
+        const userCredential = await signInWithPopup(getAuth(), googleProvider);
 
         // שמירת המשתמש בקולקציית users
         await saveUser({
             ...userData,
-            id: userId // שימוש ב-ID הקיים אם זה עריכה
+            id: userCredential.user.uid
         });
         
         // סגירת המודל בצורה בטוחה יותר
@@ -154,11 +141,26 @@ export async function createNewUser() {
         document.getElementById('userRole').value = '';
         document.getElementById('userStatus').value = '';
         document.getElementById('userPhone').value = '';
-        document.getElementById('userId').value = '';
 
-        showStatus('המשתמש נשמר בהצלחה', 'success');
+        showStatus('המשתמש נוצר בהצלחה', 'success');
     } catch (error) {
         console.error('Error creating new user:', error);
-        showStatus('שגיאה ביצירת משתמש חדש', 'error');
+        let errorMessage = 'שגיאה ביצירת משתמש חדש';
+        
+        switch (error.code) {
+            case 'auth/popup-closed-by-user':
+                errorMessage = 'התהליך בוטל על ידי המשתמש';
+                break;
+            case 'auth/popup-blocked':
+                errorMessage = 'החלון נחסם. אנא אפשר חלונות קופצים';
+                break;
+            case 'auth/cancelled-popup-request':
+                errorMessage = 'התהליך בוטל';
+                break;
+            default:
+                errorMessage = error.message;
+        }
+        
+        showStatus(errorMessage, 'error');
     }
 } 
