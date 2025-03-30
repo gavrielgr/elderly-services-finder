@@ -14,10 +14,17 @@ let db;
 let auth;
 
 try {
-  app = firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
-  auth = firebase.auth();
-  console.log('Firebase initialized successfully');
+  if (!firebase.apps.length) {
+    app = firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    console.log('Firebase initialized successfully');
+  } else {
+    app = firebase.app();
+    db = firebase.firestore();
+    auth = firebase.auth();
+    console.log('Using existing Firebase app');
+  }
 } catch (error) {
   console.error('Error initializing Firebase:', error);
 }
