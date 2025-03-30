@@ -9,41 +9,41 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// List of allowed admin emails
-const allowedEmails = ['gavrielgr@gmail.com'];
-
 // Initialize auth state listener
 export function initializeAuth() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Check if user's email is allowed
-            if (!allowedEmails.includes(user.email)) {
+            // בדיקת הרשאות מנהל ב-Firestore
+            const userRef = doc(db, 'users', user.uid);
+            const userDoc = await getDoc(userRef);
+
+            if (!userDoc.exists()) {
+                // משתמש חדש - יצירת רשומה ב-Firestore
+                await setDoc(userRef, {
+                    email: user.email,
+                    name: user.displayName,
+                    role: 'user',
+                    status: 'active',
+                    createdAt: new Date().toISOString()
+                });
                 await signOut(auth);
                 showStatus('אין לך הרשאות גישה למערכת', 'error');
                 return;
             }
 
-            // Create or update user in Firestore
-            const userRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userRef);
-
-            if (!userDoc.exists()) {
-                // First user with allowed email becomes admin
-                await setDoc(userRef, {
-                    email: user.email,
-                    name: user.displayName,
-                    role: 'admin',
-                    createdAt: new Date().toISOString()
-                });
+            const userData = userDoc.data();
+            if (userData.role !== 'admin' || userData.status !== 'active') {
+                await signOut(auth);
+                showStatus('אין לך הרשאות גישה למערכת', 'error');
+                return;
             }
 
-            // Only redirect to admin page if we're on the login page
+            // רק אם המשתמש הוא מנהל פעיל, ממשיכים
             if (window.location.pathname === '/login.html') {
                 window.location.href = '/admin.html';
             }
         } else {
-            // User is signed out
-            // Only redirect to login page if we're on the admin page
+            // משתמש לא מחובר - הפניה לדף התחברות
             if (window.location.pathname === '/admin.html') {
                 window.location.href = '/login.html';
             }
