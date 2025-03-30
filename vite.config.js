@@ -9,7 +9,7 @@ export default defineConfig({
   root: '.',
 
   // מגדיר את ה-base URL
-  base: '/',
+  base: './',
 
   // הגדרת aliases
   resolve: {

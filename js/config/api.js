@@ -68,25 +68,54 @@ function isDataFresh(localTimestamp) {
 // קבלת נתונים מהשרת
 async function fetchFromServer() {
     try {
-        const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-        const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-        const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/services`;
+        console.log('Fetching data from proxy server...');
         
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`
-            }
-        });
-
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${API_URL}/api/data`);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json();
+            console.error('Failed to fetch data:', errorData);
+            throw new Error(`Failed to fetch data: ${response.status}`);
         }
 
         const data = await response.json();
-        return data.documents.map(doc => doc.fields);
+        
+        const services = data.services.map(doc => ({
+            id: doc.name.split('/').pop(),
+            ...Object.entries(doc.fields).reduce((acc, [key, value]) => {
+                acc[key] = value.stringValue || value.integerValue || value.arrayValue?.values?.map(v => v.stringValue) || null;
+                return acc;
+            }, {})
+        }));
+
+        const categories = data.categories.map(doc => ({
+            id: doc.name.split('/').pop(),
+            ...Object.entries(doc.fields).reduce((acc, [key, value]) => {
+                acc[key] = value.stringValue || value.integerValue || value.arrayValue?.values?.map(v => v.stringValue) || null;
+                return acc;
+            }, {})
+        }));
+
+        const interestAreas = data.interestAreas.map(doc => ({
+            id: doc.name.split('/').pop(),
+            ...Object.entries(doc.fields).reduce((acc, [key, value]) => {
+                acc[key] = value.stringValue || value.integerValue || value.arrayValue?.values?.map(v => v.stringValue) || null;
+                return acc;
+            }, {})
+        }));
+
+        console.log(`Retrieved ${services.length} services`);
+        console.log(`Retrieved ${categories.length} categories`);
+        console.log(`Retrieved ${interestAreas.length} interest areas`);
+
+        return {
+            services,
+            categories,
+            interestAreas
+        };
     } catch (error) {
-        console.error('Error fetching from server:', error);
+        console.error('Error in fetchFromServer:', error);
         return null;
     }
 }
@@ -106,9 +135,9 @@ export async function fetchFromAPI() {
         if (serverData) {
             const timestamp = new Date().toISOString();
             const data = {
-                services: serverData,
-                categories: serverData.categories || [],
-                interestAreas: serverData.interestAreas || [],
+                services: serverData.services,
+                categories: serverData.categories,
+                interestAreas: serverData.interestAreas,
                 lastUpdated: timestamp
             };
             
@@ -124,9 +153,9 @@ export async function fetchFromAPI() {
             return { data: cachedData, source: 'cache' };
         }
 
-        return null;
+        return { data: { services: [], categories: [], interestAreas: [] }, source: 'empty' };
     } catch (error) {
         console.error('Error in fetchFromAPI:', error);
-        return null;
+        return { data: { services: [], categories: [], interestAreas: [] }, source: 'error' };
     }
 }

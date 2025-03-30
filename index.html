@@ -8,24 +8,24 @@
     <!-- PWA meta tags -->
     <meta name="theme-color" content="#4285f4">
     <meta name="description" content="אפליקציה לחיפוש שירותים לגיל השלישי">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/styles/main.css">
+    <link rel="stylesheet" href="styles/main.css">
     <!-- Favicon -->
-    <link rel="icon" href="/assets/icons/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="icon" href="icons/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
 </head>
 <body>
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
-            <img src="/assets/icons/logo.png" alt="Logo" class="header-logo">
+            <img src="icons/logo.png" alt="Logo" class="header-logo">
             <div class="header-title">
                 <span class="primary-title">שירותי+</span>
                 <a href="https://www.yadbeyad-care.co.il/" target="_blank" rel="noopener noreferrer" class="subtitle no-link-style">
@@ -152,6 +152,8 @@
     </div>
 </div>
 
+    
+
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
@@ -174,7 +176,7 @@
             <div class="copyright">
                 © 2025 שירותי+ | כל הזכויות שמורות
             </div>
-            <div id="app-version" class="app-version"></div>
+            <div id="app-version" class="app-version"></div> <!-- Add this element -->
         </div>
     </footer>
     <script>

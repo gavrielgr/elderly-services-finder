@@ -30,12 +30,12 @@ export class DataService {
 
             // אם אין מידע במטמון או שביקשנו רענון, נטען מהשרת
             if (navigator.onLine) {
-                const { data, source } = await fetchFromAPI();
-                if (data) {
-                    this.allServicesData = transformData(data.services);
-                    this.lastUpdated = data.lastUpdated;
-                    this.categories = Array.isArray(data.categories) ? data.categories : [];
-                    console.log('Categories from server:', this.categories);
+                const rawData = await fetchFromAPI();
+                if (rawData) {
+                    this.allServicesData = transformData(rawData);
+                    this.lastUpdated = new Date().toISOString();
+                    this.categories = Array.isArray(rawData.categories) ? rawData.categories : [];
+                    console.log('Categories from API:', this.categories);
                     
                     // שמירה במטמון
                     await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
