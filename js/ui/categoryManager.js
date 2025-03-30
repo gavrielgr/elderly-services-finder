@@ -6,6 +6,7 @@ export class CategoryManager {
         this.uiManager = uiManager;
         this.activeCategory = null;
         this.isCategoriesCollapsed = false;
+        this.categoryMap = new Map(); // מיפוי בין ID לשם
         
         this.categoriesContainer = document.getElementById('categories-container');
         this.toggleButton = document.getElementById('toggle-categories');
@@ -19,49 +20,60 @@ export class CategoryManager {
         const services = dataService.getData();
         if (!services || !Array.isArray(services)) return;
 
-        const categories = [...new Set(services.map(service => service.category))];
+        // יצירת מיפוי בין ID לשם
+        this.categoryMap.clear();
+        services.forEach(service => {
+            if (service.category && service.categoryName) {
+                this.categoryMap.set(service.category, service.categoryName);
+            }
+        });
+
+        // קבלת קטגוריות ייחודיות
+        const categories = [...new Set(services.map(service => service.category))].filter(Boolean);
         this.categoriesContainer.innerHTML = '';
 
-        categories.forEach(category => {
-            if (!category) return;
-            const card = this.createCategoryCard(category);
-            this.categoriesContainer.appendChild(card);
+        categories.forEach(categoryId => {
+            const categoryName = this.categoryMap.get(categoryId);
+            if (categoryName) {
+                const card = this.createCategoryCard(categoryId, categoryName);
+                this.categoriesContainer.appendChild(card);
+            }
         });
 
         this.updateCategoriesVisibility();
     }
 
-    createCategoryCard(category) {
+    createCategoryCard(categoryId, categoryName) {
         const card = document.createElement('div');
         card.className = 'category-card';
-        card.setAttribute('data-category', category);
+        card.setAttribute('data-category', categoryId);
         
-        const icon = categoryIcons[category.trim()] || categoryIcons['default'];
+        const icon = categoryIcons[categoryName] || categoryIcons['default'];
         
         card.innerHTML = `
             <div class="category-icon">${icon}</div>
-            <div class="category-name">${category}</div>
+            <div class="category-name">${categoryName}</div>
         `;
 
-        card.addEventListener('click', () => this.selectCategory(category));
+        card.addEventListener('click', () => this.selectCategory(categoryId));
         
-        if (category === this.activeCategory) {
+        if (categoryId === this.activeCategory) {
             card.classList.add('active');
         }
 
         return card;
     }
 
-    selectCategory(category) {
+    selectCategory(categoryId) {
         document.querySelectorAll('.category-card').forEach(card => {
             card.classList.remove('active');
         });
 
-        if (category === this.activeCategory) {
+        if (categoryId === this.activeCategory) {
             this.activeCategory = null;
         } else {
-            this.activeCategory = category;
-            const selectedCard = document.querySelector(`.category-card[data-category="${category}"]`);
+            this.activeCategory = categoryId;
+            const selectedCard = document.querySelector(`.category-card[data-category="${categoryId}"]`);
             if (selectedCard) selectedCard.classList.add('active');
         }
 
@@ -96,5 +108,9 @@ export class CategoryManager {
         categoriesContainer?.classList.remove('collapsed');
         toggleIcon?.classList.add('rotated');
         categoriesSection?.classList.remove('collapsed');
+    }
+
+    getCategoryName(categoryId) {
+        return this.categoryMap.get(categoryId) || 'כללי';
     }
 }

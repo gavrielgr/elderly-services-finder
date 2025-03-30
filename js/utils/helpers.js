@@ -4,40 +4,26 @@ export function transformData(rawData) {
         return [];
     }
 
-    let transformedData = [];
+    console.log('Raw data from server:', rawData);
 
-    Object.entries(rawData).forEach(([category, services]) => {
-        if (!Array.isArray(services) || ['status', 'data', 'lastUpdated'].includes(category)) {
-            return;
-        }
+    // אם קיבלנו מערך ישירות, נחזיר אותו
+    if (Array.isArray(rawData)) {
+        return rawData;
+    }
 
-        const cleanCategory = category.trim();
-        
-        services.forEach(service => {
-            transformedData.push({
-                category: cleanCategory,
-                name: service['שם העסק'] || service['שם התוכנית'] || service['מוקד'] || service['אנשי מקצוע'] || service['שם'] || 'שירות ללא שם',
-                description: service['תיאור העסק'] || service['תיאור כללי'] || service['זכויות ותחומי אחריות'] || service['תחום'] || service['תיאור'] || '',
-                phone: service['טלפון'] || service['מס\' טלפון'] || service['טלפון / אימייל'] || '',
-                email: service['אימייל'] || service['מייל'] || '',
-                website: service['אתר'] || service['קישור לאתר'] || '',
-                tags: processServiceTags(service)
-            });
-        });
-    });
+    // אם קיבלנו אובייקט עם data, נחזיר את המערך שבתוכו
+    if (rawData.data && Array.isArray(rawData.data)) {
+        return rawData.data;
+    }
 
-    return transformedData;
+    return [];
 }
 
 function processServiceTags(service) {
     const tags = [];
     
-    if (service['תחום עניין']) {
-        const interestTags = typeof service['תחום עניין'] === 'string' 
-            ? service['תחום עניין'].split(',')
-            : [service['תחום עניין']];
-        
-        tags.push(...interestTags.map(tag => tag.trim()).filter(tag => tag.length > 0));
+    if (service.tags) {
+        tags.push(...service.tags.map(tag => tag.name));
     }
 
     if (service['רשימת המתנה'] === 'כן') {

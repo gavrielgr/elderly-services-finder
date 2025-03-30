@@ -30,7 +30,7 @@
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#interest-areas" data-bs-toggle="tab">
-                                <i class="bi bi-bookmark"></i> תחומי עניין
+                                <i class="bi bi-bookmark"></i> תגיות
                             </a>
                         </li>
                         <li class="nav-item">
@@ -68,7 +68,7 @@
                                         <tr>
                                             <th>שם</th>
                                             <th>קטגוריה</th>
-                                            <th>תחומי עניין</th>
+                                            <th>תגיות</th>
                                             <th>טלפון</th>
                                             <th>דוא"ל</th>
                                             <th>אתר</th>
@@ -101,23 +101,23 @@
                         </div>
                         <div class="tab-pane fade" id="interest-areas" role="tabpanel">
                             <div class="d-flex justify-content-between mb-3">
-                                <h2>ניהול תחומי עניין</h2>
+                                <h2>ניהול תגיות</h2>
                                 <button class="btn btn-primary" onclick="showInterestAreaModal()">
-                                    <i class="bi bi-plus-lg"></i> הוסף תחום עניין
+                                    <i class="bi bi-plus-lg"></i> הוסף תגית
                                 </button>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-striped">
-                <thead>
-                    <tr>
+                                    <thead>
+                                        <tr>
                                             <th>שם</th>
-                        <th>תיאור</th>
+                                            <th>תיאור</th>
                                             <th>מספר שירותים</th>
                                             <th>פעולות</th>
                                         </tr>
                                     </thead>
                                     <tbody id="interest-areas-table-body">
-                                        <!-- תחומי עניין יוכנסו כאן -->
+                                        <!-- תגיות יוכנסו כאן -->
                                     </tbody>
                                 </table>
                             </div>
@@ -177,7 +177,7 @@
                             <select class="form-select" id="serviceCategory" required></select>
                         </div>
                         <div class="mb-3">
-                            <label for="serviceInterestAreas" class="form-label">תחומי עניין</label>
+                            <label for="serviceInterestAreas" class="form-label">תגיות</label>
                             <select class="form-select" id="serviceInterestAreas" multiple required></select>
                         </div>
                         <div class="mb-3">

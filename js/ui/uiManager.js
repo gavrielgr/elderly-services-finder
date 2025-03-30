@@ -20,6 +20,33 @@ export class UIManager {
         this.initThemeToggle();
         this.initRefreshButton();
         this.initScrollUpButton();
+        
+        // Listen for data updates
+        window.addEventListener('dataUpdated', (event) => {
+            const { timestamp, data } = event.detail;
+            this.updateLastUpdatedText(timestamp);
+            this.showStatusMessage('המידע עודכן בהצלחה', 'success');
+            this.resultsManager.updateResults(data);
+        });
+    }
+
+    async initialize() {
+        try {
+            // Initialize data service
+            await dataService.refreshData();
+            
+            // Render initial UI
+            await this.renderInitialUI();
+            
+            // Set up event listeners
+            this.setupEventListeners();
+            
+            // Update connection status
+            this.updateConnectionStatus();
+        } catch (error) {
+            console.error('Error initializing UI:', error);
+            throw error;
+        }
     }
 
     updateConnectionStatus(isOnline) {

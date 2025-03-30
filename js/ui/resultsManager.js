@@ -7,6 +7,8 @@ export class ResultsManager {
         this.resultsContainer = document.getElementById('results-container');
         this.resultsCount = document.getElementById('results-count');
         this.viewMode = localStorage.getItem('viewMode') || 'grid';
+        this.noResultsMessage = document.getElementById('no-results-message');
+        this.currentResults = [];
         
         this.initializeViewToggle();
     }
@@ -162,13 +164,15 @@ export class ResultsManager {
         card.className = 'result-card';
         card.setAttribute('data-category', service.category);
         
+        const categoryName = this.uiManager.categoryManager.getCategoryName(service.category);
+        
         card.innerHTML = `
-            <div class="result-category-tag">${service.category}</div>
-            <h3 class="result-name">${service.highlightedFields?.name || service.name}</h3>
-            <p class="result-description">${service.highlightedFields?.description || service.description}</p>
-            ${service.tags ? `
+            <div class="result-category-tag">${categoryName}</div>
+            <h3 class="result-name">${service.name}</h3>
+            <p class="result-description">${service.description}</p>
+            ${service.interestAreas?.length > 0 ? `
                 <div class="result-tags">
-                    ${service.tags.map(tag => service.highlightedFields?.tags?.includes(tag) ? `<mark>${tag}</mark>` : `<span class="result-tag">${tag}</span>`).join('')}
+                    ${service.interestAreas.map(area => `<span class="result-tag">${area.name}</span>`).join('')}
                 </div>
             ` : ''}
         `;
@@ -196,13 +200,16 @@ export class ResultsManager {
         if (!this.resultsCount) return;
 
         if (!hasActiveSearch) {
-            this.resultsCount.textContent = 'הקלידו מילות חיפוש או בחרו קטגוריה'; // Default text
+            this.resultsCount.textContent = 'הקלידו מילות חיפוש או בחרו קטגוריה';
         } else {
             const activeCategory = this.uiManager.categoryManager.activeCategory;
-            const categoryText = activeCategory ? ` בקטגוריה: ${activeCategory}` : '';
+            let categoryText = '';
+            if (activeCategory) {
+                const categoryName = this.uiManager.categoryManager.getCategoryName(activeCategory);
+                categoryText = ` בקטגוריה: ${categoryName}`;
+            }
             this.resultsCount.textContent = `נמצאו ${count} תוצאות${categoryText}`;
         }
-
     }
 
     showHebrewSuggestion(hebrewText) {
@@ -223,5 +230,10 @@ export class ResultsManager {
                 this.performSearch(hebrewText);
             });
         }
+    }
+
+    updateResults(data) {
+        this.currentResults = data;
+        this.renderResults(data);
     }
 }

@@ -31,7 +31,7 @@ const ASSETS_TO_CACHE = [
   './js/utils/helpers.js',
   './js/config/constants.js',
   './js/config/api.js',
-  './js/pwa/installManager.js',
+  './js/config/firebase.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -163,7 +163,6 @@ self.addEventListener('fetch', (event) => {
 // Background sync event for when connection is restored
 self.addEventListener('sync', (event) => {
   if (event.tag === 'refresh-data') {
-    // This would be where we could implement background data synchronization
     console.log('Background sync triggered');
     
     // Notify all clients that we're doing a background sync
@@ -175,28 +174,18 @@ self.addEventListener('sync', (event) => {
       });
     });
     
-    // Here you would typically fetch the latest data from your API
-    event.waitUntil(
-      fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-          // After successfully fetching new data, notify all clients
-          return self.clients.matchAll().then(clients => {
-            clients.forEach(client => {
-              client.postMessage({
-                type: 'CACHE_UPDATED',
-                data: {
-                  timestamp: new Date().toISOString(),
-                  version: CACHE_VERSION
-                }
-              });
-            });
-          });
-        })
-        .catch(error => {
-          console.error('Background sync failed:', error);
-        })
-    );
+    // After successfully fetching new data, notify all clients
+    self.clients.matchAll().then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'CACHE_UPDATED',
+          data: {
+            timestamp: new Date().toISOString(),
+            version: CACHE_VERSION
+          }
+        });
+      });
+    });
   }
 });
 

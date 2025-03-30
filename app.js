@@ -1,15 +1,13 @@
 import { CACHE_VERSION, APP_VERSION } from './js/config/constants.js';
 import { dataService } from './js/services/dataService.js';
 import { UIManager } from './js/ui/uiManager.js';
-import { InstallManager } from './js/pwa/installManager.js';
+import { installManager } from './js/services/installManager.js';
 
 // Initialize global state
 let isOnline = navigator.onLine;
-let deferredPrompt = null;
 
 // Create instances
 const uiManager = new UIManager();
-const installManager = new InstallManager();
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', initApp);
@@ -30,8 +28,12 @@ async function initApp() {
         await dataService.refreshData(false);
         uiManager.renderInitialUI();
         
-        if (installManager.isInstallable()) {
-            installManager.showInstallPrompt();
+        // Check if app is installable
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            const installButton = document.getElementById('install-button');
+            if (installButton) {
+                installButton.style.display = 'block';
+            }
         }
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -75,4 +77,7 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+// Initialize install manager
+installManager.init();
 

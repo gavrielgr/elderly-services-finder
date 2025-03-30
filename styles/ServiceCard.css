@@ -1,0 +1,71 @@
+.service-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1rem;
+}
+
+.service-card h3 {
+    margin: 0 0 1rem;
+    color: #2c3e50;
+    font-size: 1.25rem;
+}
+
+.service-card .description {
+    color: #34495e;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.contact-info {
+    margin: 1rem 0;
+}
+
+.contact-info > div {
+    margin-bottom: 0.5rem;
+}
+
+.contact-info strong {
+    color: #2c3e50;
+    margin-left: 0.5rem;
+}
+
+.contact-info a {
+    color: #3498db;
+    text-decoration: none;
+    margin-left: 1rem;
+}
+
+.contact-info a:hover {
+    text-decoration: underline;
+}
+
+.interest-areas {
+    margin: 1rem 0;
+}
+
+.tag {
+    display: inline-block;
+    background: #e8f4f8;
+    color: #2980b9;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    margin: 0.25rem;
+    font-size: 0.9rem;
+}
+
+.location {
+    margin-top: 1rem;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.location .city {
+    margin-left: 0.5rem;
+}
+
+.location .address::before {
+    content: "•";
+    margin: 0 0.5rem;
+} 

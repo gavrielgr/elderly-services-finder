@@ -1,26 +1,53 @@
-import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, Timestamp, writeBatch, setDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, Timestamp, writeBatch, setDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase.js';
 import { showStatus } from './ui.js';
+import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
+
+const ADMIN_CACHE_KEYS = {
+    CATEGORIES: 'admin_categories',
+    INTEREST_AREAS: 'admin_interest_areas',
+    LAST_UPDATE: 'admin_last_update'
+};
 
 let categories = [];
 let interestAreas = [];
 
-// Load categories
+// Load categories from cache or Firebase
 export async function loadCategories() {
     try {
+        // נסה לטעון מהמטמון תחילה
+        const cachedCategories = await getFromIndexedDB(ADMIN_CACHE_KEYS.CATEGORIES);
+        if (cachedCategories) {
+            categories = cachedCategories;
+            return;
+        }
+
         const snapshot = await getDocs(collection(db, 'categories'));
         categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // שמור במטמון
+        await saveToIndexedDB(ADMIN_CACHE_KEYS.CATEGORIES, categories);
     } catch (error) {
         console.error('Error loading categories:', error);
         showStatus('שגיאה בטעינת הקטגוריות', 'error');
     }
 }
 
-// Load interest areas
+// Load interest areas from cache or Firebase
 export async function loadInterestAreas() {
     try {
+        // נסה לטעון מהמטמון תחילה
+        const cachedAreas = await getFromIndexedDB(ADMIN_CACHE_KEYS.INTEREST_AREAS);
+        if (cachedAreas) {
+            interestAreas = cachedAreas;
+            return;
+        }
+
         const snapshot = await getDocs(collection(db, 'interest-areas'));
         interestAreas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // שמור במטמון
+        await saveToIndexedDB(ADMIN_CACHE_KEYS.INTEREST_AREAS, interestAreas);
     } catch (error) {
         console.error('Error loading interest areas:', error);
         showStatus('שגיאה בטעינת תחומי העניין', 'error');
@@ -35,12 +62,14 @@ export async function loadCategoriesAndInterestAreas() {
     ]);
 }
 
-// Load services
+// Load services with optimized queries
 export async function loadServices(tableBody) {
     try {
-        // Load categories and interest areas if not already loaded
-        if (categories.length === 0) await loadCategories();
-        if (interestAreas.length === 0) await loadInterestAreas();
+        // טען קטגוריות ותחומי עניין במקביל
+        await Promise.all([
+            categories.length === 0 ? loadCategories() : Promise.resolve(),
+            interestAreas.length === 0 ? loadInterestAreas() : Promise.resolve()
+        ]);
 
         const servicesSnapshot = await getDocs(collection(db, 'services'));
         
@@ -49,17 +78,36 @@ export async function loadServices(tableBody) {
             return;
         }
 
-        // Get all service-interest-areas connections at once
-        const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
+        // קבל את כל השירותים
+        const serviceIds = servicesSnapshot.docs.map(doc => doc.id);
         
-        // Create a map of serviceId to array of area IDs
+        // חלק את ה-IDs לקבוצות של 30 (מגבלת Firebase)
+        const chunkSize = 30;
+        const serviceIdChunks = [];
+        for (let i = 0; i < serviceIds.length; i += chunkSize) {
+            serviceIdChunks.push(serviceIds.slice(i, i + chunkSize));
+        }
+
+        // בצע שאילתות מרובות ואחד את התוצאות
+        const serviceAreasPromises = serviceIdChunks.map(chunk => 
+            getDocs(query(
+                collection(db, 'service-interest-areas'),
+                where('serviceId', 'in', chunk)
+            ))
+        );
+        
+        const serviceAreasSnapshots = await Promise.all(serviceAreasPromises);
+        
+        // יצירת מפה של serviceId לתחומי עניין
         const serviceAreasMap = {};
-        serviceAreasSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!serviceAreasMap[data.serviceId]) {
-                serviceAreasMap[data.serviceId] = [];
-            }
-            serviceAreasMap[data.serviceId].push(data.interestAreaId);
+        serviceAreasSnapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                if (!serviceAreasMap[data.serviceId]) {
+                    serviceAreasMap[data.serviceId] = [];
+                }
+                serviceAreasMap[data.serviceId].push(data.interestAreaId);
+            });
         });
 
         const rows = [];
@@ -206,135 +254,43 @@ function hideModalStatus() {
     statusDiv.className = 'alert d-none';
 }
 
-// Save service
-export async function saveService() {
-    const form = document.getElementById('serviceForm');
-    const saveButton = document.getElementById('saveServiceBtn');
-    
-    if (!form || !form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    const serviceId = document.getElementById('serviceId').value;
-    const serviceData = {
-        name: document.getElementById('serviceName').value,
-        description: document.getElementById('serviceDescription').value,
-        category: document.getElementById('serviceCategory').value,
-        contact: {
-            phone: document.getElementById('servicePhones').value.split(',')
-                .map(p => p.trim())
-                .filter(Boolean)
-                .map(number => ({
-                    number,
-                    description: document.getElementById('servicePhonesDesc').value
-                })),
-            email: document.getElementById('serviceEmails').value.split(',')
-                .map(e => e.trim())
-                .filter(Boolean)
-                .map(address => ({
-                    address,
-                    description: document.getElementById('serviceEmailsDesc').value
-                })),
-            website: document.getElementById('serviceWebsites').value.split(',')
-                .map(w => w.trim())
-                .filter(Boolean)
-                .map(url => ({
-                    url,
-                    description: document.getElementById('serviceWebsitesDesc').value
-                }))
-        },
-        city: document.getElementById('serviceCity').value,
-        address: document.getElementById('serviceAddress').value,
-        metadata: {
-            updated: Timestamp.now()
-        }
-    };
-
+// Save service with optimized batch operations
+export async function saveService(serviceData, id = null) {
     try {
-        // Show loading state
-        saveButton.disabled = true;
-        saveButton.innerHTML = `
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            שומר...
-        `;
-        showModalStatus('שומר את השירות...', 'info');
-
         const batch = writeBatch(db);
-        const selectedInterestAreas = Array.from(document.getElementById('serviceInterestAreas').selectedOptions).map(option => option.value);
-
-        // Get or create service reference
-        const serviceRef = serviceId ? 
-            doc(db, 'services', serviceId) : 
-            doc(collection(db, 'services'));
-
-        if (serviceId) {
-            // Update existing service
-            // First, get existing service-interest-areas
-            const existingAreasSnapshot = await getDocs(
-                query(collection(db, 'service-interest-areas'), 
-                where('serviceId', '==', serviceId))
-            );
-            
-            // Delete removed areas
-            existingAreasSnapshot.docs.forEach(doc => {
-                const areaId = doc.data().interestAreaId;
-                if (!selectedInterestAreas.includes(areaId)) {
-                    batch.delete(doc.ref);
-                }
-            });
-            
-            // Add new areas
-            const existingAreaIds = existingAreasSnapshot.docs.map(doc => doc.data().interestAreaId);
-            for (const areaId of selectedInterestAreas) {
-                if (!existingAreaIds.includes(areaId)) {
-                    const newAreaRef = doc(collection(db, 'service-interest-areas'));
-                    batch.set(newAreaRef, {
-                        serviceId: serviceId,
-                        interestAreaId: areaId,
-                        createdAt: Timestamp.now()
-                    });
-                }
+        const timestamp = serverTimestamp();
+        
+        // הכן את הנתונים לשמירה
+        const serviceRef = id ? doc(db, 'services', id) : doc(collection(db, 'services'));
+        const serviceId = serviceRef.id;
+        
+        // עדכן את השירות
+        batch.set(serviceRef, {
+            ...serviceData,
+            metadata: {
+                ...serviceData.metadata,
+                lastUpdated: timestamp
             }
-        } else {
-            // New service - create all service-interest-areas
-            for (const areaId of selectedInterestAreas) {
-                const newAreaRef = doc(collection(db, 'service-interest-areas'));
-                batch.set(newAreaRef, {
-                    serviceId: serviceRef.id,
-                    interestAreaId: areaId,
-                    createdAt: Timestamp.now()
-                });
-            }
-            serviceData.metadata.created = Timestamp.now();
-        }
+        }, { merge: true });
 
-        // Save the service
-        batch.set(serviceRef, serviceData, { merge: true });
+        // עדכן את המטה-דאטה
+        const metadataRef = doc(db, 'metadata', 'lastUpdate');
+        batch.set(metadataRef, {
+            timestamp,
+            type: id ? 'update' : 'create',
+            serviceId
+        }, { merge: true });
+
+        // נקה את המטמון המקומי
+        await Promise.all([
+            saveToIndexedDB(ADMIN_CACHE_KEYS.LAST_UPDATE, new Date().toISOString())
+        ]);
+
         await batch.commit();
-        
-        // Show success message in modal
-        showModalStatus('השירות נשמר בהצלחה!', 'success');
-        
-        // Reload the services table
-        await loadServices(document.getElementById('servicesTableBody'));
-        
-        // Close modal after a short delay
-        setTimeout(() => {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('serviceModal'));
-            modal.hide();
-            hideModalStatus();
-        }, 1500);
-        
+        return serviceId;
     } catch (error) {
         console.error('Error saving service:', error);
-        showModalStatus('שגיאה בשמירת השירות', 'danger');
-    } finally {
-        // Reset button state
-        if (saveButton) {
-            saveButton.disabled = false;
-            saveButton.innerHTML = 'שמור';
-        }
+        throw error;
     }
 }
 
@@ -364,6 +320,14 @@ export async function deleteService(serviceId) {
 
         // Delete the service
         batch.delete(doc(db, 'services', serviceId));
+
+        // Update metadata
+        const metadataRef = doc(db, 'metadata', 'lastUpdate');
+        batch.set(metadataRef, {
+            timestamp: serverTimestamp(),
+            type: 'delete',
+            serviceId: serviceId
+        }, { merge: true });
 
         await batch.commit();
         showStatus('השירות נמחק בהצלחה', 'success');

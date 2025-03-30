@@ -34,7 +34,17 @@
 .service-name {
     font-size: 1.5rem;
     font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.service-category {
+    font-size: 1rem;
+    color: var(--text-light);
     margin-bottom: 1.25rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    display: inline-block;
 }
 
 .service-detail {
@@ -69,7 +79,7 @@
     align-items: center;
     justify-content: center;
     transition: all var(--transition-fast);
-    margin: 0.25rem; /* Add margin to create spacing between tags */
+    margin: 0.25rem;
 }
 
 .modal-actions {

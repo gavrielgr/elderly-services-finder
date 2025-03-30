@@ -19,52 +19,84 @@ export class ModalManager {
     }
 
     showServiceDetails(service) {
+        console.log('Showing service details:', service);
         this.currentService = service;
         if (!this.detailsContainer) return;
 
-        let detailsHTML = `<h2 class="service-name">${service.name}</h2>`;
+        let detailsHTML = `
+            <h2 class="service-name">${service.name}</h2>
+            <div class="service-category">${service.categoryName}</div>
+        `;
         
         if (service.description) {
             detailsHTML += this.createDetailSection('תיאור', service.description);
         }
         
-        if (service.phone) {
-            const phoneLinks = service.phone.split(',')
-                .map(p => p.trim())
-                .map(phone => {
-                    const encodedPhone = phone.startsWith('*') ? 
-                        encodeURIComponent(phone) : phone.replace(/\D/g, '');
-                    return `<a href="tel:${encodedPhone}">${phone}</a>`;
+        // טיפול בפרטי קשר
+        const contact = service.contact || {};
+        
+        // טיפול בטלפונים
+        if (contact.phone?.length > 0) {
+            const phoneLinks = contact.phone
+                .map(p => {
+                    const number = p.number;
+                    const description = p.description;
+                    const encodedPhone = number.startsWith('*') ? 
+                        encodeURIComponent(number) : number.replace(/\D/g, '');
+                    return `<a href="tel:${encodedPhone}">${number}</a>${description ? ` - ${description}` : ''}`;
                 })
-                .join(', ');
+                .join('<br>');
             
             detailsHTML += this.createDetailSection('טלפון', phoneLinks);
         }
 
-        if (service.email) {
-            detailsHTML += this.createDetailSection(
-                'דוא"ל',
-                `<a href="mailto:${service.email}">${service.email}</a>`
-            );
+        // טיפול באימיילים
+        if (contact.email?.length > 0) {
+            const emailLinks = contact.email
+                .map(e => {
+                    const address = e.address;
+                    const description = e.description;
+                    return `<a href="mailto:${address}">${address}</a>${description ? ` - ${description}` : ''}`;
+                })
+                .join('<br>');
+            
+            detailsHTML += this.createDetailSection('דוא"ל', emailLinks);
         }
 
-        if (service.website) {
-            const websiteLinks = service.website.split(',')
-                .map(w => w.trim())
-                .map(website => {
-                    const cleanWebsite = website.replace(/\s+/g, '');
-                    const url = cleanWebsite.startsWith('http') ? cleanWebsite : `https://${cleanWebsite}`;
-                    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${website}</a>`;
+        // טיפול באתרים
+        if (contact.website?.length > 0) {
+            const websiteLinks = contact.website
+                .map(w => {
+                    const url = w.url;
+                    const description = w.description;
+                    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+                    return `<a href="${fullUrl}" target="_blank" rel="noopener noreferrer">${url}</a>${description ? ` - ${description}` : ''}`;
                 })
-                .join(', ');
+                .join('<br>');
+            
             detailsHTML += this.createDetailSection('אתר אינטרנט', websiteLinks);
         }
 
-        if (service.tags?.length > 0) {
+        // תגיות
+        if (service.interestAreas?.length > 0) {
+            const areasHtml = service.interestAreas
+                .map(area => `<span class="service-tag">${area.name}</span>`)
+                .join('');
+            detailsHTML += this.createDetailSection('תגיות', areasHtml);
+        } else if (service.tags?.length > 0) {
+            // תמיכה בפורמט הישן של תגיות
             const tagsHtml = service.tags
                 .map(tag => `<span class="service-tag">${tag}</span>`)
                 .join('');
             detailsHTML += this.createDetailSection('תגיות', tagsHtml);
+        }
+
+        // מיקום
+        if (service.city || service.address) {
+            let locationHtml = '';
+            if (service.city) locationHtml += `<div class="city">${service.city}</div>`;
+            if (service.address) locationHtml += `<div class="address">${service.address}</div>`;
+            detailsHTML += this.createDetailSection('מיקום', locationHtml);
         }
 
         this.detailsContainer.innerHTML = detailsHTML;
@@ -73,9 +105,11 @@ export class ModalManager {
         // Configure call button
         const callButton = document.getElementById('call-button');
         if (callButton) {
-            if (service.phone && /\d/.test(service.phone)) {
+            const hasPhone = contact.phone?.length > 0;
+            if (hasPhone) {
                 callButton.style.display = 'block';
-                callButton.dataset.phone = service.phone.split(',')[0].replace(/\D/g, '');
+                const phoneNumber = contact.phone[0].number;
+                callButton.dataset.phone = phoneNumber.replace(/\D/g, '');
             } else {
                 callButton.style.display = 'none';
             }
@@ -100,7 +134,7 @@ export class ModalManager {
 
     initiateCall() {
         const callButton = document.getElementById('call-button');
-        if (this.currentService?.phone && callButton?.dataset.phone) {
+        if (this.currentService?.contact?.phone?.length > 0 && callButton?.dataset.phone) {
             window.location.href = `tel:${callButton.dataset.phone}`;
         }
     }
@@ -132,16 +166,29 @@ export class ModalManager {
         if (service.description) parts.push(service.description);
         
         const contact = [];
-        if (service.phone) contact.push(`טלפון: ${service.phone}`);
-        if (service.email) contact.push(`דוא"ל: ${service.email}`);
-        if (service.website) contact.push(`אתר: ${service.website}`);
+        if (service.contact?.phone?.length > 0) {
+            contact.push(`טלפון: ${service.contact.phone.map(p => p.number).join(', ')}`);
+        }
+        if (service.contact?.email?.length > 0) {
+            contact.push(`דוא"ל: ${service.contact.email.map(e => e.address).join(', ')}`);
+        }
+        if (service.contact?.website?.length > 0) {
+            contact.push(`אתר אינטרנט: ${service.contact.website.map(w => w.url).join(', ')}`);
+        }
         
         if (contact.length > 0) {
             parts.push('\nפרטי התקשרות:\n' + contact.join('\n'));
         }
         
-        if (service.category) {
-            parts.push(`\nקטגוריה: ${service.category}`);
+        if (service.interestAreas?.length > 0) {
+            parts.push(`\nתגיות: ${service.interestAreas.join(', ')}`);
+        }
+        
+        if (service.city || service.address) {
+            let location = '';
+            if (service.city) location += `עיר: ${service.city}\n`;
+            if (service.address) location += `כתובת: ${service.address}\n`;
+            parts.push(`\nמיקום: ${location.trim()}`);
         }
         
         return parts.join('\n');

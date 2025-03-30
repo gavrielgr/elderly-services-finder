@@ -1,82 +1,61 @@
-import { DB_NAME, DB_VERSION, STORE_NAME, DATA_KEY, LAST_UPDATED_KEY } from '../config/constants.js';
+import { openDB } from 'idb';
+import { DB_NAME } from '../config/constants.js';
 
-export async function openDatabase() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onerror = () => reject('Error opening database');
-        request.onsuccess = (event) => resolve(event.target.result);
-        
-        request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+const DB_VERSION = 2;
+const STORE_NAME = 'app_data';
+
+export const LAST_UPDATED_KEY = 'lastUpdated';
+export const SERVICES_KEY = 'services';
+export const CATEGORIES_KEY = 'categories';
+export const INTEREST_AREAS_KEY = 'interestAreas';
+
+let dbPromise;
+
+async function getDB() {
+    if (!dbPromise) {
+        dbPromise = openDB(DB_NAME, DB_VERSION, {
+            upgrade(db) {
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME);
+                }
             }
-        };
-    });
+        });
+    }
+    return dbPromise;
 }
 
-export async function saveToIndexedDB(key, data) {
+export async function saveToIndexedDB(key, value) {
     try {
-        const db = await openDatabase();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            
-            const request = store.put({ key, value: data });
-            
-            transaction.oncomplete = () => resolve(true);
-            transaction.onerror = () => reject('Error saving to database');
-            
-            // Close the database connection when done
-            request.onsuccess = () => {
-                db.close();
-            };
-        });
+        const db = await getDB();
+        await db.put(STORE_NAME, value, key);
+        console.log(`Saved to IndexedDB: ${key}`);
     } catch (error) {
-        console.error('Error in saveToIndexedDB:', error);
+        console.error(`Error saving to IndexedDB (${key}):`, error);
         throw error;
     }
 }
 
 export async function getFromIndexedDB(key) {
     try {
-        const db = await openDatabase();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readonly');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.get(key);
-            
-            request.onsuccess = () => {
-                db.close();
-                resolve(request.result?.value || null);
-            };
-            request.onerror = () => {
-                db.close();
-                reject('Error reading from database');
-            };
-        });
+        const db = await getDB();
+        const value = await db.get(STORE_NAME, key);
+        if (value) {
+            console.log(`Retrieved from IndexedDB: ${key}`);
+        }
+        return value;
     } catch (error) {
-        console.error('Error in getFromIndexedDB:', error);
-        throw error;
+        console.error(`Error reading from IndexedDB (${key}):`, error);
+        return null;
     }
 }
 
 export async function clearIndexedDB() {
     try {
-        const db = await openDatabase();
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], 'readwrite');
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.clear();
-            
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => reject('Error clearing database');
-        });
+        const db = await getDB();
+        await db.clear(STORE_NAME);
+        console.log('IndexedDB cleared');
     } catch (error) {
-        console.error('Error in clearIndexedDB:', error);
+        console.error('Error clearing IndexedDB:', error);
         throw error;
     }
 }
-
-export { LAST_UPDATED_KEY } from '../config/constants.js';
