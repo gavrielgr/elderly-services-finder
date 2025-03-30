@@ -1,0 +1,38 @@
+{
+  "data": [
+    {
+      "id": "service-1",
+      "name": "שירות לדוגמה 1",
+      "category": "בריאות",
+      "description": "תיאור של שירות לדוגמה 1",
+      "contact": {
+        "phone": "03-1234567",
+        "email": "example1@example.com",
+        "address": "רחוב הדוגמה 1, תל אביב"
+      }
+    },
+    {
+      "id": "service-2",
+      "name": "שירות לדוגמה 2",
+      "category": "פנאי",
+      "description": "תיאור של שירות לדוגמה 2",
+      "contact": {
+        "phone": "03-7654321",
+        "email": "example2@example.com",
+        "address": "רחוב הדוגמה 2, תל אביב"
+      }
+    },
+    {
+      "id": "service-3",
+      "name": "שירות לדוגמה 3",
+      "category": "דיור",
+      "description": "תיאור של שירות לדוגמה 3",
+      "contact": {
+        "phone": "03-9876543",
+        "email": "example3@example.com",
+        "address": "רחוב הדוגמה 3, תל אביב"
+      }
+    }
+  ],
+  "lastUpdated": "2024-03-20T12:00:00.000Z"
+} 

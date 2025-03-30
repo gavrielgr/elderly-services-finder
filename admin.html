@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול מאתר שירותים לגיל השלישי</title>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/admin.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- לוח הבקרה -->
+    <div id="adminDashboard" class="container-fluid">
+        <div class="row">
+            <!-- סרגל צד -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-white sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#services" data-bs-toggle="tab">
+                                <i class="bi bi-gear"></i> שירותים
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#categories" data-bs-toggle="tab">
+                                <i class="bi bi-grid"></i> קטגוריות
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#interest-areas" data-bs-toggle="tab">
+                                <i class="bi bi-bookmark"></i> תחומי עניין
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#users" data-bs-toggle="tab">
+                                <i class="bi bi-people"></i> משתמשים
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3">
+                            <button id="signOutBtn" class="btn btn-outline-danger w-100">
+                                <i class="bi bi-box-arrow-right"></i> התנתק
+        </button>
+                        </li>
+                    </ul>
+    </div>
+            </nav>
+
+            <!-- תוכן ראשי -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- הודעות מערכת -->
+                <div id="status" class="alert d-none" role="alert"></div>
+
+                <!-- תוכן הטאבים -->
+                <div class="container-fluid">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab">
+                                <i class="bi bi-list-task"></i> שירותים
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+                                <i class="bi bi-folder"></i> קטגוריות
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#interest-areas" type="button" role="tab">
+                                <i class="bi bi-tags"></i> תחומי עניין
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                                <i class="bi bi-people"></i> משתמשים
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content p-3">
+                        <div class="tab-pane fade show active" id="services" role="tabpanel">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h2>ניהול שירותים</h2>
+                                <button class="btn btn-primary" onclick="showServiceModal()">
+                                    <i class="bi bi-plus-lg"></i> הוסף שירות
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>שם</th>
+                                            <th>קטגוריה</th>
+                                            <th>תחומי עניין</th>
+                                            <th>טלפון</th>
+                                            <th>דוא"ל</th>
+                                            <th>אתר</th>
+                                            <th>עיר</th>
+                                            <th>כתובת</th>
+                                            <th>פעולות</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="servicesTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="categories" role="tabpanel">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h2>ניהול קטגוריות</h2>
+                                <button class="btn btn-primary" onclick="showCategoryModal()">
+                                    <i class="bi bi-plus-lg"></i> הוסף קטגוריה
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>שם</th>
+                                            <th>תיאור</th>
+                                            <th>פעולות</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="categoriesTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="interest-areas" role="tabpanel">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h2>ניהול תחומי עניין</h2>
+                                <button class="btn btn-primary" onclick="showInterestAreaModal()">
+                                    <i class="bi bi-plus-lg"></i> הוסף תחום עניין
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                <thead>
+                    <tr>
+                                            <th>שם</th>
+                        <th>תיאור</th>
+                                            <th>מספר שירותים</th>
+                                            <th>פעולות</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="interest-areas-table-body">
+                                        <!-- תחומי עניין יוכנסו כאן -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="users" role="tabpanel">
+                            <div class="d-flex justify-content-between mb-3">
+                                <h2>ניהול משתמשים</h2>
+                                <button class="btn btn-primary" onclick="showUserModal()">
+                                    <i class="bi bi-plus-lg"></i> הוסף משתמש
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>שם</th>
+                                            <th>דוא"ל</th>
+                                            <th>תפקיד</th>
+                                            <th>סטטוס</th>
+                                            <th>תאריך יצירה</th>
+                        <th>פעולות</th>
+                    </tr>
+                </thead>
+                                    <tbody id="usersTableBody"></tbody>
+            </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- מודל שירות -->
+    <div class="modal fade" id="serviceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">שירות חדש</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="serviceForm">
+                        <input type="hidden" id="serviceId">
+                        <div class="mb-3">
+                            <label for="serviceName" class="form-label">שם השירות</label>
+                            <input type="text" class="form-control" id="serviceName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceDescription" class="form-label">תיאור</label>
+                            <textarea class="form-control" id="serviceDescription" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceCategory" class="form-label">קטגוריה</label>
+                            <select class="form-select" id="serviceCategory" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serviceInterestAreas" class="form-label">תחומי עניין</label>
+                            <select class="form-select" id="serviceInterestAreas" multiple required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">פרטי קשר</label>
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <label for="servicePhones" class="form-label">טלפונים (הפרד במספרים בפסיק)</label>
+                                    <input type="text" class="form-control" id="servicePhones">
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="serviceEmails" class="form-label">אימיילים (הפרד כתובות בפסיק)</label>
+                                    <input type="text" class="form-control" id="serviceEmails">
+                                </div>
+                                <div class="col-md-12">
+                                    <label for="serviceWebsites" class="form-label">אתרי אינטרנט (הפרד כתובות בפסיק)</label>
+                                    <input type="text" class="form-control" id="serviceWebsites">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                    <button type="button" class="btn btn-primary" onclick="saveService()">שמור</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודל תחום עניין -->
+    <div class="modal fade" id="interestAreaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">תחום עניין חדש</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="interestAreaForm">
+                        <input type="hidden" id="interestAreaId">
+                        <div class="mb-3">
+                            <label for="interestAreaName" class="form-label">שם</label>
+                            <input type="text" class="form-control" id="interestAreaName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="interestAreaDescription" class="form-label">תיאור</label>
+                            <textarea class="form-control" id="interestAreaDescription" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                    <button type="button" class="btn btn-primary" onclick="saveInterestAreaFromForm()">שמור</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודל דחיית דירוג -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">דחיית דירוג</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="rejectForm">
+                        <input type="hidden" id="rejectRatingId">
+                        <div class="mb-3">
+                            <label for="rejectReason" class="form-label">סיבת הדחייה</label>
+                            <textarea class="form-control" id="rejectReason" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmReject()">דחה דירוג</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalTitle">הוספת משתמש</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <input type="hidden" id="userId">
+                        <div class="mb-3">
+                            <label for="userName" class="form-label">שם</label>
+                            <input type="text" class="form-control" id="userName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userEmail" class="form-label">אימייל</label>
+                            <input type="email" class="form-control" id="userEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">תפקיד</label>
+                            <select class="form-select" id="userRole" required>
+                                <option value="user">משתמש</option>
+                                <option value="admin">מנהל</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userStatus" class="form-label">סטטוס</label>
+                            <select class="form-select" id="userStatus" required>
+                                <option value="active">פעיל</option>
+                                <option value="inactive">לא פעיל</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userPhone" class="form-label">טלפון</label>
+                            <input type="tel" class="form-control" id="userPhone">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userAddress" class="form-label">כתובת</label>
+                            <input type="text" class="form-control" id="userAddress">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUser()">שמור</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודל קטגוריה -->
+    <div class="modal fade" id="categoryModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="categoryModalTitle">הוספת קטגוריה</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="categoryForm">
+                        <input type="hidden" id="categoryId">
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label">שם</label>
+                            <input type="text" class="form-control" id="categoryName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryDescription" class="form-label">תיאור</label>
+                            <textarea class="form-control" id="categoryDescription" rows="3" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCategory()">שמור</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/config/firebase.js"></script>
+    <script type="module" src="js/admin/auth.js"></script>
+    <script type="module" src="js/admin/ui.js"></script>
+    <script type="module" src="js/admin/users.js"></script>
+    <script type="module" src="js/admin/services.js"></script>
+    <script type="module">
+        import { initializeAuth } from './js/admin/auth.js';
+        import { initializeApp, showUserModal, editUser, deleteUser, editService, deleteService, editInterestArea, initializeEventListeners } from './js/admin/ui.js';
+        import { showServiceModal, saveService } from './js/admin/services.js';
+        import { showCategoryModal, saveCategory, editCategory, deleteCategory } from './js/admin/categories.js';
+        import { showInterestAreaModal, saveInterestAreaFromForm, deleteInterestArea } from './js/admin/interest-areas.js';
+        
+        // Make functions globally available
+        window.showServiceModal = showServiceModal;
+        window.saveService = saveService;
+        window.showCategoryModal = showCategoryModal;
+        window.saveCategory = saveCategory;
+        window.editCategory = editCategory;
+        window.deleteCategory = deleteCategory;
+        window.showInterestAreaModal = showInterestAreaModal;
+        window.saveInterestAreaFromForm = saveInterestAreaFromForm;
+        window.showUserModal = showUserModal;
+        window.editUser = editUser;
+        window.deleteUser = deleteUser;
+        window.editService = editService;
+        window.deleteService = deleteService;
+        window.editInterestArea = editInterestArea;
+        window.deleteInterestArea = deleteInterestArea;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAuth();
+            initializeApp();
+            initializeEventListeners();
+        });
+    </script>
+</body>
+</html> 
