@@ -13,15 +13,15 @@ function bumpVersion(version) {
 // Get current version from package.json
 const PACKAGE_PATH = join(__dirname, 'package.json');
 const packageJson = JSON.parse(readFileSync(PACKAGE_PATH, 'utf8'));
-const APP_VERSION = packageJson.version;
+let APP_VERSION = packageJson.version;
 const BUILD_TIMESTAMP = new Date().toISOString();
 
 // If this is a version bump command
 if (process.argv.includes('--bump')) {
-    const newVersion = bumpVersion(APP_VERSION);
-    packageJson.version = newVersion;
+    APP_VERSION = bumpVersion(APP_VERSION);
+    packageJson.version = APP_VERSION;
     writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
-    console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
+    console.log(`Bumped version from ${packageJson.version} to ${APP_VERSION}`);
 }
 
 // Update all version/timestamp references
