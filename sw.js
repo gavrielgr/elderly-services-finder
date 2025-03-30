@@ -1,54 +1,22 @@
 // Service Worker for Elderly Services Finder
 
-// This version is injected during build
-const CACHE_VERSION = '2.0.10'; // Updated version
-const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
+const CACHE_NAME = 'elderly-services-cache-v1';
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './styles/main.css',
-  './styles/base/reset.css',
-  './styles/base/variables.css',
-  './styles/base/typography.css',
-  './styles/components/header.css',
-  './styles/components/search.css',
-  './styles/components/categories.css',
-  './styles/components/results.css',
-  './styles/components/modal.css',
-  './styles/components/install-prompt.css',
-  './styles/components/status-bar.css',
-  './styles/layout/responsive.css',
-  './styles/layout/print.css',
-  './styles/themes/dark-mode.css',
-  './app.js',
-  './js/ui/uiManager.js',
-  './js/ui/searchManager.js',
-  './js/ui/categoryManager.js',
-  './js/ui/resultsManager.js',
-  './js/ui/modalManager.js',
-  './js/services/dataService.js',
-  './js/services/storageService.js',
-  './js/utils/helpers.js',
-  './js/config/constants.js',
-  './js/config/api.js',
-  './js/config/firebase.js',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/favicon.ico',
-  './icons/favicon-32x32.png',
-  './icons/favicon-16x16.png',
-  './icons/search.png',  
-  './icons/logo.png',    
-  'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap',
-  'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/favicon.ico',
+  'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap'
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   // Skip waiting to ensure the new service worker activates immediately
   self.skipWaiting();
-  console.log(`Installing service worker version ${CACHE_VERSION}`);
   
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -64,15 +32,14 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log(`Activating new service worker version ${CACHE_VERSION}`);
+  const cacheWhitelist = [CACHE_NAME];
   
-  // Remove all caches that don't match current version
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log(`Deleting old cache: ${cacheName}`);
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            // If this cache is not in our whitelist, delete it
             return caches.delete(cacheName);
           }
         })
@@ -80,16 +47,6 @@ self.addEventListener('activate', (event) => {
     }).then(() => {
       // Claim clients to ensure the new service worker takes control immediately
       return self.clients.claim();
-    }).then(() => {
-      // Notify all clients that the service worker has been updated
-      return self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'SERVICE_WORKER_UPDATED',
-            version: CACHE_VERSION
-          });
-        });
-      });
     })
   );
 });
@@ -99,7 +56,7 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
-  // Skip cross-origin requests except for specific domains we need
+  // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin) && 
       !event.request.url.includes('fonts.googleapis.com') &&
       !event.request.url.includes('fonts.gstatic.com')) {
@@ -163,6 +120,7 @@ self.addEventListener('fetch', (event) => {
 // Background sync event for when connection is restored
 self.addEventListener('sync', (event) => {
   if (event.tag === 'refresh-data') {
+    // This would be where we could implement background data synchronization
     console.log('Background sync triggered');
     
     // Notify all clients that we're doing a background sync
@@ -174,18 +132,29 @@ self.addEventListener('sync', (event) => {
       });
     });
     
-    // After successfully fetching new data, notify all clients
-    self.clients.matchAll().then(clients => {
-      clients.forEach(client => {
-        client.postMessage({
-          type: 'CACHE_UPDATED',
-          data: {
-            timestamp: new Date().toISOString(),
-            version: CACHE_VERSION
-          }
-        });
-      });
-    });
+    // Here you would typically fetch the latest data from your API
+    // and update IndexedDB. For simplicity, we'll just notify the
+    // app that there might be new content.
+    event.waitUntil(
+      fetch(API_URL)
+        .then(response => response.json())
+        .then(data => {
+          // After successfully fetching new data, notify all clients
+          return self.clients.matchAll().then(clients => {
+            clients.forEach(client => {
+              client.postMessage({
+                type: 'CACHE_UPDATED',
+                data: {
+                  timestamp: new Date().toISOString()
+                }
+              });
+            });
+          });
+        })
+        .catch(error => {
+          console.error('Background sync failed:', error);
+        })
+    );
   }
 });
 
@@ -197,6 +166,7 @@ self.addEventListener('push', (event) => {
     const options = {
       body: data.body || 'יש עדכון חדש במידע!',
       icon: '/icons/icon-192.png',
+      badge: '/icons/badge.png',
       dir: 'rtl', // Right-to-left for Hebrew
       lang: 'he'
     };

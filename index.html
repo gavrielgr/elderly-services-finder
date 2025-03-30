@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html dir="rtl" lang="he">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>שירותי+ מבית יד ביד | שירותי סיוע ותמיכה למשפחה המטפלת</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מאתר שירותים לגיל השלישי</title>
     
     <!-- PWA meta tags -->
     <meta name="theme-color" content="#4285f4">
@@ -15,98 +15,55 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="styles/main.css">
-    <!-- Favicon -->
-    <link rel="icon" href="icons/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-
-    <!-- Import Map for Firebase -->
-    <script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js"
-        }
-    }
-    </script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Header -->
         <header class="app-header">
-            <img src="icons/logo.png" alt="Logo" class="header-logo">
-            <div class="header-title">
-                <span class="primary-title">שירותי+</span>
-                <a href="https://www.yadbeyad-care.co.il/" target="_blank" rel="noopener noreferrer" class="subtitle no-link-style">
-                    מבית יד ביד | שירותי סיוע ותמיכה למשפחה המטפלת
-                </a>
+            <h1>מאתר שירותים לגיל השלישי</h1>
+            <div id="connection-status" class="connection-status" title="סטטוס חיבור">
+                <span class="status-icon online">🟢</span>
+                <span class="status-icon offline hidden">🔴</span>
             </div>
-            <div class="header-status">
-                <div class="last-updated">
-                    <span id="last-updated-text">עודכן: טוען...</span>
-                    <button id="refresh-button" title="רענן מידע">🔄</button>
-                </div>
-                <div id="connection-status" class="connection-status" title="סטטוס חיבור">
-                    <span class="status-icon online">🟢</span>
-                    <span class="status-icon offline hidden">🔴</span>
-                </div>
-            </div>
-            <button id="theme-switch" aria-label="החלף מצב תצוגה" class="theme-switch">
-                <span class="light-mode-icon">☀️</span>
-                <span class="dark-mode-icon">🌙</span>
-            </button>
-
-            <!-- Install button with emoji icon -->
-            <button id="header-install-button" class="theme-switch" aria-label="התקן את האפליקציה">
-                📥
-            </button>
         </header>
 
         <!-- Search Section -->
         <section class="search-section">
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="חיפוש" aria-label="חיפוש">
-                <button id="clear-search-button" aria-label="נקה חיפוש" class="hidden">✕</button>
+                <input type="text" id="search-input" placeholder="חיפוש שירותים..." aria-label="חיפוש">
                 <button id="search-button" aria-label="חפש">🔍</button>
+                <button id="voice-search-button" aria-label="חיפוש קולי">🎤</button>
             </div>
-            <div id="results-count" class="results-count has-results">הקלידו מילות חיפוש או בחרו קטגוריה</div>
+            <div class="filter-options">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="no-waitlist-checkbox">
+                    <span class="checkbox-text">ללא רשימת המתנה</span>
+                </label>
+            </div>
         </section>
 
         <!-- Categories Section -->
-       <section class="categories-section">
-            <div class="categories-header">
-                <button id="toggle-categories" class="toggle-button" aria-label="הצג/הסתר קטגוריות">
-                    <span class="toggle-icon">▼</span>
-                    <span id="categories-title">קטגוריות</span>
-                </button>
-            </div>
+        <section class="categories-section">
+            <h2>קטגוריות</h2>
             <div id="categories-container" class="categories-container">
                 <!-- Categories will be populated dynamically -->
                 <div class="category-loading">טוען קטגוריות...</div>
             </div>
         </section>
-                
+
         <!-- Results Section -->
         <section class="results-section">
             <div class="results-header">
-                <div class="view-toggle">
-                    <button id="grid-view-button" class="view-button active" title="תצוגת גריד">
-                        <span class="grid-icon">&#9783;</span>
-                    </button>
-                    <button id="list-view-button" class="view-button" title="תצוגת רשימה">
-                        <span class="list-icon">&#9776;</span>
-                    </button>
+                <h2>תוצאות</h2>
+                <div class="last-updated">
+                    <span id="last-updated-text">עודכן: טוען...</span>
+                    <button id="refresh-button" title="רענן מידע">🔄</button>
                 </div>
             </div>
             <div id="results-container" class="results-container">
                 <!-- Results will be populated dynamically -->
+                <div class="results-message">הזן מילות חיפוש או בחר קטגוריה</div>
             </div>
         </section>
 
@@ -128,48 +85,6 @@
         <div id="status-bar" class="status-bar"></div>
     </div>
 
-    <!-- Scroll Up Button -->
-    <button id="scroll-up-button" class="scroll-up-button hidden" aria-label="גלול למעלה">⬆️</button>
-
-    <!-- Install Prompt -->
-<div id="install-prompt" class="install-prompt">
-    <div class="install-prompt-content">
-        <div class="install-prompt-header">
-            <h3>רוצה להתקין את שירותי+ כאפליקציה?</h3>
-            <button id="close-prompt" class="close-prompt">&times;</button>
-        </div>
-        <div class="install-prompt-body">
-            <p class="install-message">התקן את האפליקציה למסך הבית לגישה מהירה במצב מקוון ולא מקוון</p>
-            <div class="install-instructions">
-                <!-- עבור אנדרואיד -->
-                <div id="android-instructions-preloader" class="install-instructions-preloader">טוען הוראות התקנה...</div>
-                <div id="android-instructions" class="hidden">
-                    <button id="install-button-android" class="install-button">פתח את חלונית ההתקנה</button>
-                    <p>או התקן ידנית:</p>
-                    <ol>
-                        <li>לחץ על <span class="icon">⋮</span> (תפריט)</li>
-                        <li>בחר "התקן אפליקציה" או "הוסף למסך הבית"</li>
-                    </ol>
-                </div>
-                
-                <!-- עבור אייפון -->
-                <div id="ios-instructions" class="hidden">
-                    <p>כדי להתקין באייפון:</p>
-                    <ol>
-                        <li>לחץ על <span class="icon">↑</span> (שיתוף)</li>
-                        <li>גלול מטה ובחר "הוסף למסך הבית"</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-        <div class="install-prompt-actions">
-           <button id="later-button" class="later-button">אולי מאוחר יותר</button>
-        </div>
-    </div>
-</div>
-
-    
-
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
@@ -186,21 +101,6 @@
     </script>
     
     <!-- Main Script -->
-    <script type="module" src="app.js"></script>
-    <footer class="app-footer">
-        <div class="footer-container">
-            <div class="copyright">
-                © 2025 שירותי+ | כל הזכויות שמורות
-            </div>
-            <div id="app-version" class="app-version"></div> <!-- Add this element -->
-        </div>
-    </footer>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const appVersionElement = document.getElementById('app-version');
-        if (!urlParams.has('test')) {
-            appVersionElement.style.display = 'none';
-        }
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>

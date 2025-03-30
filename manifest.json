@@ -1,32 +1,26 @@
 {
-  "name": "שירותי+",
-  "short_name": "שירותי+",
-  "description": "אפליקציה למציאת פתרונות לאזרחים ותיקים",
-  "start_url": "./index.html?homescreen=true",
+  "name": "מאתר שירותים לגיל השלישי",
+  "short_name": "שירותים לזקנים",
+  "description": "אפליקציה לחיפוש מידע על שירותים לאזרחים ותיקים",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4285f4",
   "orientation": "portrait-primary",
   "dir": "rtl",
   "lang": "he",
-  "scope": "./",
   "icons": [
     {
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "icons/favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
     }
   ]
 }
