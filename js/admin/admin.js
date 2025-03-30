@@ -3,7 +3,6 @@ import { ratingsAdmin } from './RatingsAdmin.js';
 
 class AdminUI {
     constructor() {
-        this.loginForm = document.getElementById('login-form');
         this.loginContainer = document.getElementById('login-container');
         this.adminDashboard = document.getElementById('admin-dashboard');
         this.adminEmail = document.getElementById('admin-email');
@@ -35,7 +34,6 @@ class AdminUI {
 
     initializeEventListeners() {
         // Auth listeners
-        this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         this.logoutButton.addEventListener('click', () => this.handleLogout());
 
         // Filter listeners
@@ -63,18 +61,6 @@ class AdminUI {
         });
     }
 
-    async handleLogin(e) {
-        e.preventDefault();
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        try {
-            await adminAuth.login(email, password);
-        } catch (error) {
-            this.showStatusMessage('התחברות נכשלה', 'error');
-        }
-    }
-
     async handleLogout() {
         try {
             await adminAuth.logout();
@@ -87,7 +73,6 @@ class AdminUI {
     showLogin() {
         this.loginContainer.classList.remove('hidden');
         this.adminDashboard.classList.add('hidden');
-        this.loginForm.reset();
     }
 
     showDashboard(admin) {

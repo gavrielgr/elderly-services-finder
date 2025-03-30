@@ -3,7 +3,7 @@ import { db } from '../config/firebase.js';
 import { showStatus } from './ui.js';
 import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
 
-const ADMIN_CACHE_KEYS = {
+export const ADMIN_CACHE_KEYS = {
     CATEGORIES: 'admin_categories',
     INTEREST_AREAS: 'admin_interest_areas',
     LAST_UPDATE: 'admin_last_update'

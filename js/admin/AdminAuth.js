@@ -1,6 +1,7 @@
 import { auth, db } from '../config/firebase.js';
 import { 
-    signInWithEmailAndPassword,
+    signInWithPopup,
+    GoogleAuthProvider,
     signOut,
     onAuthStateChanged 
 } from 'firebase/auth';
@@ -16,6 +17,7 @@ export class AdminAuth {
     constructor() {
         this.currentAdmin = null;
         this.authStateListeners = new Set();
+        this.googleProvider = new GoogleAuthProvider();
         
         // Listen to auth state changes
         onAuthStateChanged(auth, (user) => {
@@ -23,15 +25,17 @@ export class AdminAuth {
         });
     }
 
-    async login(email, password) {
+    async login() {
         try {
-            // 1. Firebase authentication
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            // 1. Firebase authentication with Google
+            const userCredential = await signInWithPopup(auth, this.googleProvider);
             
             // 2. Check if user is admin
-            const adminDoc = await getDoc(doc(db, 'admins', userCredential.user.uid));
+            const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
             
-            if (!adminDoc.exists() || adminDoc.data().status !== 'active') {
+            if (!userDoc.exists() || 
+                userDoc.data().role !== 'admin' || 
+                userDoc.data().status !== 'active') {
                 await signOut(auth);
                 throw new Error('unauthorized');
             }
@@ -45,7 +49,7 @@ export class AdminAuth {
             return {
                 uid: userCredential.user.uid,
                 email: userCredential.user.email,
-                ...adminDoc.data()
+                ...userDoc.data()
             };
 
         } catch (error) {
@@ -71,10 +75,10 @@ export class AdminAuth {
     async checkPermission(permission) {
         if (!this.currentAdmin) return false;
         
-        const adminDoc = await getDoc(doc(db, 'admins', this.currentAdmin.uid));
-        if (!adminDoc.exists()) return false;
+        const userDoc = await getDoc(doc(db, 'users', this.currentAdmin.uid));
+        if (!userDoc.exists()) return false;
         
-        return adminDoc.data().permissions.includes(permission);
+        return userDoc.data().permissions?.includes(permission) || false;
     }
 
     async logActivity(adminId, action, details) {
@@ -95,10 +99,12 @@ export class AdminAuth {
 
     async handleAuthStateChange(user) {
         if (user) {
-            const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-            this.currentAdmin = adminDoc.exists() ? {
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
+            this.currentAdmin = userDoc.exists() && 
+                              userDoc.data().role === 'admin' && 
+                              userDoc.data().status === 'active' ? {
                 uid: user.uid,
-                ...adminDoc.data()
+                ...userDoc.data()
             } : null;
         } else {
             this.currentAdmin = null;

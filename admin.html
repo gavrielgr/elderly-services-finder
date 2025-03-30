@@ -312,7 +312,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
-                    <button type="button" class="btn btn-primary" id="saveUserBtn" onclick="saveUser()">שמור</button>
+                    <button type="button" class="btn btn-primary" id="saveUserBtn" onclick="createNewUser()">שמור</button>
                 </div>
             </div>
         </div>
@@ -365,6 +365,7 @@
         import { showServiceModal, saveService, editService } from './js/admin/services.js';
         import { showCategoryModal, saveCategory, editCategory, deleteCategory } from './js/admin/categories.js';
         import { showInterestAreaModal, saveInterestAreaFromForm, deleteInterestArea } from './js/admin/interest-areas.js';
+        import { createNewUser } from './js/admin/users.js';
         
         // Make functions globally available
         window.showServiceModal = showServiceModal;
@@ -381,6 +382,7 @@
         window.editInterestArea = editInterestArea;
         window.deleteInterestArea = deleteInterestArea;
         window.loadCategories = loadCategories;
+        window.createNewUser = createNewUser;
         
         document.addEventListener('DOMContentLoaded', () => {
             initializeAuth();
