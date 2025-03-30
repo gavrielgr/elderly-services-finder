@@ -9,7 +9,7 @@ export default defineConfig({
   root: '.',
 
   // מגדיר את ה-base URL
-  base: './',
+  base: '/',
 
   // הגדרת aliases
   resolve: {
@@ -30,6 +30,7 @@ export default defineConfig({
   },
 
   optimizeDeps: {
-    exclude: ['fsevents']
+    exclude: ['fsevents'],
+    include: ['firebase/app', 'firebase/firestore', 'firebase/auth']
   }
 }); 
