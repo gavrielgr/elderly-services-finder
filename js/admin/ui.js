@@ -24,6 +24,23 @@ export function showStatus(message, type = 'info') {
     }, 5000);
 }
 
+// Show loading indicator
+function showLoading(tableBody) {
+    if (!tableBody) return;
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="10" class="text-center">
+                <div class="d-flex justify-content-center align-items-center">
+                    <div class="spinner-border text-primary me-2" role="status">
+                        <span class="visually-hidden">טוען...</span>
+                    </div>
+                    <span>טוען נתונים...</span>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
 // Initialize tabs
 function initializeTabs() {
     const tabElements = document.querySelectorAll('[data-bs-toggle="tab"]');
@@ -32,15 +49,19 @@ function initializeTabs() {
             const targetId = event.target.getAttribute('data-bs-target');
             switch (targetId) {
                 case '#services':
+                    showLoading(document.getElementById('servicesTableBody'));
                     await loadServices(document.getElementById('servicesTableBody'));
                     break;
                 case '#categories':
+                    showLoading(document.getElementById('categoriesTableBody'));
                     await loadCategories();
                     break;
                 case '#interest-areas':
+                    showLoading(document.getElementById('interest-areas-table-body'));
                     await loadInterestAreasTable(document.getElementById('interest-areas-table-body'));
                     break;
                 case '#users':
+                    showLoading(document.getElementById('usersTableBody'));
                     await loadUsers();
                     break;
             }
@@ -50,6 +71,20 @@ function initializeTabs() {
 
 // Initialize app
 export function initializeApp() {
+    // Check for status messages in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    if (status) {
+        switch (status) {
+            case 'service_saved':
+                showStatus('השירות נשמר בהצלחה', 'success');
+                break;
+            // Add more status messages here as needed
+        }
+        // Remove status from URL without refreshing the page
+        window.history.replaceState({}, '', 'admin.html');
+    }
+
     // Initialize tabs
     initializeTabs();
     
@@ -60,17 +95,19 @@ export function initializeApp() {
 // Load all data
 async function loadAllData() {
     try {
-        // Load users
-        await loadUsers();
+        // Show loading indicators
+        showLoading(document.getElementById('servicesTableBody'));
+        showLoading(document.getElementById('categoriesTableBody'));
+        showLoading(document.getElementById('interest-areas-table-body'));
+        showLoading(document.getElementById('usersTableBody'));
         
-        // Load services
-        await loadServices(document.getElementById('servicesTableBody'));
-        
-        // Load categories and interest areas
-        await loadCategoriesAndInterestAreas();
-        
-        // Load interest areas table
-        await loadInterestAreasTable(document.getElementById('interest-areas-table-body'));
+        // Load all data
+        await Promise.all([
+            loadUsers(),
+            loadServices(document.getElementById('servicesTableBody')),
+            loadCategories(),
+            loadInterestAreasTable(document.getElementById('interest-areas-table-body'))
+        ]);
     } catch (error) {
         console.error('Error loading data:', error);
         showStatus('שגיאה בטעינת הנתונים', 'error');
@@ -78,13 +115,13 @@ async function loadAllData() {
 }
 
 // Load categories
-async function loadCategories() {
+export async function loadCategories() {
     try {
         const categoriesSnapshot = await getDocs(collection(db, 'categories'));
         const categoriesTableBody = document.getElementById('categoriesTableBody');
         
         if (categoriesSnapshot.empty) {
-            categoriesTableBody.innerHTML = '<tr><td colspan="4" class="text-center">אין קטגוריות להצגה</td></tr>';
+            categoriesTableBody.innerHTML = '<tr><td colspan="3" class="text-center">אין קטגוריות להצגה</td></tr>';
             return;
         }
 
@@ -95,7 +132,6 @@ async function loadCategories() {
                 <tr>
                     <td>${category.name}</td>
                     <td>${category.description || ''}</td>
-                    <td>${new Date(category.createdAt).toLocaleDateString('he-IL')}</td>
                     <td>
                         <div class="btn-group" role="group">
                             <button class="btn btn-sm btn-primary" onclick="editCategory('${doc.id}')">
@@ -121,11 +157,19 @@ async function loadCategories() {
 async function loadInterestAreasTable(tableBody) {
     try {
         const areasSnapshot = await getDocs(collection(db, 'interest-areas'));
+        const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
         
         if (areasSnapshot.empty) {
             tableBody.innerHTML = '<tr><td colspan="4" class="text-center">אין תחומי עניין להצגה</td></tr>';
             return;
         }
+
+        // Create a map to count services per area
+        const areaServicesCount = {};
+        serviceAreasSnapshot.forEach(doc => {
+            const data = doc.data();
+            areaServicesCount[data.interestAreaId] = (areaServicesCount[data.interestAreaId] || 0) + 1;
+        });
 
         const rows = [];
         areasSnapshot.forEach(doc => {
@@ -134,7 +178,7 @@ async function loadInterestAreasTable(tableBody) {
                 <tr>
                     <td>${area.name}</td>
                     <td>${area.description || ''}</td>
-                    <td>${new Date(area.createdAt).toLocaleDateString('he-IL')}</td>
+                    <td>${areaServicesCount[doc.id] || 0}</td>
                     <td>
                         <div class="btn-group" role="group">
                             <button class="btn btn-sm btn-primary" onclick="editInterestArea('${doc.id}')">
@@ -261,10 +305,6 @@ export function editUser(userId) {
     showUserModal(userId);
 }
 
-export function editService(serviceId) {
-    showStatus('עריכת שירות עדיין לא מומשה', 'info');
-}
-
 export function editInterestArea(areaId) {
     showStatus('עריכת תחום עניין עדיין לא מומשה', 'info');
 }
@@ -290,6 +330,41 @@ export function deleteService(serviceId) {
         } catch (error) {
             console.error('Error deleting service:', error);
             showStatus('שגיאה במחיקת השירות', 'error');
+        }
+    }
+}
+
+// Toggle button loading state
+function toggleButtonLoading(button, isLoading) {
+    if (!button) return;
+    
+    const originalContent = button.innerHTML;
+    if (isLoading) {
+        button.disabled = true;
+        button.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            טוען...
+        `;
+    } else {
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    }
+    return originalContent;
+}
+
+// Handle save operations with loading state
+export async function handleSaveOperation(saveFunction, button, successMessage) {
+    const originalContent = toggleButtonLoading(button, true);
+    try {
+        await saveFunction();
+        showStatus(successMessage, 'success');
+    } catch (error) {
+        console.error('Error during save operation:', error);
+        showStatus('שגיאה בשמירת הנתונים', 'error');
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalContent;
         }
     }
 }

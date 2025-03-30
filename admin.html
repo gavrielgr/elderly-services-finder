@@ -160,6 +160,8 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- חיווי טעינה -->
+                    <div id="serviceModalStatus" class="alert d-none mb-3" role="alert"></div>
                     <form id="serviceForm">
                         <input type="hidden" id="serviceId">
                         <div class="mb-3">
@@ -208,7 +210,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
-                    <button type="button" class="btn btn-primary" onclick="saveService()">שמור</button>
+                    <button type="button" class="btn btn-primary" id="saveServiceBtn" onclick="saveService()">שמור</button>
                 </div>
             </div>
         </div>
@@ -237,7 +239,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
-                    <button type="button" class="btn btn-primary" onclick="saveInterestAreaFromForm()">שמור</button>
+                    <button type="button" class="btn btn-primary" id="saveInterestAreaBtn" onclick="saveInterestAreaFromForm()">שמור</button>
                 </div>
             </div>
         </div>
@@ -309,7 +311,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
-                    <button type="button" class="btn btn-primary" onclick="saveUser()">שמור</button>
+                    <button type="button" class="btn btn-primary" id="saveUserBtn" onclick="saveUser()">שמור</button>
                 </div>
             </div>
         </div>
@@ -338,7 +340,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
-                    <button type="button" class="btn btn-primary" onclick="saveCategory()">שמור</button>
+                    <button type="button" class="btn btn-primary" id="saveCategoryBtn" onclick="saveCategory()">שמור</button>
                 </div>
             </div>
         </div>
@@ -353,8 +355,8 @@
     <script type="module" src="js/admin/services.js"></script>
     <script type="module">
         import { initializeAuth } from './js/admin/auth.js';
-        import { initializeApp, showUserModal, editUser, deleteUser, editService, deleteService, editInterestArea, initializeEventListeners } from './js/admin/ui.js';
-        import { showServiceModal, saveService } from './js/admin/services.js';
+        import { initializeApp, showUserModal, editUser, deleteUser, deleteService, editInterestArea, initializeEventListeners, loadCategories } from './js/admin/ui.js';
+        import { showServiceModal, saveService, editService } from './js/admin/services.js';
         import { showCategoryModal, saveCategory, editCategory, deleteCategory } from './js/admin/categories.js';
         import { showInterestAreaModal, saveInterestAreaFromForm, deleteInterestArea } from './js/admin/interest-areas.js';
         
@@ -370,10 +372,9 @@
         window.showUserModal = showUserModal;
         window.editUser = editUser;
         window.deleteUser = deleteUser;
-        window.editService = editService;
-        window.deleteService = deleteService;
         window.editInterestArea = editInterestArea;
         window.deleteInterestArea = deleteInterestArea;
+        window.loadCategories = loadCategories;
         
         document.addEventListener('DOMContentLoaded', () => {
             initializeAuth();

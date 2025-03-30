@@ -213,4 +213,9 @@ main {
 
 .modal-header .btn-close {
     margin: -0.5rem auto -0.5rem -0.5rem;
+}
+
+/* Override Bootstrap's form-select width */
+.form-select {
+    width: auto !important;
 } 

@@ -121,7 +121,7 @@ export async function loadServices(tableBody) {
                     <td>${websites}</td>
                     <td>
                         <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-primary" onclick="editService('${serviceDoc.id}')">
+                            <button class="btn btn-sm btn-primary" onclick="window.location.href='edit-service.html?id=${serviceDoc.id}'">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <button class="btn btn-sm btn-danger" onclick="deleteService('${serviceDoc.id}')">
@@ -190,9 +190,27 @@ export function showServiceModal(serviceId = null) {
     modal.show();
 }
 
+// Show modal status
+function showModalStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('serviceModalStatus');
+    if (!statusDiv) return;
+
+    statusDiv.className = `alert alert-${type} d-block`;
+    statusDiv.textContent = message;
+}
+
+// Hide modal status
+function hideModalStatus() {
+    const statusDiv = document.getElementById('serviceModalStatus');
+    if (!statusDiv) return;
+    statusDiv.className = 'alert d-none';
+}
+
 // Save service
 export async function saveService() {
     const form = document.getElementById('serviceForm');
+    const saveButton = document.getElementById('saveServiceBtn');
+    
     if (!form || !form.checkValidity()) {
         form.reportValidity();
         return;
@@ -234,6 +252,14 @@ export async function saveService() {
     };
 
     try {
+        // Show loading state
+        saveButton.disabled = true;
+        saveButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            שומר...
+        `;
+        showModalStatus('שומר את השירות...', 'info');
+
         const batch = writeBatch(db);
         const selectedInterestAreas = Array.from(document.getElementById('serviceInterestAreas').selectedOptions).map(option => option.value);
 
@@ -287,15 +313,28 @@ export async function saveService() {
         batch.set(serviceRef, serviceData, { merge: true });
         await batch.commit();
         
-        showStatus('השירות נשמר בהצלחה', 'success');
+        // Show success message in modal
+        showModalStatus('השירות נשמר בהצלחה!', 'success');
         
-        // Hide modal and reload data
-        const modal = bootstrap.Modal.getInstance(document.getElementById('serviceModal'));
-        modal.hide();
+        // Reload the services table
         await loadServices(document.getElementById('servicesTableBody'));
+        
+        // Close modal after a short delay
+        setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('serviceModal'));
+            modal.hide();
+            hideModalStatus();
+        }, 1500);
+        
     } catch (error) {
         console.error('Error saving service:', error);
-        showStatus('שגיאה בשמירת השירות', 'error');
+        showModalStatus('שגיאה בשמירת השירות', 'danger');
+    } finally {
+        // Reset button state
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = 'שמור';
+        }
     }
 }
 

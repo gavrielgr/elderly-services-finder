@@ -35,6 +35,8 @@ export function showCategoryModal(categoryId = null) {
 // Save category
 export async function saveCategory() {
     const form = document.getElementById('categoryForm');
+    const saveButton = document.getElementById('saveCategoryBtn');
+    
     if (!form || !form.checkValidity()) {
         form.reportValidity();
         return;
@@ -48,6 +50,13 @@ export async function saveCategory() {
     };
 
     try {
+        // Show loading state
+        saveButton.disabled = true;
+        saveButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            שומר...
+        `;
+
         const categoryRef = categoryId ? 
             doc(db, 'categories', categoryId) : 
             doc(collection(db, 'categories'));
@@ -66,6 +75,12 @@ export async function saveCategory() {
     } catch (error) {
         console.error('Error saving category:', error);
         showStatus('שגיאה בשמירת הקטגוריה', 'error');
+    } finally {
+        // Reset button state
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.innerHTML = 'שמור';
+        }
     }
 }
 
