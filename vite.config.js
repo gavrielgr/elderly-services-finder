@@ -14,10 +14,7 @@ export default defineConfig({
   // הגדרת aliases
   resolve: {
     alias: {
-      '@': '/src',
-      'firebase/app': 'firebase/app',
-      'firebase/firestore': 'firebase/firestore',
-      'firebase/auth': 'firebase/auth'
+      '@': '/src'
     }
   },
 
@@ -29,10 +26,7 @@ export default defineConfig({
 
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
-    rollupOptions: {
-      external: ['firebase/app', 'firebase/firestore', 'firebase/auth']
-    }
+    assetsDir: 'assets'
   },
 
   optimizeDeps: {
