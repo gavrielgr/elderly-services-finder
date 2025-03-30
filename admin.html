@@ -54,29 +54,7 @@
 
                 <!-- תוכן הטאבים -->
                 <div class="container-fluid">
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab">
-                                <i class="bi bi-list-task"></i> שירותים
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
-                                <i class="bi bi-folder"></i> קטגוריות
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#interest-areas" type="button" role="tab">
-                                <i class="bi bi-tags"></i> תחומי עניין
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
-                                <i class="bi bi-people"></i> משתמשים
-                            </button>
-                        </li>
-                    </ul>
-                    <div class="tab-content p-3">
+                    <div class="tab-content">
                         <div class="tab-pane fade show active" id="services" role="tabpanel">
                             <div class="d-flex justify-content-between mb-3">
                                 <h2>ניהול שירותים</h2>
@@ -94,8 +72,6 @@
                                             <th>טלפון</th>
                                             <th>דוא"ל</th>
                                             <th>אתר</th>
-                                            <th>עיר</th>
-                                            <th>כתובת</th>
                                             <th>פעולות</th>
                                         </tr>
                                     </thead>
@@ -206,16 +182,25 @@
                             <label class="form-label">פרטי קשר</label>
                             <div class="row g-3">
                                 <div class="col-md-12">
-                                    <label for="servicePhones" class="form-label">טלפונים (הפרד במספרים בפסיק)</label>
-                                    <input type="text" class="form-control" id="servicePhones">
+                                    <label for="servicePhones" class="form-label">טלפונים</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="servicePhones" placeholder="מספרי טלפון (הפרד במספרים בפסיק)">
+                                        <input type="text" class="form-control" id="servicePhonesDesc" placeholder="תיאור (לא חובה)">
+                                    </div>
                                 </div>
                                 <div class="col-md-12">
-                                    <label for="serviceEmails" class="form-label">אימיילים (הפרד כתובות בפסיק)</label>
-                                    <input type="text" class="form-control" id="serviceEmails">
+                                    <label for="serviceEmails" class="form-label">אימיילים</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="serviceEmails" placeholder="כתובות אימייל (הפרד כתובות בפסיק)">
+                                        <input type="text" class="form-control" id="serviceEmailsDesc" placeholder="תיאור (לא חובה)">
+                                    </div>
                                 </div>
                                 <div class="col-md-12">
-                                    <label for="serviceWebsites" class="form-label">אתרי אינטרנט (הפרד כתובות בפסיק)</label>
-                                    <input type="text" class="form-control" id="serviceWebsites">
+                                    <label for="serviceWebsites" class="form-label">אתרי אינטרנט</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="serviceWebsites" placeholder="כתובות אתרים (הפרד כתובות בפסיק)">
+                                        <input type="text" class="form-control" id="serviceWebsitesDesc" placeholder="תיאור (לא חובה)">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -319,10 +304,6 @@
                         <div class="mb-3">
                             <label for="userPhone" class="form-label">טלפון</label>
                             <input type="tel" class="form-control" id="userPhone">
-                        </div>
-                        <div class="mb-3">
-                            <label for="userAddress" class="form-label">כתובת</label>
-                            <input type="text" class="form-control" id="userAddress">
                         </div>
                     </form>
                 </div>

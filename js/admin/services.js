@@ -49,33 +49,89 @@ export async function loadServices(tableBody) {
             return;
         }
 
+        // Get all service-interest-areas connections at once
+        const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
+        
+        // Create a map of serviceId to array of area IDs
+        const serviceAreasMap = {};
+        serviceAreasSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (!serviceAreasMap[data.serviceId]) {
+                serviceAreasMap[data.serviceId] = [];
+            }
+            serviceAreasMap[data.serviceId].push(data.interestAreaId);
+        });
+
         const rows = [];
-        servicesSnapshot.forEach((doc) => {
-            const service = doc.data();
+        for (const serviceDoc of servicesSnapshot.docs) {
+            const service = serviceDoc.data();
             const category = categories.find(c => c.id === service.category);
-            const areas = service.interestAreas?.map(areaId => 
-                interestAreas.find(a => a.id === areaId)?.name
-            ).filter(Boolean).join(', ') || '';
+            
+            // Get interest areas for this service from the map
+            const areaIds = serviceAreasMap[serviceDoc.id] || [];
+            const areas = areaIds
+                .map(areaId => interestAreas.find(a => a.id === areaId)?.name)
+                .filter(Boolean)
+                .join(', ');
+
+            // Extract contact information with type checking and fallbacks
+            let phones = '', emails = '', websites = '';
+            
+            // Handle phone numbers
+            if (service.contact?.phone) {
+                if (Array.isArray(service.contact.phone)) {
+                    phones = service.contact.phone.map(p => typeof p === 'object' ? p.number : p).join(', ');
+                } else if (typeof service.contact.phone === 'string') {
+                    phones = service.contact.phone;
+                }
+            }
+            
+            // Handle emails
+            if (service.contact?.email) {
+                if (Array.isArray(service.contact.email)) {
+                    emails = service.contact.email.map(e => typeof e === 'object' ? e.address : e).join(', ');
+                } else if (typeof service.contact.email === 'string') {
+                    emails = service.contact.email;
+                }
+            }
+            
+            // Handle websites
+            if (service.contact?.website) {
+                if (Array.isArray(service.contact.website)) {
+                    websites = service.contact.website.map(w => typeof w === 'object' ? w.url : w).join(', ');
+                } else if (typeof service.contact.website === 'string') {
+                    websites = service.contact.website;
+                }
+            }
+
+            // Fallback to old structure if contact object doesn't exist
+            if (!service.contact) {
+                phones = service.phone || '';
+                emails = service.email || '';
+                websites = service.website || '';
+            }
 
             rows.push(`
                 <tr>
                     <td>${service.name || ''}</td>
                     <td>${category?.name || ''}</td>
                     <td>${areas}</td>
-                    <td>${service.contact?.phone || ''}</td>
+                    <td>${phones}</td>
+                    <td>${emails}</td>
+                    <td>${websites}</td>
                     <td>
                         <div class="btn-group" role="group">
-                            <button class="btn btn-sm btn-primary" onclick="editService('${doc.id}')">
+                            <button class="btn btn-sm btn-primary" onclick="editService('${serviceDoc.id}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteService('${doc.id}')">
+                            <button class="btn btn-sm btn-danger" onclick="deleteService('${serviceDoc.id}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
                     </td>
                 </tr>
             `);
-        });
+        }
         
         tableBody.innerHTML = rows.join('');
     } catch (error) {
@@ -100,14 +156,29 @@ export function showServiceModal(serviceId = null) {
         title.textContent = 'עריכת שירות';
         // Load service data
         getService(serviceId).then(service => {
+            console.log('Service data:', service);
             document.getElementById('serviceId').value = service.id;
-            document.getElementById('serviceName').value = service.name;
+            document.getElementById('serviceName').value = service.name || '';
             document.getElementById('serviceDescription').value = service.description || '';
             document.getElementById('serviceCategory').value = service.category || '';
             document.getElementById('serviceInterestAreas').value = service.interestAreas || [];
-            document.getElementById('servicePhones').value = service.contact?.phone || '';
-            document.getElementById('serviceEmails').value = service.contact?.email || '';
-            document.getElementById('serviceWebsites').value = service.contact?.website || '';
+            
+            // Handle contact information
+            const phones = service.contact?.phone || [];
+            const emails = service.contact?.email || [];
+            const websites = service.contact?.website || [];
+            
+            document.getElementById('servicePhones').value = phones.map(p => p.number).join(', ');
+            document.getElementById('servicePhonesDesc').value = phones[0]?.description || '';
+            
+            document.getElementById('serviceEmails').value = emails.map(e => e.address).join(', ');
+            document.getElementById('serviceEmailsDesc').value = emails[0]?.description || '';
+            
+            document.getElementById('serviceWebsites').value = websites.map(w => w.url).join(', ');
+            document.getElementById('serviceWebsitesDesc').value = websites[0]?.description || '';
+            
+            document.getElementById('serviceCity').value = service.city || '';
+            document.getElementById('serviceAddress').value = service.address || '';
         }).catch(error => {
             console.error('Error loading service:', error);
             showStatus('שגיאה בטעינת פרטי השירות', 'error');
@@ -132,73 +203,90 @@ export async function saveService() {
         name: document.getElementById('serviceName').value,
         description: document.getElementById('serviceDescription').value,
         category: document.getElementById('serviceCategory').value,
-        interestAreas: Array.from(document.getElementById('serviceInterestAreas').selectedOptions).map(option => option.value),
         contact: {
-            phone: document.getElementById('servicePhones').value,
-            email: document.getElementById('serviceEmails').value,
-            website: document.getElementById('serviceWebsites').value
+            phone: document.getElementById('servicePhones').value.split(',')
+                .map(p => p.trim())
+                .filter(Boolean)
+                .map(number => ({
+                    number,
+                    description: document.getElementById('servicePhonesDesc').value
+                })),
+            email: document.getElementById('serviceEmails').value.split(',')
+                .map(e => e.trim())
+                .filter(Boolean)
+                .map(address => ({
+                    address,
+                    description: document.getElementById('serviceEmailsDesc').value
+                })),
+            website: document.getElementById('serviceWebsites').value.split(',')
+                .map(w => w.trim())
+                .filter(Boolean)
+                .map(url => ({
+                    url,
+                    description: document.getElementById('serviceWebsitesDesc').value
+                }))
         },
+        city: document.getElementById('serviceCity').value,
+        address: document.getElementById('serviceAddress').value,
         metadata: {
-            lastUpdated: Timestamp.now()
+            updated: Timestamp.now()
         }
     };
 
     try {
         const batch = writeBatch(db);
+        const selectedInterestAreas = Array.from(document.getElementById('serviceInterestAreas').selectedOptions).map(option => option.value);
 
-        // Update service counts for interest areas
+        // Get or create service reference
+        const serviceRef = serviceId ? 
+            doc(db, 'services', serviceId) : 
+            doc(collection(db, 'services'));
+
         if (serviceId) {
-            // Get existing service data
-            const serviceDoc = await getDoc(doc(db, 'services', serviceId));
-            const existingAreas = serviceDoc.data()?.interestAreas || [];
+            // Update existing service
+            // First, get existing service-interest-areas
+            const existingAreasSnapshot = await getDocs(
+                query(collection(db, 'service-interest-areas'), 
+                where('serviceId', '==', serviceId))
+            );
             
-            // Decrease count for removed areas
-            for (const areaId of existingAreas) {
-                if (!serviceData.interestAreas.includes(areaId)) {
-                    const areaRef = doc(db, 'interest-areas', areaId);
-                    const areaDoc = await getDoc(areaRef);
-                    if (areaDoc.exists()) {
-                        batch.update(areaRef, {
-                            servicesCount: (areaDoc.data().servicesCount || 0) - 1
-                        });
-                    }
+            // Delete removed areas
+            existingAreasSnapshot.docs.forEach(doc => {
+                const areaId = doc.data().interestAreaId;
+                if (!selectedInterestAreas.includes(areaId)) {
+                    batch.delete(doc.ref);
                 }
-            }
+            });
             
-            // Increase count for new areas
-            for (const areaId of serviceData.interestAreas) {
-                if (!existingAreas.includes(areaId)) {
-                    const areaRef = doc(db, 'interest-areas', areaId);
-                    const areaDoc = await getDoc(areaRef);
-                    if (areaDoc.exists()) {
-                        batch.update(areaRef, {
-                            servicesCount: (areaDoc.data().servicesCount || 0) + 1
-                        });
-                    }
+            // Add new areas
+            const existingAreaIds = existingAreasSnapshot.docs.map(doc => doc.data().interestAreaId);
+            for (const areaId of selectedInterestAreas) {
+                if (!existingAreaIds.includes(areaId)) {
+                    const newAreaRef = doc(collection(db, 'service-interest-areas'));
+                    batch.set(newAreaRef, {
+                        serviceId: serviceId,
+                        interestAreaId: areaId,
+                        createdAt: Timestamp.now()
+                    });
                 }
             }
         } else {
-            // New service - increase count for all areas
-            for (const areaId of serviceData.interestAreas) {
-                const areaRef = doc(db, 'interest-areas', areaId);
-                const areaDoc = await getDoc(areaRef);
-                if (areaDoc.exists()) {
-                    batch.update(areaRef, {
-                        servicesCount: (areaDoc.data().servicesCount || 0) + 1
-                    });
-                }
+            // New service - create all service-interest-areas
+            for (const areaId of selectedInterestAreas) {
+                const newAreaRef = doc(collection(db, 'service-interest-areas'));
+                batch.set(newAreaRef, {
+                    serviceId: serviceRef.id,
+                    interestAreaId: areaId,
+                    createdAt: Timestamp.now()
+                });
             }
             serviceData.metadata.created = Timestamp.now();
         }
 
         // Save the service
-        const serviceRef = serviceId ? 
-            doc(db, 'services', serviceId) : 
-            doc(collection(db, 'services'));
-        
         batch.set(serviceRef, serviceData, { merge: true });
-
         await batch.commit();
+        
         showStatus('השירות נשמר בהצלחה', 'success');
         
         // Hide modal and reload data
@@ -225,22 +313,15 @@ export async function deleteService(serviceId) {
     try {
         const batch = writeBatch(db);
 
-        // Get service data
-        const serviceDoc = await getDoc(doc(db, 'services', serviceId));
-        const service = serviceDoc.data();
-
-        // Update interest area counts
-        if (service?.interestAreas) {
-            for (const areaId of service.interestAreas) {
-                const areaRef = doc(db, 'interest-areas', areaId);
-                const areaDoc = await getDoc(areaRef);
-                if (areaDoc.exists()) {
-                    batch.update(areaRef, {
-                        servicesCount: Math.max(0, (areaDoc.data().servicesCount || 0) - 1)
-                    });
-                }
-            }
-        }
+        // Delete all service-interest-areas connections
+        const serviceAreasSnapshot = await getDocs(
+            query(collection(db, 'service-interest-areas'), 
+            where('serviceId', '==', serviceId))
+        );
+        
+        serviceAreasSnapshot.docs.forEach(doc => {
+            batch.delete(doc.ref);
+        });
 
         // Delete the service
         batch.delete(doc(db, 'services', serviceId));
@@ -261,14 +342,19 @@ export async function getService(id) {
         
         if (docSnap.exists()) {
             const service = docSnap.data();
+            
+            // Get interest areas from service-interest-areas collection
+            const serviceAreasSnapshot = await getDocs(
+                query(collection(db, 'service-interest-areas'), 
+                where('serviceId', '==', id))
+            );
+            
+            const interestAreas = serviceAreasSnapshot.docs.map(doc => doc.data().interestAreaId);
+            
             return {
                 id: docSnap.id,
                 ...service,
-                contact: {
-                    phone: service.contact?.phone || '',
-                    email: service.contact?.email || '',
-                    website: service.contact?.website || ''
-                }
+                interestAreas
             };
         }
         
