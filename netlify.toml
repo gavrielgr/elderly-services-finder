@@ -4,12 +4,6 @@
     Service-Worker-Allowed = "/"
 
 [[headers]]
-  for = "/sw.js"
-  [headers.values]
-    Content-Type = "application/javascript"
-    Cache-Control = "no-store"
-
-[[headers]]
   for = "/assets/sw-*.js"
   [headers.values]
     Content-Type = "application/javascript"
@@ -18,8 +12,9 @@
 
 [[redirects]]
   from = "/sw.js"
-  to = "/assets/sw-ki5AU8Ys.js"
+  to = "/assets/sw-:hash.js"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/icons/*"
