@@ -42,7 +42,7 @@
     color: var(--text-light);
     margin-bottom: 1.25rem;
     padding: 0.25rem 0.5rem;
-    background-color: var(--bg-secondary);
+    background-color: var(--category-tag-bg);
     border-radius: var(--radius-sm);
     display: inline-block;
 }

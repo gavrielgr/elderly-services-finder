@@ -1,3 +1,7 @@
+:root {
+    --category-tag-bg: rgba(78, 205, 196, 0.15); /* Light teal color with opacity for category tags */
+}
+
 .results-section {
     flex: 1;
     padding: 1rem;
@@ -75,6 +79,17 @@
     line-height: 1.4;
 }
 
+.result-category-tag {
+    font-size: 0.9rem;
+    background-color: var(--category-tag-bg);
+    color: var(--text-light);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-sm);
+    font-weight: 400;
+    display: inline-block;
+    margin-bottom: 0.75rem;
+}
+
 .result-description {
     color: var(--text-light);
     font-size: 1.1rem;
@@ -84,6 +99,32 @@
     overflow: hidden; /* Prevent overflow */
     text-overflow: ellipsis; /* Add ellipsis for overflowed text */
     margin-bottom: 1rem;
+}
+
+.result-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.result-address, .result-phone, .result-email, .result-website {
+    display: flex;
+    align-items: center;
+    color: var(--text-light);
+}
+
+.result-address i, .result-phone i, .result-email i, .result-website i {
+    margin-left: 0.5rem;
+    width: 1.2rem;
+    text-align: center;
+    color: var(--primary-color);
+}
+
+.result-website a {
+    color: var(--primary-color);
+    text-decoration: none;
 }
 
 .result-tags {

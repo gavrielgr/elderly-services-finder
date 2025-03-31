@@ -191,7 +191,7 @@ self.addEventListener('push', (event) => {
     
     const options = {
       body: data.body || 'יש עדכון חדש במידע!',
-      icon: '/icons/icon-192.png',
+      icon: '/icons/icon-192x192.png',
       dir: 'rtl', // Right-to-left for Hebrew
       lang: 'he'
     };
