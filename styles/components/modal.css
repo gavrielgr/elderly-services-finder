@@ -82,6 +82,17 @@
     margin: 0.25rem;
 }
 
+.detail-title {
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+
+}
+
+.detail-content {
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .modal-actions {
     display: flex;
     justify-content: space-around;

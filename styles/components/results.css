@@ -63,6 +63,9 @@
     color: var(--text-color);
     position: relative;
     border-right: 4px solid transparent;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .result-name {
@@ -80,13 +83,15 @@
     overflow-wrap: break-word; /* Handle word wrapping */
     overflow: hidden; /* Prevent overflow */
     text-overflow: ellipsis; /* Add ellipsis for overflowed text */
+    margin-bottom: 1rem;
 }
 
 .result-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
-    margin-top: 0.5rem;
+    margin-top: auto;
+    padding-top: 1rem;
 }
 
 .result-tag {

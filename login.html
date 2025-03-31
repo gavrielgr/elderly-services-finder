@@ -3,41 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>התחברות - שירותי+</title>
-    <link rel="stylesheet" href="/styles/main.css">
+    <title>שירותי+ | התחברות</title>
+    <meta name="description" content="התחברות למערכת הניהול של שירותי+">
+    <link rel="icon" href="/icons/favicon.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        .login-container {
+        :root {
+            --primary-color: #7DD1D3;
+            --primary-dark: #5CB9BB;
+            --text-color: #333;
+            --bg-color: #f5f5f5;
+            --error-color: #e74c3c;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            direction: rtl;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background-color: #f7f9fc;
         }
         
-        .login-box {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            padding: 32px;
-            width: 90%;
-            max-width: 420px;
+        .login-container {
+            background-color: white;
+            width: 95%;
+            max-width: 400px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
             text-align: center;
         }
         
-        .logo {
-            margin-bottom: 24px;
+        .login-content {
+            padding: 2rem;
+            text-align: center;
         }
         
-        .logo img {
-            max-width: 96px;
-            height: auto;
-            margin-bottom: 8px;
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
         }
         
-        .logo h1 {
-            font-size: 1.8rem;
-            margin: 0;
-            color: #333;
+        p {
+            margin-bottom: 1.5rem;
+            color: #666;
         }
         
         .login-button {
@@ -45,78 +73,80 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 12px 24px;
-            background-color: #4285F4;
-            color: white;
-            border: none;
+            padding: 0.8rem;
+            background-color: white;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 16px;
             cursor: pointer;
-            margin-top: 24px;
             transition: background-color 0.2s;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 1rem;
         }
         
         .login-button:hover {
-            background-color: #3367D6;
-        }
-        
-        .login-button:disabled {
-            background-color: #A4A4A4;
-            cursor: not-allowed;
+            background-color: #f8f8f8;
         }
         
         .google-logo {
-            width: 24px;
-            height: 24px;
-            margin-left: 12px;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
         }
         
-        .loader {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top-color: #4285F4;
-            animation: spin 1s linear infinite;
-            margin: 20px 0;
+        .login-logo {
+            width: 80px;
+            height: auto;
+            margin-bottom: 1rem;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .login-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
         }
         
         .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 12px;
+            color: var(--error-color);
+            background-color: rgba(231, 76, 60, 0.1);
+            padding: 0.8rem;
             border-radius: 4px;
-            margin-top: 16px;
-            text-align: right;
+            margin-bottom: 1rem;
         }
         
         .hidden {
             display: none;
         }
         
-        .message {
-            margin-top: 16px;
-            color: #6c757d;
+        .loader {
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="login-box">
-            <div class="logo">
-                <img src="/icons/logo.png" alt="שירותי+">
-                <h1>שירותי+</h1>
-            </div>
-            <div id="checking-auth" class="message">
-                בודק מצב התחברות...
+        <div class="login-header">
+            <h1 class="login-title">שירותי+</h1>
+        </div>
+        <div class="login-content">
+            <div id="checking-auth">
+                <p>בודק מצב התחברות...</p>
                 <div class="loader"></div>
             </div>
+            
             <div id="login-controls" class="hidden">
+                <h2>התחברות למערכת הניהול</h2>
+                <p>אנא התחבר באמצעות חשבון מאושר</p>
+                
                 <div id="loading-indicator" class="loader hidden"></div>
                 <div id="error-box" class="error-message hidden"></div>
                 <button id="login-btn" class="login-button">
@@ -127,10 +157,18 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
     <script type="module">
-        import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
-        import { doc, getDoc } from 'firebase/firestore';
-        import { auth, db } from '/js/config/firebase.js';
+        import { firebaseConfig } from '/js/config/firebase.js';
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
         
         // DOM elements
         const loginBtn = document.getElementById('login-btn');
@@ -163,13 +201,13 @@
         }
         
         // Check if already authenticated
-        onAuthStateChanged(auth, async (user) => {
+        auth.onAuthStateChanged(async (user) => {
             if (user) {
                 console.log('User is already signed in, checking admin status');
                 try {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    const userDoc = await db.collection('users').doc(user.uid).get();
                     
-                    if (userDoc.exists() && 
+                    if (userDoc.exists && 
                         userDoc.data().role === 'admin' && 
                         userDoc.data().status === 'active') {
                         
@@ -199,8 +237,8 @@
                 showLoading();
                 
                 // Sign in with Google
-                const provider = new GoogleAuthProvider();
-                const result = await signInWithPopup(auth, provider);
+                const provider = new firebase.auth.GoogleAuthProvider();
+                const result = await auth.signInWithPopup(provider);
                 const user = result.user;
                 
                 console.log('Google sign-in successful:', user.uid);
