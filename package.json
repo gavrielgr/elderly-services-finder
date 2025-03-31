@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node build.js && vite build",
+    "build": "node build.js && vite build && node post-build.js",
+    "preview": "vite preview",
     "bump": "node build.js --bump",
     "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"
   },
@@ -15,13 +16,14 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "firebase": "^10.14.1",
+    "firebase": "^10.8.0",
     "firebase-admin": "^13.2.0",
-    "fuse.js": "^6.6.2",
+    "fuse.js": "^7.0.0",
+    "idb": "^8.0.0",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^5.1.4"
+    "vite": "^5.0.8"
   }
 }
