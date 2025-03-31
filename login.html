@@ -41,16 +41,20 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module">
-        import { initializeAuth, signInWithGoogle } from './js/admin/auth.js';
+        import { AdminAuth } from './js/admin/AdminAuth.js';
         import { showStatus } from './js/admin/ui.js';
 
-        // Initialize auth
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add click handler for Google sign in
-            document.getElementById('googleSignInBtn').addEventListener('click', signInWithGoogle);
-            
-            // Initialize auth state listener
-            initializeAuth();
+        // Initialize admin auth
+        const adminAuth = new AdminAuth();
+        
+        // Handle login button click
+        document.getElementById('googleSignInBtn').addEventListener('click', async () => {
+            try {
+                await adminAuth.login();
+            } catch (error) {
+                console.error('Login error:', error);
+                showStatus('שגיאה בהתחברות', 'error');
+            }
         });
     </script>
 </body>

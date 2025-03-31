@@ -1,7 +1,7 @@
 {
   "name": "elderly-services-finder",
   "private": true,
-  "version": "1.99.87",
+  "version": "1.99.88",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,10 +15,10 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "firebase": "^10.8.0",
+    "firebase": "^10.14.1",
     "firebase-admin": "^13.2.0",
-    "node-fetch": "^3.3.2",
-    "fuse.js": "^6.6.2"
+    "fuse.js": "^6.6.2",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

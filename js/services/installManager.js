@@ -1,58 +1,49 @@
 export class InstallManager {
     constructor() {
         this.deferredPrompt = null;
-        this.installButton = document.getElementById('install-button');
-        
-        if (this.installButton) {
-            this.installButton.addEventListener('click', () => this.installApp());
-        }
+        this.installButton = null;
+        this.setupEventListeners();
     }
 
-    init() {
+    setupEventListeners() {
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
-            
-            // Stash the event so it can be triggered later
             this.deferredPrompt = e;
-            
-            // Show the install button
-            if (this.installButton) {
-                this.installButton.style.display = 'block';
-            }
+            this.showInstallButton();
         });
 
-        // Listen for successful installation
         window.addEventListener('appinstalled', () => {
-            // Hide the install button
-            if (this.installButton) {
-                this.installButton.style.display = 'none';
-            }
+            this.deferredPrompt = null;
+            this.hideInstallButton();
         });
+    }
+
+    showInstallButton() {
+        if (!this.installButton) {
+            this.installButton = document.createElement('button');
+            this.installButton.id = 'install-button';
+            this.installButton.textContent = 'התקן אפליקציה';
+            this.installButton.addEventListener('click', () => this.installApp());
+            document.body.appendChild(this.installButton);
+        }
+        this.installButton.style.display = 'block';
+    }
+
+    hideInstallButton() {
+        if (this.installButton) {
+            this.installButton.style.display = 'none';
+        }
     }
 
     async installApp() {
         if (!this.deferredPrompt) {
             return;
         }
-
-        // Show the install prompt
         this.deferredPrompt.prompt();
-        
-        // Wait for the user to respond to the prompt
         const { outcome } = await this.deferredPrompt.userChoice;
-        
-        // Clear the deferredPrompt so it can be garbage collected
+        console.log(`User response to the install prompt: ${outcome}`);
         this.deferredPrompt = null;
-        
-        // Hide the install button
-        if (this.installButton) {
-            this.installButton.style.display = 'none';
-        }
-    }
-
-    isInstallable() {
-        return this.deferredPrompt !== null;
+        this.hideInstallButton();
     }
 }
 

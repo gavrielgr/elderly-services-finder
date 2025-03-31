@@ -4,10 +4,7 @@ import { DB_NAME } from '../config/constants.js';
 const DB_VERSION = 2;
 const STORE_NAME = 'app_data';
 
-export const LAST_UPDATED_KEY = 'lastUpdated';
-export const SERVICES_KEY = 'services';
-export const CATEGORIES_KEY = 'categories';
-export const INTEREST_AREAS_KEY = 'interestAreas';
+export const ALL_SERVICES_KEY = 'allServicesData';
 
 let dbPromise;
 

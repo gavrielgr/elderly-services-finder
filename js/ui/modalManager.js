@@ -23,9 +23,14 @@ export class ModalManager {
         this.currentService = service;
         if (!this.detailsContainer) return;
 
+        // Get category name from the categories array
+        const categories = this.uiManager.dataService.getCategories();
+        const category = categories.find(cat => cat.id === service.category);
+        const categoryName = category ? category.name : 'כללי';
+
         let detailsHTML = `
             <h2 class="service-name">${service.name}</h2>
-            <div class="service-category">${service.categoryName}</div>
+            <div class="service-category">${categoryName}</div>
         `;
         
         if (service.description) {

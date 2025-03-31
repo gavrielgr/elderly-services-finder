@@ -1,5 +1,4 @@
 import { categoryIcons } from '../config/constants.js';
-import { dataService } from '../services/dataService.js';
 
 export class CategoryManager {
     constructor(uiManager) {
@@ -17,31 +16,25 @@ export class CategoryManager {
     }
 
     renderCategories() {
-        const services = dataService.getData();
-        if (!services || !Array.isArray(services)) return;
+        const categories = this.uiManager.dataService.getCategories();
+        const services = this.uiManager.dataService.getData();
+        if (!categories || !Array.isArray(categories) || !services || !Array.isArray(services)) {
+            console.warn('Categories or services not available:', { categories, services });
+            return;
+        }
 
-        // יצירת מיפוי בין ID לשם
-        this.categoryMap.clear();
-        services.forEach(service => {
-            if (service.category && service.categoryName) {
-                this.categoryMap.set(service.category, service.categoryName);
-            }
-        });
-
-        // קבלת קטגוריות ייחודיות ומיון לפי א-ב
-        const categories = [...new Set(services.map(service => service.category))].filter(Boolean);
+        // מיון לפי א-ב
         categories.sort((a, b) => {
-            const nameA = this.categoryMap.get(a) || '';
-            const nameB = this.categoryMap.get(b) || '';
-            return nameA.localeCompare(nameB, 'he');
+            return a.name.localeCompare(b.name, 'he');
         });
 
         this.categoriesContainer.innerHTML = '';
 
-        categories.forEach(categoryId => {
-            const categoryName = this.categoryMap.get(categoryId);
-            if (categoryName) {
-                const card = this.createCategoryCard(categoryId, categoryName);
+        categories.forEach(category => {
+            // בדיקה אם יש שירותים בקטגוריה
+            const hasServices = services.some(service => service.category === category.id);
+            if (hasServices) {
+                const card = this.createCategoryCard(category.id, category.name);
                 this.categoriesContainer.appendChild(card);
             }
         });
@@ -54,7 +47,7 @@ export class CategoryManager {
         card.className = 'category-card';
         card.setAttribute('data-category', categoryId);
         
-        const category = dataService.getCategory(categoryId);
+        const category = this.uiManager.dataService.getCategory(categoryId);
         const icon = category?.icon || categoryIcons[categoryName] || categoryIcons['default'];
         
         card.innerHTML = `
@@ -72,14 +65,21 @@ export class CategoryManager {
     }
 
     selectCategory(categoryId) {
+        if (!this.uiManager || !this.uiManager.resultsManager) {
+            console.error('UIManager or ResultsManager not initialized');
+            return;
+        }
+
         document.querySelectorAll('.category-card').forEach(card => {
             card.classList.remove('active');
         });
 
         if (categoryId === this.activeCategory) {
             this.activeCategory = null;
+            this.uiManager.resultsManager.currentCategory = null;
         } else {
             this.activeCategory = categoryId;
+            this.uiManager.resultsManager.currentCategory = categoryId;
             const selectedCard = document.querySelector(`.category-card[data-category="${categoryId}"]`);
             if (selectedCard) selectedCard.classList.add('active');
         }

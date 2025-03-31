@@ -1,7 +1,6 @@
 import { fetchFromAPI } from '../config/api.js';
 import { saveToIndexedDB, getFromIndexedDB } from './storageService.js';
-import { transformData } from '../utils/helpers.js';
-import { DATA_KEY, LAST_UPDATED_KEY, ALL_SERVICES_KEY, CATEGORIES_KEY } from '../config/constants.js';
+import { ALL_SERVICES_KEY } from '../config/constants.js';
 
 export class DataService {
     constructor() {
@@ -9,7 +8,6 @@ export class DataService {
         this.lastUpdated = null;
         this.lastUpdateCheck = null;
         this.UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-        this.categories = []; // אתחול מערך ריק
     }
 
     async refreshData(forceRefresh = false) {
@@ -17,103 +15,116 @@ export class DataService {
             // נסה לטעון מהמטמון תחילה
             if (!forceRefresh) {
                 const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);
-                if (cachedData) {
+                if (cachedData && cachedData.services && cachedData.categories) {
                     this.allServicesData = cachedData;
-                    this.lastUpdated = await getFromIndexedDB(LAST_UPDATED_KEY);
-                    const cachedCategories = await getFromIndexedDB(CATEGORIES_KEY);
-                    this.categories = Array.isArray(cachedCategories) ? cachedCategories : [];
+                    this.lastUpdated = cachedData.lastUpdated;
                     console.log('Using cached data from:', this.lastUpdated);
-                    console.log('Categories from cache:', this.categories);
-                    return;
+                    console.log('Categories from cache:', this.allServicesData.categories);
+                    return true;
                 }
             }
 
             // אם אין מידע במטמון או שביקשנו רענון, נטען מהשרת
             if (navigator.onLine) {
-                const rawData = await fetchFromAPI();
-                if (rawData) {
-                    this.allServicesData = transformData(rawData);
-                    this.lastUpdated = new Date().toISOString();
-                    this.categories = Array.isArray(rawData.categories) ? rawData.categories : [];
-                    console.log('Categories from API:', this.categories);
+                const response = await fetchFromAPI();
+                if (response && response.data) {
+                    this.allServicesData = response.data;
+                    this.lastUpdated = response.data.lastUpdated;
+                    console.log('Categories from API:', this.allServicesData.categories);
                     
                     // שמירה במטמון
                     await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
-                    await saveToIndexedDB(LAST_UPDATED_KEY, this.lastUpdated);
-                    await saveToIndexedDB(CATEGORIES_KEY, this.categories);
+                    return true;
                 }
             }
+
+            return false;
         } catch (error) {
             console.error('Error refreshing data:', error);
+            return false;
         }
     }
 
     async checkForUpdates() {
         try {
-            const { data: rawData, source } = await fetchFromAPI();
-            
-            // אם המידע מגיע מהמטמון, אין צורך לעדכן
-            if (source === 'cache') {
-                console.log('Cache is up to date');
-                return false;
-            }
-
-            // אם יש מידע חדש מהשרת
-            if (rawData) {
-                console.log('New data available from server, updating...');
-                const transformedData = transformData(rawData);
-                const timestamp = new Date().toISOString();
-                await this.updateLocalData(transformedData, timestamp);
-                
-                // Dispatch custom event to notify UI
-                const event = new CustomEvent('dataUpdated', {
-                    detail: {
-                        timestamp,
-                        data: transformedData
-                    }
-                });
-                window.dispatchEvent(event);
-                
+            // בדיקה אם יש נתונים במטמון
+            const cachedData = await this.getCachedData();
+            if (!cachedData) {
+                console.log('No cached data found, need to refresh');
                 return true;
             }
 
-            console.log('No updates available');
+            // בדיקה אם הנתונים במטמון עדכניים
+            const lastUpdated = new Date(cachedData.lastUpdated);
+            const now = new Date();
+            const hoursSinceUpdate = (now - lastUpdated) / (1000 * 60 * 60);
+
+            if (hoursSinceUpdate > 24) {
+                console.log('Cached data is older than 24 hours, need to refresh');
+                return true;
+            }
+
+            // שמירת הנתונים במטמון ב-allServicesData
+            this.allServicesData = cachedData;
+
+            console.log('Using cached data:', {
+                lastUpdated: cachedData.lastUpdated,
+                servicesCount: cachedData.services?.length || 0,
+                categoriesCount: cachedData.categories?.length || 0
+            });
+
             return false;
         } catch (error) {
             console.error('Error checking for updates:', error);
-            return false;
-        }
-    }
-
-    async updateLocalData(data, timestamp) {
-        this.allServicesData = data;
-        this.lastUpdated = timestamp;
-        
-        try {
-            // Save to IndexedDB
-            await saveToIndexedDB(DATA_KEY, data);
-            await saveToIndexedDB(LAST_UPDATED_KEY, timestamp);
-        } catch (error) {
-            console.warn('Failed to save to IndexedDB:', error);
-            // Continue even if IndexedDB save fails
+            return true;
         }
     }
 
     getData() {
-        return this.allServicesData;
+        if (!this.allServicesData || !this.allServicesData.services) {
+            console.warn('Services not available in allServicesData');
+            return [];
+        }
+        return this.allServicesData.services;
     }
 
     getLastUpdated() {
         return this.lastUpdated;
     }
 
-    getCategory(categoryId) {
-        if (!Array.isArray(this.categories)) {
-            console.warn('Categories is not an array:', this.categories);
-            this.categories = [];
+    getCategories() {
+        if (!this.allServicesData || !this.allServicesData.categories) {
+            console.warn('Categories not available in allServicesData');
+            return [];
         }
-        return this.categories.find(cat => cat.id === categoryId);
+        return this.allServicesData.categories;
+    }
+
+    getCategory(categoryId) {
+        if (!this.allServicesData?.categories) {
+            console.warn('Categories is not available:', this.allServicesData);
+            return null;
+        }
+        return this.allServicesData.categories.find(cat => cat.id === categoryId);
+    }
+
+    async getCachedData() {
+        try {
+            const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);
+            if (cachedData) {
+                console.log('Retrieved cached data:', {
+                    servicesCount: cachedData.services?.length || 0,
+                    categoriesCount: cachedData.categories?.length || 0,
+                    lastUpdated: cachedData.lastUpdated
+                });
+                return cachedData;
+            }
+            console.log('No cached data found');
+            return null;
+        } catch (error) {
+            console.error('Error getting cached data:', error);
+            return null;
+        }
     }
 }
 
-export const dataService = new DataService();

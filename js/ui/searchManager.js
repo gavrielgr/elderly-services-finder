@@ -1,5 +1,4 @@
 import { debounce } from '../utils/helpers.js';
-import { dataService } from '../services/dataService.js';
 
 export class SearchManager {
     constructor(uiManager) {
@@ -22,9 +21,11 @@ export class SearchManager {
     }
 
     handleSearch() {
-        this.currentQuery = this.searchInput.value.trim();
+        const query = this.searchInput.value.trim();
+        this.currentQuery = query;
+        this.uiManager.resultsManager.currentQuery = query;
         this.toggleClearButton();
-        this.uiManager.resultsManager.performSearch(this.currentQuery);
+        this.uiManager.resultsManager.performSearch();
     }
 
     clearSearch() {
@@ -34,10 +35,11 @@ export class SearchManager {
         
         this.searchInput.value = '';
         this.currentQuery = '';
+        this.uiManager.resultsManager.currentQuery = '';
         this.toggleClearButton();
         
         if (this.uiManager.categoryManager.activeCategory) {
-            this.uiManager.resultsManager.performSearch(''); // Show results for active category
+            this.uiManager.resultsManager.performSearch(); // Show results for active category
         } else {
             this.uiManager.resultsManager.renderDefaultResults();
         }

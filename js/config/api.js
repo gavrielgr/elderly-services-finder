@@ -1,18 +1,15 @@
-import { getFromIndexedDB, saveToIndexedDB, LAST_UPDATED_KEY, SERVICES_KEY, CATEGORIES_KEY, INTEREST_AREAS_KEY } from '../services/storageService.js';
+import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
+import { ALL_SERVICES_KEY } from '../config/constants.js';
+import { db, auth } from './firebase.js';
+import { collection, getDocs } from 'firebase/firestore';
 
 // קבלת נתונים מהמטמון המקומי
 async function getFromCache() {
     try {
-        const [services, categories, interestAreas, lastUpdated] = await Promise.all([
-            getFromIndexedDB(SERVICES_KEY),
-            getFromIndexedDB(CATEGORIES_KEY),
-            getFromIndexedDB(INTEREST_AREAS_KEY),
-            getFromIndexedDB(LAST_UPDATED_KEY)
-        ]);
-        
-        if (services && categories && interestAreas && lastUpdated) {
-            console.log('Using cached data from:', lastUpdated);
-            return { services, categories, interestAreas, lastUpdated };
+        const allServicesData = await getFromIndexedDB(ALL_SERVICES_KEY);
+        if (allServicesData) {
+            console.log('Using cached data from:', allServicesData.lastUpdated);
+            return allServicesData;
         }
         return null;
     } catch (error) {
@@ -24,12 +21,7 @@ async function getFromCache() {
 // שמירת נתונים במטמון המקומי
 async function saveToCache(data) {
     try {
-        await Promise.all([
-            saveToIndexedDB(SERVICES_KEY, data.services),
-            saveToIndexedDB(CATEGORIES_KEY, data.categories),
-            saveToIndexedDB(INTEREST_AREAS_KEY, data.interestAreas),
-            saveToIndexedDB(LAST_UPDATED_KEY, data.lastUpdated)
-        ]);
+        await saveToIndexedDB(ALL_SERVICES_KEY, data);
         console.log('Data saved to cache');
     } catch (error) {
         console.error('Error saving to cache:', error);
@@ -68,41 +60,27 @@ function isDataFresh(localTimestamp) {
 // קבלת נתונים מהשרת
 async function fetchFromServer() {
     try {
-        console.log('Fetching data from proxy server...');
+        console.log('Fetching data from Firebase...');
         
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const response = await fetch(`${API_URL}/api/data`);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Failed to fetch data:', errorData);
-            throw new Error(`Failed to fetch data: ${response.status}`);
-        }
+        const [servicesSnapshot, categoriesSnapshot, interestAreasSnapshot] = await Promise.all([
+            getDocs(collection(db, 'services')),
+            getDocs(collection(db, 'categories')),
+            getDocs(collection(db, 'interest-areas'))
+        ]);
 
-        const data = await response.json();
-        
-        const services = data.services.map(doc => ({
-            id: doc.name.split('/').pop(),
-            ...Object.entries(doc.fields).reduce((acc, [key, value]) => {
-                acc[key] = value.stringValue || value.integerValue || value.arrayValue?.values?.map(v => v.stringValue) || null;
-                return acc;
-            }, {})
+        const services = servicesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
         }));
 
-        const categories = data.categories.map(doc => ({
-            id: doc.name.split('/').pop(),
-            ...Object.entries(doc.fields).reduce((acc, [key, value]) => {
-                acc[key] = value.stringValue || value.integerValue || value.arrayValue?.values?.map(v => v.stringValue) || null;
-                return acc;
-            }, {})
+        const categories = categoriesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
         }));
 
-        const interestAreas = data.interestAreas.map(doc => ({
-            id: doc.name.split('/').pop(),
-            ...Object.entries(doc.fields).reduce((acc, [key, value]) => {
-                acc[key] = value.stringValue || value.integerValue || value.arrayValue?.values?.map(v => v.stringValue) || null;
-                return acc;
-            }, {})
+        const interestAreas = interestAreasSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
         }));
 
         console.log(`Retrieved ${services.length} services`);

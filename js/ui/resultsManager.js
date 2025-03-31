@@ -1,4 +1,3 @@
-import { dataService } from '../services/dataService.js';
 import Fuse from 'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js';
 
 export class ResultsManager {
@@ -14,7 +13,12 @@ export class ResultsManager {
     }
 
     async performSearch(searchQuery = '') {
-        const services = dataService.getData();
+        if (!this.uiManager || !this.uiManager.dataService) {
+            console.error('UIManager or DataService not initialized');
+            return;
+        }
+
+        const services = this.uiManager.dataService.getData();
         if (!services) return;
 
         const activeCategory = this.uiManager.categoryManager.activeCategory;
@@ -70,6 +74,11 @@ export class ResultsManager {
     }
 
     async getHebrewEquivalent(englishText) {
+        if (!this.uiManager || !this.uiManager.dataService) {
+            console.error('UIManager or DataService not initialized');
+            return null;
+        }
+
         const keyboardMap = {
             q: '/', w: "'", e: 'ק', r: 'ר', t: 'א', y: 'ט', u: 'ו', i: 'ן', o: 'ם', p: 'פ',
                 a: 'ש', s: 'ד', d: 'ג', f: 'כ', g: 'ע', h: 'י', j: 'ח', k: 'ל', l: 'ך',
@@ -82,7 +91,7 @@ export class ResultsManager {
             .join('');
 
         if (hebrewText.length > 3) {
-            const services = dataService.getData();
+            const services = this.uiManager.dataService.getData();
             const activeCategory = this.uiManager.categoryManager.activeCategory;
 
             // Create Fuse instance just like in performSearch
@@ -143,50 +152,68 @@ export class ResultsManager {
         }
     }
 
-    renderResults(results) {
-        if (!results || !Array.isArray(results)) return;
-        
-        const container = document.getElementById('results-container');
-        container.innerHTML = '';
-        
-        if (results.length === 0) {
-            this.updateResultsCount(0);
+    renderResults(services) {
+        if (!this.resultsContainer) return;
+
+        this.resultsContainer.innerHTML = '';
+        this.currentResults = services;
+
+        if (!services || services.length === 0) {
+            if (this.noResultsMessage) {
+                this.noResultsMessage.classList.remove('hidden');
+            }
+            if (this.resultsCount) {
+                this.resultsCount.textContent = 'לא נמצאו תוצאות';
+            }
             return;
         }
 
-        const fragment = document.createDocumentFragment();
-        results.forEach(service => {
-            const card = this.createResultCard(service);
-            if (card) fragment.appendChild(card);
-        });
+        if (this.noResultsMessage) {
+            this.noResultsMessage.classList.add('hidden');
+        }
+        if (this.resultsCount) {
+            this.resultsCount.textContent = `${services.length} תוצאות`;
+        }
 
-        container.appendChild(fragment);
-        container.className = `results-container ${this.viewMode}-view`;
-    }
+        services.forEach(service => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.setAttribute('data-service-id', service.id);
 
-    createResultCard(service) {
-        const card = document.createElement('div');
-        card.className = 'result-card';
-        card.setAttribute('data-category', service.category);
-        
-        const categoryName = this.uiManager.categoryManager.getCategoryName(service.category);
-        
-        card.innerHTML = `
-            <div class="result-category-tag">${categoryName}</div>
-            <h3 class="result-name">${service.name}</h3>
-            <p class="result-description">${service.description}</p>
-            ${service.tags?.length > 0 ? `
-                <div class="result-tags">
-                    ${service.tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+            // Get category name from the categories array
+            const categories = this.uiManager.dataService.getCategories();
+            const category = categories.find(cat => cat.id === service.category);
+            const categoryName = category ? category.name : 'כללי';
+
+            card.innerHTML = `
+                <div class="result-category-tag">${categoryName}</div>
+                <h3 class="result-name">${service.name}</h3>
+                <p class="result-description">${service.description || 'אין תיאור זמין'}</p>
+                <div class="result-details">
+                    ${service.address ? `<div class="result-address"><i class="fas fa-map-marker-alt"></i> ${service.address}</div>` : ''}
+                    ${service.phone ? `<div class="result-phone"><i class="fas fa-phone"></i> ${service.phone}</div>` : ''}
+                    ${service.email ? `<div class="result-email"><i class="fas fa-envelope"></i> ${service.email}</div>` : ''}
+                    ${service.website ? `<div class="result-website"><i class="fas fa-globe"></i> <a href="${service.website}" target="_blank">${service.website}</a></div>` : ''}
                 </div>
-            ` : ''}
-        `;
+                ${service.tags?.length > 0 ? `
+                    <div class="result-tags">
+                        ${service.tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+                    </div>
+                ` : ''}
+            `;
 
-        card.addEventListener('click', () => {
-            this.uiManager.modalManager.showServiceDetails(service);
+            card.addEventListener('click', () => {
+                if (this.uiManager && this.uiManager.modalManager) {
+                    this.uiManager.modalManager.showServiceDetails(service);
+                } else {
+                    console.error('ModalManager not initialized');
+                }
+            });
+            this.resultsContainer.appendChild(card);
         });
 
-        return card;
+        // Update view mode
+        this.resultsContainer.className = `results-container ${this.viewMode}-view`;
     }
 
     setViewMode(mode) {
@@ -210,7 +237,9 @@ export class ResultsManager {
             const activeCategory = this.uiManager.categoryManager.activeCategory;
             let categoryText = '';
             if (activeCategory) {
-                const categoryName = this.uiManager.categoryManager.getCategoryName(activeCategory);
+                const categories = this.uiManager.dataService.getCategories();
+                const category = categories.find(cat => cat.id === activeCategory);
+                const categoryName = category ? category.name : 'כללי';
                 categoryText = ` בקטגוריה: ${categoryName}`;
             }
             this.resultsCount.textContent = `נמצאו ${count} תוצאות${categoryText}`;

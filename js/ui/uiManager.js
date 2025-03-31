@@ -1,17 +1,13 @@
 import { SearchManager } from './searchManager.js';
 import { CategoryManager } from './categoryManager.js';
-import { ResultsManager } from './resultsManager.js';
+import { ResultsManager } from './ResultsManager.js';
 import { ModalManager } from './modalManager.js';
-import { dataService } from '../services/dataService.js';
-import { getFromIndexedDB, LAST_UPDATED_KEY } from '../services/storageService.js';
+import { DataService } from '../services/dataService.js';
+import { getFromIndexedDB } from '../services/storageService.js';
 
 export class UIManager {
     constructor() {
-        this.searchManager = new SearchManager(this);
-        this.categoryManager = new CategoryManager(this);
-        this.resultsManager = new ResultsManager(this);
-        this.modalManager = new ModalManager(this);
-        
+        this.dataService = new DataService();
         this.statusBar = document.getElementById('status-bar');
         this.connectionStatus = document.getElementById('connection-status');
         this.lastUpdatedText = document.getElementById('last-updated-text');
@@ -20,7 +16,53 @@ export class UIManager {
         this.initThemeToggle();
         this.initRefreshButton();
         this.initScrollUpButton();
-        
+    }
+
+    async initialize() {
+        try {
+            const refreshed = await this.dataService.refreshData();
+            if (!refreshed) {
+                console.error('Failed to load data');
+                this.showStatusMessage('שגיאה בטעינת הנתונים', 'error');
+                return;
+            }
+
+            const services = this.dataService.getData();
+            const categories = this.dataService.getCategories();
+            
+            if (!services || !Array.isArray(services) || !categories || !Array.isArray(categories)) {
+                console.warn('Services or categories not available:', { services, categories });
+                this.showStatusMessage('שגיאה בטעינת הנתונים', 'error');
+                return;
+            }
+
+            // יצירת המנהלים אחרי טעינת הנתונים
+            this.searchManager = new SearchManager(this);
+            this.resultsManager = new ResultsManager(this);
+            this.categoryManager = new CategoryManager(this);
+            this.modalManager = new ModalManager(this);
+
+            this.setupEventListeners();
+            this.updateConnectionStatus();
+            this.renderInitialUI();
+        } catch (error) {
+            console.error('Error initializing UI:', error);
+            this.showStatusMessage('שגיאה בטעינת הנתונים', 'error');
+        }
+    }
+
+    setupEventListeners() {
+        // Listen for online/offline status
+        window.addEventListener('online', () => {
+            this.updateConnectionStatus(true);
+            this.showStatusMessage('החיבור לאינטרנט חודש', 'success');
+        });
+
+        window.addEventListener('offline', () => {
+            this.updateConnectionStatus(false);
+            this.showStatusMessage('החיבור לאינטרנט נותק', 'error');
+        });
+
         // Listen for data updates
         window.addEventListener('dataUpdated', (event) => {
             const { timestamp, data } = event.detail;
@@ -28,25 +70,6 @@ export class UIManager {
             this.showStatusMessage('המידע עודכן בהצלחה', 'success');
             this.resultsManager.updateResults(data);
         });
-    }
-
-    async initialize() {
-        try {
-            // Initialize data service
-            await dataService.refreshData();
-            
-            // Render initial UI
-            await this.renderInitialUI();
-            
-            // Set up event listeners
-            this.setupEventListeners();
-            
-            // Update connection status
-            this.updateConnectionStatus();
-        } catch (error) {
-            console.error('Error initializing UI:', error);
-            throw error;
-        }
     }
 
     updateConnectionStatus(isOnline) {
@@ -95,11 +118,11 @@ export class UIManager {
     }
 
     async renderInitialUI() {
-        this.categoryManager.renderCategories();
         this.resultsManager.renderDefaultResults();
+        this.categoryManager.renderCategories();
         
         // Load and display last updated timestamp
-        const timestamp = await getFromIndexedDB(LAST_UPDATED_KEY);
+        const timestamp = this.dataService.getLastUpdated();
         if (timestamp) {
             this.updateLastUpdatedText(timestamp);
         }
@@ -142,13 +165,13 @@ export class UIManager {
             
             try {
                 console.log('Attempting to refresh data from server...');
-                const refreshed = await dataService.refreshData(true);
+                const refreshed = await this.dataService.refreshData(true);
                 
                 if (refreshed) {
                     console.log('Data refresh successful - updating UI');
                     this.showStatusMessage('הנתונים עודכנו בהצלחה', 'success');
                     this.renderInitialUI();
-                    this.updateLastUpdatedText(dataService.getLastUpdated());
+                    this.updateLastUpdatedText(this.dataService.getLastUpdated());
                 } else {
                     console.log('No new data available from server');
                     this.showStatusMessage('לא נמצאו עדכונים חדשים', 'info');

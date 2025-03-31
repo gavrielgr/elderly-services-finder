@@ -169,8 +169,35 @@
         }
     </script>
     
-    <!-- Main Script -->
-    <script type="module" src="app.js"></script>
+    <!-- Scripts -->
+    <script type="module" src="js/config/firebase.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module">
+        // Wait for UIManager to be initialized
+        window.addEventListener('uiManagerReady', () => {
+            // Handle refresh button click
+            document.getElementById('refresh-button').addEventListener('click', async () => {
+                try {
+                    const hasUpdates = await window.uiManager.dataService.checkForUpdates();
+                    if (hasUpdates) {
+                        window.uiManager.showStatusMessage('הנתונים עודכנו בהצלחה', 'success');
+                    } else {
+                        window.uiManager.showStatusMessage('לא נמצאו עדכונים חדשים', 'info');
+                    }
+                } catch (error) {
+                    console.error('Error checking for updates:', error);
+                    window.uiManager.showStatusMessage('שגיאה בעדכון הנתונים', 'error');
+                }
+            });
+
+            // Handle data updates
+            window.addEventListener('dataUpdated', (event) => {
+                const { timestamp } = event.detail;
+                window.uiManager.updateLastUpdatedText(timestamp);
+            });
+        });
+    </script>
+    
     <footer class="app-footer">
         <div class="footer-container">
             <div class="copyright">

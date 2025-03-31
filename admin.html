@@ -354,40 +354,33 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="js/config/firebase.js"></script>
-    <script type="module" src="js/admin/auth.js"></script>
-    <script type="module" src="js/admin/ui.js"></script>
-    <script type="module" src="js/admin/users.js"></script>
-    <script type="module" src="js/admin/services.js"></script>
     <script type="module">
-        import { initializeAuth } from './js/admin/auth.js';
-        import { initializeApp, showUserModal, editUser, deleteUser, deleteService, editInterestArea, initializeEventListeners, loadCategories } from './js/admin/ui.js';
-        import { showServiceModal, saveService, editService } from './js/admin/services.js';
-        import { showCategoryModal, saveCategory, editCategory, deleteCategory } from './js/admin/categories.js';
-        import { showInterestAreaModal, saveInterestAreaFromForm, deleteInterestArea } from './js/admin/interest-areas.js';
-        import { createNewUser } from './js/admin/users.js';
-        
-        // Make functions globally available
-        window.showServiceModal = showServiceModal;
-        window.saveService = saveService;
-        window.showCategoryModal = showCategoryModal;
-        window.saveCategory = saveCategory;
-        window.editCategory = editCategory;
-        window.deleteCategory = deleteCategory;
-        window.showInterestAreaModal = showInterestAreaModal;
-        window.saveInterestAreaFromForm = saveInterestAreaFromForm;
-        window.showUserModal = showUserModal;
-        window.editUser = editUser;
-        window.deleteUser = deleteUser;
-        window.editInterestArea = editInterestArea;
-        window.deleteInterestArea = deleteInterestArea;
-        window.loadCategories = loadCategories;
-        window.createNewUser = createNewUser;
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeAuth();
-            initializeApp();
-            initializeEventListeners();
+        import { AdminAuth } from './js/admin/AdminAuth.js';
+        import { initializeUI } from './js/admin/ui.js';
+        import { initializeServices } from './js/admin/services.js';
+        import { initializeCategories } from './js/admin/categories.js';
+        import { initializeInterestAreas } from './js/admin/interest-areas.js';
+        import { initializeUsers } from './js/admin/users.js';
+        import { initializeRatings } from './js/admin/ratings.js';
+
+        // Initialize admin auth
+        const adminAuth = new AdminAuth();
+        adminAuth.onAuthStateChange(async (user) => {
+            if (user) {
+                // Initialize UI
+                initializeUI();
+                
+                // Load data
+                await Promise.all([
+                    initializeServices(),
+                    initializeCategories(),
+                    initializeInterestAreas(),
+                    initializeUsers(),
+                    initializeRatings()
+                ]);
+            } else {
+                window.location.href = '/login.html';
+            }
         });
     </script>
 </body>
