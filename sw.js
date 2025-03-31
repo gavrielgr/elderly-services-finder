@@ -6,8 +6,6 @@ const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/assets/main.css',
-  '/assets/main.js',
   '/manifest.json',
   '/icons/icon-72x72.png',
   '/icons/icon-96x96.png',
