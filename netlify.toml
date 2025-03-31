@@ -12,4 +12,9 @@
 [[redirects]]
   from = "/sw.js"
   to = "/assets/sw.js"
+  status = 200
+
+[[redirects]]
+  from = "/assets/sw-*.js"
+  to = "/assets/sw.js"
   status = 200 
