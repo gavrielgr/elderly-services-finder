@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "he",
-  "scope": "./",
+  "scope": "/",
   "icons": [
     {
       "src": "icons/icon-72x72.png",
