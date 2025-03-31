@@ -4,17 +4,17 @@
     --text-color: #f1f5f9;
     --text-light: #94a3b8;
     --border-color: #334155;
-    --primary-color: #4ECDC4;
+    --primary-color: #7DD1D3;
     --card-bg: #1e293b;
     --modal-bg: #1e293b;
-    --header-bg: #3e9e99;
-    --tag-bg: rgba(78, 205, 196, 0.1);
-    --tag-border: rgba(78, 205, 196, 0.3);
-    --tag-color: #80e0d8;
+    --header-bg: #5CB9BB;
+    --tag-bg: rgba(125, 209, 211, 0.1);
+    --tag-border: rgba(125, 209, 211, 0.3);
+    --tag-color: #A5E1E3;
 }
 
 [data-theme="dark"] .app-header {
-    background: linear-gradient(135deg, #4ECDC4 0%, #3e9e99 100%);
+    background: linear-gradient(135deg, #7DD1D3 0%, #5CB9BB 100%);
     color: white;
 }
 
