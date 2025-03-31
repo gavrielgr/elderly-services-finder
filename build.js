@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync, watch, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,6 +52,9 @@ if (!existsSync(distAssetsDir)) {
     mkdirSync(distAssetsDir, { recursive: true });
 }
 
+// Generate the service worker filename
+const swFileName = `sw-${APP_VERSION.replace(/\./g, '_')}.js`;
+
 // Copy to root for direct access
 copyFileSync(
     join(__dirname, 'sw.js'),
@@ -61,8 +64,17 @@ copyFileSync(
 // Copy to assets for hashed version
 copyFileSync(
     join(__dirname, 'sw.js'),
-    join(distAssetsDir, `sw-${APP_VERSION.replace(/\./g, '_')}.js`)
+    join(distAssetsDir, swFileName)
 );
+
+// Update netlify.toml with the new service worker filename
+const netlifyConfig = readFileSync('netlify.toml', 'utf8');
+const updatedConfig = netlifyConfig.replace(
+    /to = "\/assets\/sw-[^"]+\.js"/,
+    `to = "/assets/${swFileName}"`
+);
+writeFileSync('netlify.toml', updatedConfig);
+console.log(`Updated netlify.toml with Service Worker file: ${swFileName}`);
 
 // Update constants.js with more specific replacements
 updateFile(
@@ -74,40 +86,3 @@ updateFile(
 );
 
 console.log(`Updated builds with version ${APP_VERSION} and timestamp ${BUILD_TIMESTAMP}`);
-
-if (process.argv.includes('--bump')) {
-    process.exit(0);
-}
-
-// Function to update netlify.toml after the build
-const updateNetlifyConfig = () => {
-  const files = readdirSync(distAssetsDir);
-  const swFile = files.find(file => file.startsWith('sw-') && file.endsWith('.js'));
-  
-  if (!swFile) {
-    console.error('Service Worker file not found in dist/assets');
-    return;
-  }
-  
-  const netlifyConfig = readFileSync('netlify.toml', 'utf8');
-  const updatedConfig = netlifyConfig.replace(
-    /to = "\/assets\/sw-[^"]+\.js"/,
-    `to = "/assets/${swFile}"`
-  );
-  
-  writeFileSync('netlify.toml', updatedConfig);
-  console.log(`Updated netlify.toml with Service Worker file: ${swFile}`);
-};
-
-// Watch for changes in the dist directory
-const watchDist = () => {
-  const watcher = watch(distAssetsDir, (eventType, filename) => {
-    if (filename && filename.startsWith('sw-') && filename.endsWith('.js')) {
-      updateNetlifyConfig();
-      watcher.close();
-    }
-  });
-};
-
-// Start watching after a short delay to ensure the dist directory exists
-setTimeout(watchDist, 1000);
