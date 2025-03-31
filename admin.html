@@ -6,13 +6,131 @@
     <title>ניהול - שירותי+</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/admin.css">
+    <style>
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #4285F4;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 20px;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .error-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        .item-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .item-actions {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .item-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .item-details {
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .action-button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #666;
+        }
+
+        .action-button:hover {
+            color: #000;
+        }
+
+        .edit-button:hover {
+            color: #4285F4;
+        }
+
+        .delete-button:hover {
+            color: #DC3545;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+        }
+    </style>
 </head>
 <body>
-    <div class="admin-container">
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <div id="error-container" class="error-container hidden">
+        <div id="error-message" class="error-message"></div>
+        <button onclick="window.location.href='/login'" style="margin-top: 20px; padding: 10px 20px;">חזור לדף התחברות</button>
+    </div>
+    
+    <div class="admin-container" style="display: none;">
         <header class="admin-header">
             <div class="header-content">
                 <div class="logo">
-                    <img src="/assets/logo.png" alt="שירותי+">
+                    <img src="/icons/logo.png" alt="שירותי+">
                     <span>שירותי+ - ניהול</span>
                 </div>
                 <div class="header-actions">
@@ -38,7 +156,7 @@
                         <button id="add-service" class="primary-button">הוסף שירות חדש</button>
                     </div>
                     <div id="services-list" class="list-container">
-                        טוען...
+                        <div class="spinner"></div>
                     </div>
                 </div>
                 
@@ -48,14 +166,14 @@
                         <button id="add-category" class="primary-button">הוסף קטגוריה חדשה</button>
                     </div>
                     <div id="categories-list" class="list-container">
-                        טוען...
+                        <div class="spinner"></div>
                     </div>
                 </div>
                 
                 <div id="users-section" class="admin-section">
                     <h2>ניהול משתמשים</h2>
                     <div id="users-list" class="list-container">
-                        טוען...
+                        <div class="spinner"></div>
                     </div>
                 </div>
             </div>
@@ -63,11 +181,287 @@
     </div>
     
     <script type="module">
-        import { AdminAuth } from './js/admin/AdminAuth.js';
+        import { auth, db } from '/js/config/firebase.js';
+        import { signOut, onAuthStateChanged } from 'firebase/auth';
+        import { 
+            doc, 
+            getDoc, 
+            collection, 
+            getDocs, 
+            query, 
+            orderBy,
+            deleteDoc,
+            updateDoc
+        } from 'firebase/firestore';
         
-        const adminAuth = new AdminAuth();
+        // DOM elements
         const userInfo = document.getElementById('user-info');
         const logoutButton = document.getElementById('logout-button');
+        const adminContainer = document.querySelector('.admin-container');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const errorContainer = document.getElementById('error-container');
+        const errorMessage = document.getElementById('error-message');
+        
+        // List containers
+        const servicesListContainer = document.getElementById('services-list');
+        const categoriesListContainer = document.getElementById('categories-list');
+        const usersListContainer = document.getElementById('users-list');
+        
+        // Add buttons
+        const addServiceButton = document.getElementById('add-service');
+        const addCategoryButton = document.getElementById('add-category');
+        
+        // UI Helper Functions
+        function showError(message) {
+            loadingOverlay.style.display = 'none';
+            errorMessage.textContent = message;
+            errorContainer.classList.remove('hidden');
+        }
+        
+        function showAdmin() {
+            loadingOverlay.style.display = 'none';
+            errorContainer.classList.add('hidden');
+            adminContainer.style.display = 'block';
+        }
+        
+        function formatDate(timestamp) {
+            if (!timestamp) return 'לא ידוע';
+            
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return new Intl.DateTimeFormat('he-IL', {
+                year: 'numeric',
+                month: 'numeric',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric'
+            }).format(date);
+        }
+        
+        // Data Loading Functions
+        async function loadServices() {
+            try {
+                servicesListContainer.innerHTML = '<div class="spinner"></div>';
+                
+                const servicesQuery = query(collection(db, 'services'), orderBy('name'));
+                const querySnapshot = await getDocs(servicesQuery);
+                
+                if (querySnapshot.empty) {
+                    servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+                    return;
+                }
+                
+                let html = '';
+                querySnapshot.forEach((doc) => {
+                    const service = { id: doc.id, ...doc.data() };
+                    html += `
+                        <div class="item-card" data-id="${service.id}">
+                            <div class="item-actions">
+                                <button class="action-button edit-button" data-id="${service.id}" title="ערוך">✏️</button>
+                                <button class="action-button delete-button" data-id="${service.id}" title="מחק">🗑️</button>
+                            </div>
+                            <div class="item-title">${service.name}</div>
+                            <div class="item-details">
+                                <div>${service.description || 'אין תיאור'}</div>
+                                <div>קטגוריה: ${service.category || 'לא מוגדר'}</div>
+                                <div>עודכן: ${formatDate(service.updatedAt)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                servicesListContainer.innerHTML = html;
+                
+                // Add event listeners to edit and delete buttons
+                servicesListContainer.querySelectorAll('.edit-button').forEach(button => {
+                    button.addEventListener('click', () => editService(button.dataset.id));
+                });
+                
+                servicesListContainer.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', () => deleteService(button.dataset.id));
+                });
+                
+            } catch (error) {
+                console.error('Error loading services:', error);
+                servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים. אנא נסה שוב.</div>';
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                categoriesListContainer.innerHTML = '<div class="spinner"></div>';
+                
+                const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
+                const querySnapshot = await getDocs(categoriesQuery);
+                
+                if (querySnapshot.empty) {
+                    categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה.</div>';
+                    return;
+                }
+                
+                let html = '';
+                querySnapshot.forEach((doc) => {
+                    const category = { id: doc.id, ...doc.data() };
+                    html += `
+                        <div class="item-card" data-id="${category.id}">
+                            <div class="item-actions">
+                                <button class="action-button edit-button" data-id="${category.id}" title="ערוך">✏️</button>
+                                <button class="action-button delete-button" data-id="${category.id}" title="מחק">🗑️</button>
+                            </div>
+                            <div class="item-title">${category.name}</div>
+                            <div class="item-details">
+                                <div>${category.description || 'אין תיאור'}</div>
+                                <div>עודכן: ${formatDate(category.updatedAt)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                categoriesListContainer.innerHTML = html;
+                
+                // Add event listeners to edit and delete buttons
+                categoriesListContainer.querySelectorAll('.edit-button').forEach(button => {
+                    button.addEventListener('click', () => editCategory(button.dataset.id));
+                });
+                
+                categoriesListContainer.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', () => deleteCategory(button.dataset.id));
+                });
+                
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                categoriesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת הקטגוריות. אנא נסה שוב.</div>';
+            }
+        }
+        
+        async function loadUsers() {
+            try {
+                usersListContainer.innerHTML = '<div class="spinner"></div>';
+                
+                const usersQuery = query(collection(db, 'users'));
+                const querySnapshot = await getDocs(usersQuery);
+                
+                if (querySnapshot.empty) {
+                    usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה.</div>';
+                    return;
+                }
+                
+                let html = '';
+                querySnapshot.forEach((doc) => {
+                    const user = { id: doc.id, ...doc.data() };
+                    const statusClass = user.status === 'active' ? 'text-success' : 'text-danger';
+                    html += `
+                        <div class="item-card" data-id="${user.id}">
+                            <div class="item-actions">
+                                <button class="action-button edit-button" data-id="${user.id}" title="ערוך">✏️</button>
+                            </div>
+                            <div class="item-title">${user.name || user.email}</div>
+                            <div class="item-details">
+                                <div>אימייל: ${user.email || 'לא מוגדר'}</div>
+                                <div>תפקיד: ${user.role || 'משתמש'}</div>
+                                <div>סטטוס: <span class="${statusClass}">${user.status === 'active' ? 'פעיל' : 'מושהה'}</span></div>
+                                <div>כניסה אחרונה: ${formatDate(user.lastLogin)}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                usersListContainer.innerHTML = html;
+                
+                // Add event listeners to edit buttons
+                usersListContainer.querySelectorAll('.edit-button').forEach(button => {
+                    button.addEventListener('click', () => editUser(button.dataset.id));
+                });
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                usersListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת המשתמשים. אנא נסה שוב.</div>';
+            }
+        }
+        
+        // Action Functions (Placeholders - will be implemented later)
+        function editService(id) {
+            alert(`עריכת שירות ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+        }
+        
+        function deleteService(id) {
+            if (confirm(`האם אתה בטוח שברצונך למחוק את השירות?`)) {
+                alert(`מחיקת שירות ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+            }
+        }
+        
+        function editCategory(id) {
+            alert(`עריכת קטגוריה ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+        }
+        
+        function deleteCategory(id) {
+            if (confirm(`האם אתה בטוח שברצונך למחוק את הקטגוריה?`)) {
+                alert(`מחיקת קטגוריה ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+            }
+        }
+        
+        function editUser(id) {
+            alert(`עריכת משתמש ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+        }
+        
+        // Check if user is authenticated and has admin rights
+        async function checkAdminStatus(user) {
+            if (!user) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            try {
+                console.log('Checking admin rights for user:', user.uid);
+                // Check if user has admin rights
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                
+                if (!userDoc.exists()) {
+                    console.log('User document does not exist');
+                    showError('חשבון משתמש לא קיים במערכת. אנא פנה למנהל המערכת.');
+                    await signOut(auth);
+                    return;
+                }
+                
+                const userData = userDoc.data();
+                console.log('User data:', userData);
+                
+                if (userData.role !== 'admin') {
+                    console.log('User is not an admin');
+                    showError('אין לך הרשאות מנהל במערכת. אנא פנה למנהל המערכת.');
+                    await signOut(auth);
+                    return;
+                }
+                
+                if (userData.status !== 'active') {
+                    console.log('User is not active');
+                    showError('חשבון המנהל שלך אינו פעיל. אנא פנה למנהל המערכת.');
+                    await signOut(auth);
+                    return;
+                }
+                
+                // User is an admin, show admin UI
+                userInfo.textContent = `שלום ${user.displayName || userData.name || 'מנהל'}`;
+                showAdmin();
+                
+                // Load initial data
+                loadServices();
+                
+            } catch (error) {
+                console.error('Error checking admin status:', error);
+                showError('שגיאה בבדיקת הרשאות. אנא נסה שוב מאוחר יותר.');
+            }
+        }
+        
+        // Wait for auth state to initialize
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                console.log('User is signed in:', user.uid);
+                await checkAdminStatus(user);
+            } else {
+                console.log('No user signed in');
+                window.location.href = '/login';
+            }
+        });
         
         // Handle navigation
         document.querySelectorAll('.nav-button').forEach(button => {
@@ -80,20 +474,39 @@
                 button.classList.add('active');
                 const sectionId = `${button.dataset.section}-section`;
                 document.getElementById(sectionId).classList.add('active');
+                
+                // Load data for the selected section if not already loaded
+                const section = button.dataset.section;
+                if (section === 'services') {
+                    loadServices();
+                } else if (section === 'categories') {
+                    loadCategories();
+                } else if (section === 'users') {
+                    loadUsers();
+                }
             });
         });
         
-        // Handle logout
-        logoutButton.addEventListener('click', () => {
-            adminAuth.logout();
+        // Handle form buttons
+        addServiceButton.addEventListener('click', () => {
+            alert('הוספת שירות חדש - פונקציונליות זו תהיה זמינה בקרוב');
         });
         
-        // Check authentication
-        if (!adminAuth.currentUser) {
-            window.location.href = '/login';
-        } else {
-            userInfo.textContent = `שלום ${adminAuth.currentUser.name}`;
-        }
+        addCategoryButton.addEventListener('click', () => {
+            alert('הוספת קטגוריה חדשה - פונקציונליות זו תהיה זמינה בקרוב');
+        });
+        
+        // Handle logout
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('שגיאה בהתנתקות. אנא נסה שוב.');
+            }
+        });
     </script>
 </body>
+</html> 
 </html> 
