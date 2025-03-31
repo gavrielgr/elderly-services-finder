@@ -16,6 +16,11 @@ export class UIManager {
         this.initThemeToggle();
         this.initRefreshButton();
         this.initScrollUpButton();
+        
+        // Check initial connection status if element exists
+        if (this.connectionStatus) {
+            this.updateConnectionStatus(navigator.onLine);
+        }
     }
 
     async initialize() {
@@ -43,7 +48,6 @@ export class UIManager {
             this.modalManager = new ModalManager(this);
 
             this.setupEventListeners();
-            this.updateConnectionStatus();
             this.renderInitialUI();
         } catch (error) {
             console.error('Error initializing UI:', error);
@@ -73,17 +77,21 @@ export class UIManager {
     }
 
     updateConnectionStatus(isOnline) {
-        const onlineIcon = document.querySelector('.status-icon.online');
-        const offlineIcon = document.querySelector('.status-icon.offline');
+        if (!this.connectionStatus) return;
         
-        if (isOnline) {
-            onlineIcon.classList.remove('hidden');
-            offlineIcon.classList.add('hidden');
-            this.connectionStatus.title = 'מחובר לאינטרנט';
-        } else {
-            onlineIcon.classList.add('hidden');
-            offlineIcon.classList.remove('hidden');
-            this.connectionStatus.title = 'לא מחובר לאינטרנט';
+        const onlineIcon = this.connectionStatus.querySelector('.status-icon.online');
+        const offlineIcon = this.connectionStatus.querySelector('.status-icon.offline');
+        
+        if (onlineIcon && offlineIcon) {
+            if (isOnline) {
+                onlineIcon.classList.remove('hidden');
+                offlineIcon.classList.add('hidden');
+                this.connectionStatus.title = 'מחובר לאינטרנט';
+            } else {
+                onlineIcon.classList.add('hidden');
+                offlineIcon.classList.remove('hidden');
+                this.connectionStatus.title = 'מנותק מהאינטרנט';
+            }
         }
     }
 
@@ -101,18 +109,16 @@ export class UIManager {
     }
 
     updateLastUpdatedText(timestamp) {
-        if (!this.lastUpdatedText || !timestamp) return;
+        if (!this.lastUpdatedText) return;
         
         const date = new Date(timestamp);
-        if (isNaN(date.getTime())) return;
-        
-        const formattedDate = new Intl.DateTimeFormat('he-IL', {
-            day: 'numeric',
-            month: 'numeric',
+        const formattedDate = date.toLocaleDateString('he-IL', {
             year: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric'
-        }).format(date);
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         
         this.lastUpdatedText.textContent = `עודכן: ${formattedDate}`;
     }
