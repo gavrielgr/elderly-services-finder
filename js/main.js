@@ -2,7 +2,7 @@
 import { UIManager } from './ui/uiManager.js';
 import { SearchManager } from './ui/searchManager.js';
 import { CategoryManager } from './ui/categoryManager.js';
-import { ResultsManager } from './ui/ResultsManager.js';
+import { ResultsManager } from './ui/resultsManager.js';
 import { ModalManager } from './ui/modalManager.js';
 import { InstallManager } from './pwa/installManager.js';
 

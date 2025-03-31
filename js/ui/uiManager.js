@@ -1,6 +1,6 @@
 import { SearchManager } from './searchManager.js';
 import { CategoryManager } from './categoryManager.js';
-import { ResultsManager } from './ResultsManager.js';
+import { ResultsManager } from './resultsManager.js';
 import { ModalManager } from './modalManager.js';
 import { DataService } from '../services/dataService.js';
 import { getFromIndexedDB } from '../services/storageService.js';
