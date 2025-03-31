@@ -9,17 +9,18 @@
     Content-Type = "application/javascript"
     Cache-Control = "no-store"
 
+[[headers]]
+  for = "/assets/sw-*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "no-store"
+
 [[redirects]]
   from = "/sw.js"
-  to = "/assets/sw.js"
+  to = "/assets/sw-ki5AU8Ys.js"
   status = 200
 
 [[redirects]]
-  from = "/assets/sw-*.js"
-  to = "/assets/sw.js"
-  status = 200
-
-[[redirects]]
-  from = "/assets/icons/*"
-  to = "/icons/:splat"
+  from = "/icons/*"
+  to = "/assets/:splat"
   status = 200 

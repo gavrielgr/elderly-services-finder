@@ -9,7 +9,7 @@ import { InstallManager } from './pwa/installManager.js';
 // Register Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/assets/sw-lJnnwrRA.js')
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then(registration => {
                 console.log('ServiceWorker registration successful');
             })
