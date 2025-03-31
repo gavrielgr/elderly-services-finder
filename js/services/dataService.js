@@ -8,34 +8,85 @@ export class DataService {
         this.lastUpdated = null;
         this.lastUpdateCheck = null;
         this.UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+        this.refreshPromise = null; // למניעת קריאות מקבילות
     }
 
     async refreshData(forceRefresh = false) {
+        try {
+            // אם כבר מתבצעת טעינה, נחזיר את ההבטחה הקיימת
+            if (this.refreshPromise) {
+                console.log('Refresh already in progress, waiting for it to complete...');
+                return this.refreshPromise;
+            }
+            
+            // נתחיל תהליך טעינה חדש
+            this.refreshPromise = this._doRefresh(forceRefresh);
+            
+            // נחכה לתוצאה ונאפס את ההבטחה בסיום
+            const result = await this.refreshPromise;
+            this.refreshPromise = null;
+            return result;
+        } catch (error) {
+            console.error('Error in refreshData:', error);
+            this.refreshPromise = null;
+            return false;
+        }
+    }
+    
+    // פונקציית העזר שמבצעת את הטעינה בפועל
+    async _doRefresh(forceRefresh) {
         try {
             // נסה לטעון מהמטמון תחילה
             if (!forceRefresh) {
                 const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);
                 if (cachedData && cachedData.services && cachedData.categories) {
-                    this.allServicesData = cachedData;
-                    this.lastUpdated = cachedData.lastUpdated;
-                    console.log('Using cached data from:', this.lastUpdated);
-                    console.log('Categories from cache:', this.allServicesData.categories);
+                    // בדיקה אם הנתונים תקפים (לא ריקים ויש תאריך עדכון)
+                    if (
+                        cachedData.services.length > 0 && 
+                        cachedData.categories.length > 0 && 
+                        cachedData.lastUpdated
+                    ) {
+                        this.allServicesData = cachedData;
+                        this.lastUpdated = cachedData.lastUpdated;
+                        console.log('Using cached data from:', this.lastUpdated);
+                        
+                        // פירסום אירוע עדכון נתונים כדי לעדכן את הממשק
+                        this._dispatchDataUpdatedEvent(this.lastUpdated);
+                        
+                        return true;
+                    }
+                    console.log('Cached data is invalid, fetching from server');
+                }
+            }
+
+            // אם יש חיבור אינטרנט ואין מידע במטמון או שביקשנו רענון, נטען מהשרת
+            if (navigator.onLine) {
+                console.log('Fetching data from server...');
+                const startTime = performance.now();
+                
+                const response = await fetchFromAPI();
+                
+                const endTime = performance.now();
+                console.log(`API fetch completed in ${Math.round(endTime - startTime)}ms`);
+                
+                if (response && response.data) {
+                    this.allServicesData = response.data;
+                    this.lastUpdated = response.data.lastUpdated;
+                    
+                    // פירסום אירוע עדכון נתונים
+                    this._dispatchDataUpdatedEvent(this.lastUpdated);
+                    
+                    // שמירת זמן הבדיקה האחרונה
+                    this.lastUpdateCheck = Date.now();
+                    
                     return true;
                 }
             }
 
-            // אם אין מידע במטמון או שביקשנו רענון, נטען מהשרת
-            if (navigator.onLine) {
-                const response = await fetchFromAPI();
-                if (response && response.data) {
-                    this.allServicesData = response.data;
-                    this.lastUpdated = response.data.lastUpdated;
-                    console.log('Categories from API:', this.allServicesData.categories);
-                    
-                    // שמירה במטמון
-                    await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
-                    return true;
-                }
+            // אם לא הצלחנו לקבל נתונים חדשים אבל יש לנו נתונים קיימים
+            if (this.allServicesData) {
+                console.log('Using existing data');
+                return true;
             }
 
             return false;
@@ -44,14 +95,30 @@ export class DataService {
             return false;
         }
     }
+    
+    // פירסום אירוע עדכון נתונים
+    _dispatchDataUpdatedEvent(timestamp) {
+        window.dispatchEvent(new CustomEvent('dataUpdated', {
+            detail: {
+                timestamp,
+                data: this.allServicesData
+            }
+        }));
+    }
 
     async checkForUpdates() {
         try {
+            // בדיקה אם עבר מספיק זמן מהבדיקה האחרונה
+            if (this.lastUpdateCheck && (Date.now() - this.lastUpdateCheck < this.UPDATE_CHECK_INTERVAL)) {
+                console.log('Last update check was too recent, skipping');
+                return false;
+            }
+            
             // בדיקה אם יש נתונים במטמון
             const cachedData = await this.getCachedData();
             if (!cachedData) {
                 console.log('No cached data found, need to refresh');
-                return true;
+                return await this.refreshData(true);
             }
 
             // בדיקה אם הנתונים במטמון עדכניים
@@ -61,11 +128,17 @@ export class DataService {
 
             if (hoursSinceUpdate > 24) {
                 console.log('Cached data is older than 24 hours, need to refresh');
-                return true;
+                return await this.refreshData(true);
             }
+            
+            // עדכון זמן הבדיקה האחרונה
+            this.lastUpdateCheck = Date.now();
 
             // שמירת הנתונים במטמון ב-allServicesData
-            this.allServicesData = cachedData;
+            if (!this.allServicesData) {
+                this.allServicesData = cachedData;
+                this.lastUpdated = cachedData.lastUpdated;
+            }
 
             console.log('Using cached data:', {
                 lastUpdated: cachedData.lastUpdated,
@@ -73,10 +146,10 @@ export class DataService {
                 categoriesCount: cachedData.categories?.length || 0
             });
 
-            return false;
+            return false; // אין צורך בעדכון
         } catch (error) {
             console.error('Error checking for updates:', error);
-            return true;
+            return false;
         }
     }
 

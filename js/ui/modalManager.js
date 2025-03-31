@@ -57,8 +57,23 @@ export class ModalManager {
 
         // Get category name from the categories array
         const categories = this.uiManager.dataService.getCategories();
-        const category = categories.find(cat => cat.id === service.category);
-        const categoryName = category ? category.name : 'כללי';
+        let categoryName = 'כללי';
+
+        // בדיקה עבור שדה category (מבנה ישן)
+        if (service.category && categories) {
+            const category = categories.find(cat => cat.id === service.category);
+            if (category) {
+                categoryName = category.name;
+            }
+        }
+
+        // בדיקה עבור שדה categoryId (מבנה חדש)
+        if ((!categoryName || categoryName === 'כללי') && service.categoryId && categories) {
+            const category = categories.find(cat => cat.id === service.categoryId);
+            if (category) {
+                categoryName = category.name;
+            }
+        }
 
         // יצירת HTML עבור פרטי השירות
         let detailsHTML = `

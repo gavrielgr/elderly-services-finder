@@ -1,7 +1,20 @@
 import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
-import { ALL_SERVICES_KEY } from '../config/constants.js';
+import { ALL_SERVICES_KEY } from './constants.js';
 import { db, auth } from './firebase.js';
-import { collection, getDocs } from 'firebase/firestore';
+import { 
+    collection, getDocs, query, limit, orderBy, startAfter, where, 
+    doc, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp 
+} from 'firebase/firestore';
+
+// הגדרות עבור בקרת עומס קריאות פיירבייס
+const BATCH_SIZE = 50;
+const QUERY_DELAY = 500; // מילישניות לחכות בין קריאות
+const CACHE_TTL = 1000 * 60 * 60 * 24; // תוקף המטמון - 24 שעות
+
+// פונקציית עזר לחכות מספר מילישניות
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // קבלת נתונים מהמטמון המקומי
 async function getFromCache() {
@@ -57,47 +70,141 @@ function isDataFresh(localTimestamp) {
     return diffInHours < 24;
 }
 
-// קבלת נתונים מהשרת
+// קבלת נתונים מהשרת עם pagination ובקרת קצב קריאות
 async function fetchFromServer() {
     try {
-        console.log('Fetching data from Firebase...');
-        
-        const [servicesSnapshot, categoriesSnapshot, interestAreasSnapshot, serviceAreasSnapshot] = await Promise.all([
-            getDocs(collection(db, 'services')),
-            getDocs(collection(db, 'categories')),
-            getDocs(collection(db, 'interest-areas')),
-            getDocs(collection(db, 'service-interest-areas'))
-        ]);
+        console.log('Fetching data from Firebase with pagination...');
 
-        const services = servicesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-
+        // 1. Get categories (small collection, fetch all at once)
+        console.log('Fetching categories...');
+        const categoriesSnapshot = await getDocs(collection(db, 'categories'));
         const categories = categoriesSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        console.log(`Retrieved ${categories.length} categories`);
 
+        // 2. Get interest areas (small collection, fetch all at once)
+        console.log('Fetching interest areas...');
+        const interestAreasSnapshot = await getDocs(collection(db, 'interest-areas'));
         const interestAreas = interestAreasSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
         }));
+        console.log(`Retrieved ${interestAreas.length} interest areas`);
 
-        // יצירת מיפוי של מזהי שירותים לתחומי עניין
-        const serviceInterestAreasMap = {};
-        serviceAreasSnapshot.docs.forEach(doc => {
-            const data = doc.data();
-            if (!serviceInterestAreasMap[data.serviceId]) {
-                serviceInterestAreasMap[data.serviceId] = [];
+        // 3. Get services with pagination
+        console.log('Fetching services with pagination...');
+        let services = [];
+        let lastDoc = null;
+        let hasMore = true;
+        let batchCount = 0;
+
+        while (hasMore) {
+            batchCount++;
+            let servicesQuery;
+            
+            if (lastDoc) {
+                servicesQuery = query(
+                    collection(db, 'services'),
+                    orderBy('name'),
+                    startAfter(lastDoc),
+                    limit(BATCH_SIZE)
+                );
+            } else {
+                servicesQuery = query(
+                    collection(db, 'services'),
+                    orderBy('name'),
+                    limit(BATCH_SIZE)
+                );
             }
-            serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
-        });
 
-        // הוספת תחומי עניין לכל שירות
+            console.log(`Fetching services batch ${batchCount}...`);
+            const servicesSnapshot = await getDocs(servicesQuery);
+            
+            const batchServices = servicesSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            services = [...services, ...batchServices];
+            
+            // Check if we have more services to fetch
+            if (servicesSnapshot.docs.length < BATCH_SIZE) {
+                hasMore = false;
+                console.log('No more services to fetch');
+            } else {
+                // Update the last document for pagination
+                lastDoc = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
+                console.log(`Fetched ${services.length} services so far`);
+                
+                // Add delay between batches to prevent rate limiting
+                if (hasMore) {
+                    console.log(`Waiting ${QUERY_DELAY}ms before next batch...`);
+                    await delay(QUERY_DELAY);
+                }
+            }
+        }
+
+        // 4. Get service-interest-area mappings (may be large, use pagination)
+        console.log('Fetching service-interest-area mappings...');
+        const serviceInterestAreasMap = {};
+        let lastMappingDoc = null;
+        hasMore = true;
+        batchCount = 0;
+
+        while (hasMore) {
+            batchCount++;
+            let mappingsQuery;
+            
+            if (lastMappingDoc) {
+                mappingsQuery = query(
+                    collection(db, 'service-interest-areas'),
+                    orderBy('serviceId'),
+                    startAfter(lastMappingDoc),
+                    limit(BATCH_SIZE)
+                );
+            } else {
+                mappingsQuery = query(
+                    collection(db, 'service-interest-areas'),
+                    orderBy('serviceId'),
+                    limit(BATCH_SIZE)
+                );
+            }
+
+            console.log(`Fetching mappings batch ${batchCount}...`);
+            const mappingsSnapshot = await getDocs(mappingsQuery);
+            
+            // Process this batch of mappings
+            mappingsSnapshot.docs.forEach(doc => {
+                const data = doc.data();
+                if (!serviceInterestAreasMap[data.serviceId]) {
+                    serviceInterestAreasMap[data.serviceId] = [];
+                }
+                serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
+            });
+            
+            // Check if we have more mappings to fetch
+            if (mappingsSnapshot.docs.length < BATCH_SIZE) {
+                hasMore = false;
+                console.log('No more mappings to fetch');
+            } else {
+                // Update the last document for pagination
+                lastMappingDoc = mappingsSnapshot.docs[mappingsSnapshot.docs.length - 1];
+                console.log(`Processed ${Object.keys(serviceInterestAreasMap).length} service mappings so far`);
+                
+                // Add delay between batches to prevent rate limiting
+                if (hasMore) {
+                    console.log(`Waiting ${QUERY_DELAY}ms before next batch...`);
+                    await delay(QUERY_DELAY);
+                }
+            }
+        }
+
+        // 5. Add interest areas to services
         services.forEach(service => {
             const interestAreaIds = serviceInterestAreasMap[service.id] || [];
-            // מוסיף את אובייקטי תחומי העניין המלאים לשירות
+            // Add full interest area objects to service
             service.interestAreas = interestAreaIds
                 .map(areaId => {
                     const area = interestAreas.find(a => a.id === areaId);
@@ -106,10 +213,7 @@ async function fetchFromServer() {
                 .filter(area => area !== null);
         });
 
-        console.log(`Retrieved ${services.length} services`);
-        console.log(`Retrieved ${categories.length} categories`);
-        console.log(`Retrieved ${interestAreas.length} interest areas`);
-        console.log(`Retrieved ${serviceAreasSnapshot.size} service-interest-area links`);
+        console.log(`Complete data load: ${services.length} services, ${categories.length} categories, ${interestAreas.length} interest areas`);
 
         return {
             services,
@@ -124,14 +228,40 @@ async function fetchFromServer() {
 
 export const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhjH6M2KJrbCQRu4YiofKbgwrkDpjxZGvLIUqE4KrcA_IKd5sp_8eDl0Pb_zEjeWb9_F8A26cGZyN3LnUwLp1tSGwE4DO0MvbpgpbuL6dkaSgQyecapCtZLqZWSy4fns_lzmQ-VVQYa0YZvoLbV3-5Oq0p4FguPA1dOH8tQlui0VwZ_H9mdlkd0D1AgxO53pa8r4r8VlKWtje0O0-W-tIQTtzYauPWkvm8bwXofRooP4qw-IYmKBYIVb_wXqSyHH5n9dcN7a7v5RpLauKypRY9G1hw1Uw&lib=MOF1g2zWJcL4207AxUsxFPKpukIcnFaFe';
 
-// פונקציה ראשית לקבלת נתונים
+/**
+ * פונקציה לבדיקה אם המטמון תקף
+ * @param {string} key - מפתח המטמון
+ * @returns {Promise<boolean>} - האם המטמון תקף
+ */
+async function isCacheValid(key) {
+    try {
+        const cachedData = await getFromIndexedDB(key);
+        if (!cachedData || !cachedData.timestamp) return false;
+        
+        const now = Date.now();
+        const cacheAge = now - cachedData.timestamp;
+        return cacheAge < CACHE_TTL;
+    } catch (error) {
+        console.error('Error checking cache validity:', error);
+        return false;
+    }
+}
+
+/**
+ * פונקציה לטעינת נתונים מהשרת
+ * מבצעת אופטימיזציה של טעינה בקבוצות ובהשהיות
+ * @returns {Promise<Object>} - הנתונים שנטענו
+ */
 export async function fetchFromAPI() {
     try {
-        // נסה לקבל מהמטמון תחילה
-        const cachedData = await getFromCache();
-        if (cachedData && isDataFresh(cachedData.lastUpdated)) {
-            console.log('Using fresh cached data');
-            return { data: cachedData, source: 'cache' };
+        console.log('Fetching data from API');
+        const startTime = performance.now();
+
+        // נסה לקבל נתונים מהמטמון
+        if (await isCacheValid(ALL_SERVICES_KEY)) {
+            const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);
+            console.log('Using valid cached data');
+            return { success: true, data: cachedData };
         }
 
         // אם אין מידע במטמון או שהוא לא טרי, נטען מהשרת
@@ -142,24 +272,300 @@ export async function fetchFromAPI() {
                 services: serverData.services,
                 categories: serverData.categories,
                 interestAreas: serverData.interestAreas,
-                lastUpdated: timestamp
+                lastUpdated: timestamp,
+                timestamp: Date.now()
             };
             
             // שמירה במטמון
             await saveToCache(data);
             
-            return { data, source: 'server' };
+            const endTime = performance.now();
+            console.log(`API fetch completed in ${Math.round(endTime - startTime)}ms`);
+            console.log(`Fetched ${serverData.services.length} services, ${serverData.categories.length} categories, ${serverData.interestAreas.length} interest areas`);
+
+            return { success: true, data };
         }
 
-        // אם לא הצלחנו לקבל נתונים מהשרת, נשתמש במטמון (אם יש)
+        // אם לא הצלחנו לקבל נתונים מהשרת, ננסה להשתמש במטמון
+        const cachedData = await getFromCache();
         if (cachedData) {
             console.log('Using stale cached data');
-            return { data: cachedData, source: 'cache' };
+            return { success: true, data: cachedData };
         }
 
-        return { data: { services: [], categories: [], interestAreas: [] }, source: 'empty' };
+        return { success: false, error: 'No data found' };
     } catch (error) {
         console.error('Error in fetchFromAPI:', error);
-        return { data: { services: [], categories: [], interestAreas: [] }, source: 'error' };
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה להוספת שירות חדש
+ * @param {Object} serviceData - נתוני השירות
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function addServiceAPI(serviceData) {
+    try {
+        // הוספת חותמת זמן
+        serviceData.createdAt = serverTimestamp();
+        
+        // הוספת השירות
+        const docRef = await addDoc(collection(db, 'services'), serviceData);
+        
+        // אם יש תחומי עניין, מוסיפים מיפויים
+        if (serviceData.interestAreaIds && serviceData.interestAreaIds.length > 0) {
+            const batch = writeBatch(db);
+            
+            for (const interestAreaId of serviceData.interestAreaIds) {
+                const mappingData = {
+                    serviceId: docRef.id,
+                    interestAreaId,
+                    createdAt: serverTimestamp()
+                };
+                
+                const newMappingRef = doc(collection(db, 'service-interest-areas'));
+                batch.set(newMappingRef, mappingData);
+            }
+            
+            await batch.commit();
+        }
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true, serviceId: docRef.id };
+    } catch (error) {
+        console.error('Error adding service:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה לעדכון שירות קיים
+ * @param {string} serviceId - מזהה השירות
+ * @param {Object} serviceData - נתוני השירות המעודכנים
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function updateServiceAPI(serviceId, serviceData) {
+    try {
+        // עדכון חותמת זמן העדכון
+        serviceData.updatedAt = serverTimestamp();
+        
+        // עדכון נתוני השירות
+        const serviceDocRef = doc(db, 'services', serviceId);
+        await updateDoc(serviceDocRef, serviceData);
+        
+        // עדכון תחומי עניין אם יש
+        if (serviceData.interestAreaIds) {
+            // מחיקת כל המיפויים הקיימים
+            const existingMappingsQuery = query(
+                collection(db, 'service-interest-areas'),
+                where('serviceId', '==', serviceId)
+            );
+            
+            const existingMappings = await getDocs(existingMappingsQuery);
+            
+            const batch = writeBatch(db);
+            
+            // מחיקת המיפויים הישנים
+            existingMappings.forEach(mapping => {
+                batch.delete(mapping.ref);
+            });
+            
+            // הוספת המיפויים החדשים
+            for (const interestAreaId of serviceData.interestAreaIds) {
+                const mappingData = {
+                    serviceId,
+                    interestAreaId,
+                    createdAt: serverTimestamp()
+                };
+                
+                const newMappingRef = doc(collection(db, 'service-interest-areas'));
+                batch.set(newMappingRef, mappingData);
+            }
+            
+            await batch.commit();
+        }
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating service:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה למחיקת שירות
+ * @param {string} serviceId - מזהה השירות למחיקה
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function deleteServiceAPI(serviceId) {
+    try {
+        // מחיקת השירות עצמו
+        await deleteDoc(doc(db, 'services', serviceId));
+        
+        // מחיקת כל המיפויים לתחומי עניין
+        const mappingsQuery = query(
+            collection(db, 'service-interest-areas'),
+            where('serviceId', '==', serviceId)
+        );
+        
+        const mappingsSnapshot = await getDocs(mappingsQuery);
+        
+        if (!mappingsSnapshot.empty) {
+            const batch = writeBatch(db);
+            mappingsSnapshot.forEach(mapping => {
+                batch.delete(mapping.ref);
+            });
+            await batch.commit();
+        }
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting service:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה להוספת קטגוריה חדשה
+ * @param {Object} categoryData - נתוני הקטגוריה
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function addCategoryAPI(categoryData) {
+    try {
+        categoryData.createdAt = serverTimestamp();
+        const docRef = await addDoc(collection(db, 'categories'), categoryData);
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true, categoryId: docRef.id };
+    } catch (error) {
+        console.error('Error adding category:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה לעדכון קטגוריה קיימת
+ * @param {string} categoryId - מזהה הקטגוריה
+ * @param {Object} categoryData - נתוני הקטגוריה המעודכנים
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function updateCategoryAPI(categoryId, categoryData) {
+    try {
+        categoryData.updatedAt = serverTimestamp();
+        await updateDoc(doc(db, 'categories', categoryId), categoryData);
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating category:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה למחיקת קטגוריה
+ * @param {string} categoryId - מזהה הקטגוריה למחיקה
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function deleteCategoryAPI(categoryId) {
+    try {
+        await deleteDoc(doc(db, 'categories', categoryId));
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה להוספת תחום עניין חדש
+ * @param {Object} interestAreaData - נתוני תחום העניין
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function addInterestAreaAPI(interestAreaData) {
+    try {
+        interestAreaData.createdAt = serverTimestamp();
+        const docRef = await addDoc(collection(db, 'interest-areas'), interestAreaData);
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true, interestAreaId: docRef.id };
+    } catch (error) {
+        console.error('Error adding interest area:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה לעדכון תחום עניין קיים
+ * @param {string} interestAreaId - מזהה תחום העניין
+ * @param {Object} interestAreaData - נתוני תחום העניין המעודכנים
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function updateInterestAreaAPI(interestAreaId, interestAreaData) {
+    try {
+        interestAreaData.updatedAt = serverTimestamp();
+        await updateDoc(doc(db, 'interest-areas', interestAreaId), interestAreaData);
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error updating interest area:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * פונקציה למחיקת תחום עניין
+ * @param {string} interestAreaId - מזהה תחום העניין למחיקה
+ * @returns {Promise<Object>} - תוצאת התהליך
+ */
+export async function deleteInterestAreaAPI(interestAreaId) {
+    try {
+        await deleteDoc(doc(db, 'interest-areas', interestAreaId));
+        
+        // מחיקת כל המיפויים המקושרים לתחום העניין
+        const mappingsQuery = query(
+            collection(db, 'service-interest-areas'),
+            where('interestAreaId', '==', interestAreaId)
+        );
+        
+        const mappingsSnapshot = await getDocs(mappingsQuery);
+        
+        if (!mappingsSnapshot.empty) {
+            const batch = writeBatch(db);
+            mappingsSnapshot.forEach(mapping => {
+                batch.delete(mapping.ref);
+            });
+            await batch.commit();
+        }
+        
+        // מחיקת מטמון לאחר שינוי נתונים
+        await saveToIndexedDB(ALL_SERVICES_KEY, null);
+        
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting interest area:', error);
+        return { success: false, error: error.message };
     }
 }

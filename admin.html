@@ -7,365 +7,438 @@
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/admin.css">
     <style>
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        /* Base styles */
+        body, html {
+            font-family: 'Heebo', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+            direction: rtl;
         }
         
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top-color: #4285F4;
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .error-message {
-            background-color: #f8d7da;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 4px;
-            margin: 20px;
-            max-width: 600px;
-            text-align: center;
-        }
-        
-        .error-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
-        
-        .hidden {
-            display: none !important;
+        /* Container */
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
 
-        .item-card {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            padding: 16px;
-            margin-bottom: 16px;
-            position: relative;
-        }
-
-        .item-actions {
-            position: absolute;
-            top: 16px;
-            left: 16px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .item-title {
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 8px;
-        }
-
-        .item-details {
-            color: #555;
-            font-size: 0.9rem;
-        }
-
-        .action-button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            color: #666;
-        }
-
-        .action-button:hover {
-            color: #000;
-        }
-
-        .edit-button:hover {
-            color: #4285F4;
-        }
-
-        .delete-button:hover {
-            color: #DC3545;
-        }
-
-        .empty-message {
-            text-align: center;
-            color: #666;
-            padding: 30px;
-        }
-
-        .search-container {
-            display: flex;
-            margin-bottom: 16px;
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #4285F4;
-            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
-        }
-
-        .results-info {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 12px;
-        }
-
-        .header-container {
+        /* Header */
+        .admin-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .admin-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
         }
 
-        .header-title {
-            margin: 0;
+        .admin-user-info {
+            display: flex;
+            align-items: center;
+        }
+        
+        .admin-user-info-text {
+            margin-left: 10px;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        /* Navigation */
+        .admin-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        
+        .admin-nav button {
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .admin-nav button.active {
+            background-color: #4285f4;
+            color: white;
         }
 
-        @media (max-width: 768px) {
-            .header-container {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .search-container {
-                margin-top: 12px;
-                max-width: 100%;
-            }
+        /* Section styles */
+        .admin-section {
+            display: none;
+            margin-bottom: 20px;
+        }
+        
+        .admin-section.active {
+            display: block;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .section-controls {
+            display: flex;
+            gap: 10px;
         }
 
-        /* Modal Styles */
-        .modal {
+        /* Loading overlay */
+        .loading-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(255, 255, 255, 0.8);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
-
-        .modal-content {
-            background-color: white;
-            border-radius: 8px;
-            padding: 24px;
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .modal-title {
-            font-size: 1.4rem;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .close-modal:hover {
-            color: #000;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: 500;
-        }
-
-        .form-input, .form-textarea, .form-select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
+        /* Error container */
+        .error-container {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px 20px;
             border-radius: 4px;
-            font-size: 0.9rem;
+            margin-bottom: 20px;
         }
-
-        .form-textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        .form-select {
-            height: 38px;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: 24px;
-        }
-
-        .cancel-button {
-            background-color: #f2f2f2;
-            color: #333;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+        
+        /* Buttons */
+        button {
             cursor: pointer;
+            transition: background-color 0.2s;
         }
-
-        .save-button {
-            background-color: #4285F4;
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .add-button {
+            background-color: #4caf50;
             color: white;
             border: none;
-            padding: 8px 16px;
             border-radius: 4px;
-            cursor: pointer;
+            padding: 8px 12px;
+            font-weight: bold;
         }
-
-        .cancel-button:hover {
-            background-color: #e6e6e6;
+        
+        /* Items list */
+        .admin-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
         }
-
-        .save-button:hover {
-            background-color: #3367d6;
-        }
-
-        .status-toggle {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .switch {
+        
+        .item-card {
+            background-color: white;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             position: relative;
-            display: inline-block;
-            width: 48px;
-            height: 24px;
         }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
+        
+        .item-actions {
             position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .action-button {
+            background: none;
+            border: none;
+            font-size: 16px;
             cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .action-button:hover {
+            opacity: 1;
+        }
+        
+        .item-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            margin-left: 60px; /* Space for actions */
+        }
+        
+        .item-details {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .item-details > div {
+            margin-bottom: 5px;
+        }
+        
+        /* Search container */
+        .search-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        .search-results-info {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
-            -webkit-transition: .4s;
-            transition: .4s;
-            border-radius: 24px;
+            background-color: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
         }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
+        
+        .modal-content {
             background-color: white;
-            -webkit-transition: .4s;
-            transition: .4s;
-            border-radius: 50%;
+            padding: 20px;
+            border-radius: 6px;
+            width: 450px;
+            max-width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
         }
-
-        input:checked + .slider {
-            background-color: #4285F4;
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-
-        input:focus + .slider {
-            box-shadow: 0 0 1px #4285F4;
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
         }
-
-        input:checked + .slider:before {
-            -webkit-transform: translateX(24px);
-            -ms-transform: translateX(24px);
-            transform: translateX(24px);
+        
+        .close-modal {
+            font-size: 24px;
+            color: #777;
+            cursor: pointer;
+            background: none;
+            border: none;
         }
-
-        .error-text {
-            color: #DC3545;
-            font-size: 0.8rem;
-            margin-top: 4px;
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-error {
+            color: #d9534f;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .form-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .text-danger {
+            color: #d9534f;
+        }
+        
+        .text-success {
+            color: #4caf50;
+        }
+        
+        .interest-areas-section {
+            margin-top: 20px;
+        }
+        
+        .interest-areas-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .empty-message {
+            color: #777;
+            padding: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        .error-message {
+            color: #d9534f;
+            padding: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        
+        /* System Messages */
+        .admin-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 10px 20px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1100;
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .admin-message.show {
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .admin-message.success {
+            background-color: #4caf50;
+        }
+        
+        .admin-message.error {
+            background-color: #f44336;
+        }
+        
+        .admin-message.info {
+            background-color: #2196F3;
+        }
+        
+        /* Refresh Button */
+        .refresh-button {
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .refresh-button::before {
+            content: '🔄';
         }
     </style>
 </head>
 <body>
-    <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-overlay">
         <div class="spinner"></div>
     </div>
     
-    <div id="error-container" class="error-container hidden">
-        <div id="error-message" class="error-message"></div>
-        <button onclick="window.location.href='/login'" style="margin-top: 20px; padding: 10px 20px;">חזור לדף התחברות</button>
+    <div id="error-container" class="error-container">
+        <div id="error-message"></div>
     </div>
     
     <div class="admin-container" style="display: none;">
         <header class="admin-header">
-            <div class="header-content">
-                <div class="logo">
-                    <img src="/icons/logo.png" alt="שירותי+">
-                    <span>שירותי+ - ניהול</span>
-                </div>
-                <div class="header-actions">
-                    <span id="user-info"></span>
-                    <button id="logout-button" class="logout-button">התנתק</button>
+            <div class="admin-logo">פאנל ניהול - שירותי+</div>
+            <div class="admin-user-info">
+                <div id="user-info" class="admin-user-info-text"></div>
+                <div class="admin-actions">
+                    <button class="refresh-button" id="refresh-data-button">רענן נתונים</button>
+                    <button id="logout-button" class="btn btn-secondary">התנתק</button>
                 </div>
             </div>
         </header>
+        
+        <nav class="admin-nav">
+            <button class="active" data-section="services-section">שירותים</button>
+            <button data-section="categories-section">קטגוריות</button>
+            <button data-section="interest-areas-section">תחומי עניין</button>
+            <button data-section="users-section">משתמשים</button>
+        </nav>
         
         <main class="admin-main">
             <div class="admin-sidebar">
@@ -627,6 +700,56 @@
         let allInterestAreas = [];
         let allUsers = [];
         
+        // Global cache
+        const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+        const ADMIN_CACHE_PREFIX = 'admin_cache_';
+        
+        // Cache management functions
+        function saveToCache(key, data) {
+            try {
+                const cacheItem = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(ADMIN_CACHE_PREFIX + key, JSON.stringify(cacheItem));
+            } catch (error) {
+                console.error('Error saving to cache:', error);
+            }
+        }
+        
+        function getFromCache(key) {
+            try {
+                const cacheItemJson = localStorage.getItem(ADMIN_CACHE_PREFIX + key);
+                if (!cacheItemJson) return null;
+                
+                const cacheItem = JSON.parse(cacheItemJson);
+                if (!cacheItem || !cacheItem.timestamp) return null;
+                
+                // Check if cache is expired
+                if (Date.now() - cacheItem.timestamp > CACHE_EXPIRY) {
+                    localStorage.removeItem(ADMIN_CACHE_PREFIX + key);
+                    return null;
+                }
+                
+                return cacheItem.data;
+            } catch (error) {
+                console.error('Error retrieving from cache:', error);
+                return null;
+            }
+        }
+        
+        function clearCache() {
+            try {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith(ADMIN_CACHE_PREFIX)) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            } catch (error) {
+                console.error('Error clearing cache:', error);
+            }
+        }
+        
         // UI Helper Functions
         function showError(message) {
             loadingOverlay.style.display = 'none';
@@ -680,6 +803,16 @@
                 }
                 console.log(`קטגוריות טעונות: ${allCategories.length}`);
                 
+                // Check cache first
+                const cachedServices = getFromCache('services');
+                if (cachedServices) {
+                    console.log('Using cached services data');
+                    allServices = cachedServices;
+                    renderServices(allServices);
+                    servicesResultsInfo.textContent = `${allServices.length} שירותים`;
+                    return;
+                }
+                
                 const servicesQuery = query(collection(db, 'services'), orderBy('name'));
                 const querySnapshot = await getDocs(servicesQuery);
                 
@@ -696,6 +829,9 @@
                 }));
                 
                 console.log(`שירותים שנטענו: ${allServices.length}`);
+                
+                // Save to cache
+                saveToCache('services', allServices);
                 
                 renderServices(allServices);
                 servicesResultsInfo.textContent = `${allServices.length} שירותים`;
@@ -813,6 +949,16 @@
                     return allCategories;
                 }
                 
+                // Check cache first
+                const cachedCategories = getFromCache('categories');
+                if (cachedCategories) {
+                    console.log('Using cached categories data');
+                    allCategories = cachedCategories;
+                    renderCategories(allCategories);
+                    categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
+                    return allCategories;
+                }
+                
                 console.log("טוען קטגוריות מ-Firestore...");
                 categoriesListContainer.innerHTML = '<div class="spinner"></div>';
                 
@@ -833,7 +979,9 @@
                 }));
                 
                 console.log(`נטענו ${allCategories.length} קטגוריות:`);
-                allCategories.forEach(cat => console.log(`- ${cat.id}: ${cat.name}`));
+                
+                // Save to cache
+                saveToCache('categories', allCategories);
                 
                 renderCategories(allCategories);
                 categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
@@ -887,6 +1035,16 @@
             try {
                 interestAreasListContainer.innerHTML = '<div class="spinner"></div>';
                 
+                // Check cache first
+                const cachedInterestAreas = getFromCache('interest-areas');
+                if (cachedInterestAreas) {
+                    console.log('Using cached interest areas data');
+                    allInterestAreas = cachedInterestAreas;
+                    renderInterestAreas(allInterestAreas);
+                    interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
+                    return;
+                }
+                
                 // שלב 1: טעינת כל תחומי העניין
                 const interestAreasQuery = query(collection(db, 'interest-areas'), orderBy('name'));
                 const interestAreasSnapshot = await getDocs(interestAreasQuery);
@@ -915,6 +1073,9 @@
                     const servicesCount = areaServicesCount[area.id] || 0;
                     return { ...area, servicesCount };
                 });
+                
+                // Save to cache
+                saveToCache('interest-areas', allInterestAreas);
                 
                 renderInterestAreas(allInterestAreas);
                 interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
@@ -966,6 +1127,16 @@
             try {
                 usersListContainer.innerHTML = '<div class="spinner"></div>';
                 
+                // Check cache first
+                const cachedUsers = getFromCache('users');
+                if (cachedUsers) {
+                    console.log('Using cached users data');
+                    allUsers = cachedUsers;
+                    renderUsers(allUsers);
+                    usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
+                    return;
+                }
+                
                 const usersQuery = query(collection(db, 'users'));
                 const querySnapshot = await getDocs(usersQuery);
                 
@@ -981,6 +1152,9 @@
                     ...doc.data()
                 }));
                 
+                // Save to cache
+                saveToCache('users', allUsers);
+                
                 renderUsers(allUsers);
                 usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
                 
@@ -989,6 +1163,61 @@
                 usersListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת המשתמשים. אנא נסה שוב.</div>';
                 usersResultsInfo.textContent = '';
             }
+        }
+        
+        // פונקציית ריענון של כל הנתונים
+        async function refreshData() {
+            try {
+                showLoading();
+                // clear all cache
+                clearCache();
+                console.log('מרענן את כל הנתונים...');
+                
+                // Clear all arrays
+                allServices = [];
+                allCategories = [];
+                allInterestAreas = [];
+                allUsers = [];
+                
+                // Reload data in order of dependency
+                await loadCategories();
+                await loadServices();
+                await loadInterestAreas();
+                await loadUsers();
+                
+                hideLoading();
+                showMessage('הנתונים רועננו בהצלחה', 'success');
+            } catch (error) {
+                console.error('שגיאה בריענון הנתונים:', error);
+                hideLoading();
+                showMessage('שגיאה בריענון הנתונים', 'error');
+            }
+        }
+        
+        function showLoading() {
+            loadingOverlay.style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            loadingOverlay.style.display = 'none';
+        }
+        
+        function showMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `admin-message ${type}`;
+            messageElement.textContent = message;
+            document.body.appendChild(messageElement);
+            
+            setTimeout(() => {
+                messageElement.classList.add('show');
+            }, 10);
+            
+            setTimeout(() => {
+                messageElement.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(messageElement);
+                }, 300);
+            }, 3000);
         }
         
         function renderUsers(users) {
@@ -1667,37 +1896,56 @@
             }
         }
         
-        // Handle navigation
-        document.querySelectorAll('.nav-button').forEach(button => {
-            button.addEventListener('click', () => {
-                // Remove active class from all buttons and sections
-                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.admin-section').forEach(section => section.classList.remove('active'));
-                
-                // Add active class to clicked button and corresponding section
-                button.classList.add('active');
-                const sectionId = `${button.dataset.section}-section`;
-                document.getElementById(sectionId).classList.add('active');
-                
-                // Clear search inputs
-                document.querySelectorAll('.search-input').forEach(input => {
-                    input.value = '';
+        // Navigation buttons
+        document.querySelectorAll('.admin-nav button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.admin-nav button').forEach(btn => {
+                    btn.classList.remove('active');
                 });
                 
-                // Load data for the selected section if not already loaded
-                const section = button.dataset.section;
-                console.log(`מעבר ללשונית: ${section}`);
+                // Add active class to clicked button
+                this.classList.add('active');
                 
-                if (section === 'services') {
-                    loadServices(); // loadServices כעת תמיד טוען קטגוריות קודם
-                } else if (section === 'categories') {
+                // Hide all sections
+                document.querySelectorAll('.admin-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                
+                // Show corresponding section
+                const targetSection = this.dataset.section;
+                document.getElementById(targetSection).classList.add('active');
+                
+                // Load data for the section if needed
+                if (targetSection === 'services-section' && allServices.length === 0) {
+                    loadServices();
+                } else if (targetSection === 'categories-section' && allCategories.length === 0) {
                     loadCategories();
-                } else if (section === 'interest-areas') {
+                } else if (targetSection === 'interest-areas-section' && allInterestAreas.length === 0) {
                     loadInterestAreas();
-                } else if (section === 'users') {
+                } else if (targetSection === 'users-section' && allUsers.length === 0) {
                     loadUsers();
                 }
             });
+        });
+        
+        // Add listeners for add buttons
+        document.querySelectorAll('.add-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const type = this.dataset.type;
+                if (type === 'service') {
+                    openServiceModal();
+                } else if (type === 'category') {
+                    openCategoryModal();
+                } else if (type === 'interest-area') {
+                    openInterestAreaModal();
+                }
+            });
+        });
+        
+        // Refresh data button
+        document.getElementById('refresh-data-button').addEventListener('click', () => {
+            refreshData();
         });
         
         // Handle form buttons

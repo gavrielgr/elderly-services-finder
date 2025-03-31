@@ -30,9 +30,17 @@ export class CategoryManager {
 
         this.categoriesContainer.innerHTML = '';
 
+        // עדכון מיפוי קטגוריות
+        categories.forEach(category => {
+            this.categoryMap.set(category.id, category.name);
+        });
+
         categories.forEach(category => {
             // בדיקה אם יש שירותים בקטגוריה
-            const hasServices = services.some(service => service.category === category.id);
+            const hasServices = services.some(service => 
+                service.category === category.id || service.categoryId === category.id
+            );
+            
             if (hasServices) {
                 const card = this.createCategoryCard(category.id, category.name);
                 this.categoriesContainer.appendChild(card);

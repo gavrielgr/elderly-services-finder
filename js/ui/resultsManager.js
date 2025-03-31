@@ -61,7 +61,17 @@ export class ResultsManager {
 
         // Filter by category if active
         if (activeCategory) {
-            results = results.filter(service => service.category === activeCategory);
+            results = results.filter(service => {
+                // תמיכה במבנה נתונים ישן
+                if (service.category === activeCategory) {
+                    return true;
+                }
+                // תמיכה במבנה נתונים חדש
+                if (service.categoryId === activeCategory) {
+                    return true;
+                }
+                return false;
+            });
         }
 
         // מיון התוצאות לפי א-ב
@@ -106,7 +116,17 @@ export class ResultsManager {
 
             // Filter by category if active, just like in performSearch
             if (activeCategory) {
-                results = results.filter(service => service.category === activeCategory);
+                results = results.filter(service => {
+                    // תמיכה במבנה נתונים ישן
+                    if (service.category === activeCategory) {
+                        return true;
+                    }
+                    // תמיכה במבנה נתונים חדש
+                    if (service.categoryId === activeCategory) {
+                        return true;
+                    }
+                    return false;
+                });
             }
 
             if (results.length > 0) {
@@ -182,8 +202,34 @@ export class ResultsManager {
 
             // Get category name from the categories array
             const categories = this.uiManager.dataService.getCategories();
-            const category = categories.find(cat => cat.id === service.category);
-            const categoryName = category ? category.name : 'כללי';
+            let categoryName = 'כללי';
+
+            if (service.category && categories) {
+                // תמיכה במבנה הנתונים הישן
+                if (typeof service.category === 'string') {
+                    const category = categories.find(cat => cat.id === service.category);
+                    if (category) {
+                        categoryName = category.name;
+                    }
+                } 
+                // תמיכה במבנה החדש כשהקטגוריה בשדה categoryId
+                else if (service.categoryId) {
+                    const category = categories.find(cat => cat.id === service.categoryId);
+                    if (category) {
+                        categoryName = category.name;
+                    }
+                }
+            }
+
+            // בדיקה נוספת אם יש שדה categoryId
+            if (!categoryName || categoryName === 'כללי') {
+                if (service.categoryId && categories) {
+                    const category = categories.find(cat => cat.id === service.categoryId);
+                    if (category) {
+                        categoryName = category.name;
+                    }
+                }
+            }
 
             // Process service tags properly
             let tags = [];
@@ -266,12 +312,14 @@ export class ResultsManager {
         } else {
             const activeCategory = this.uiManager.categoryManager.activeCategory;
             let categoryText = '';
+            
             if (activeCategory) {
                 const categories = this.uiManager.dataService.getCategories();
-                const category = categories.find(cat => cat.id === activeCategory);
+                const category = categories ? categories.find(cat => cat.id === activeCategory) : null;
                 const categoryName = category ? category.name : 'כללי';
-                categoryText = ` בקטגוריה: ${categoryName}`;
+                categoryText = ` בקטגוריית ${categoryName}`;
             }
+            
             this.resultsCount.textContent = `נמצאו ${count} תוצאות${categoryText}`;
         }
     }
