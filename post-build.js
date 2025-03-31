@@ -1,14 +1,33 @@
-import { existsSync } from 'node:fs';
+import { copyFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Verify the service worker file exists
-const swPath = join(__dirname, 'dist', 'sw.js');
-if (!existsSync(swPath)) {
-    console.error('Service Worker file not found at', swPath);
-    process.exit(1);
+// Copy login.html and admin.html to dist
+function copyFiles() {
+    try {
+        // Verify source files exist
+        const loginFile = join(__dirname, 'login.html');
+        const adminFile = join(__dirname, 'admin.html');
+        
+        if (!existsSync(loginFile)) {
+            throw new Error(`Source file not found: ${loginFile}`);
+        }
+        if (!existsSync(adminFile)) {
+            throw new Error(`Source file not found: ${adminFile}`);
+        }
+        
+        // Copy files
+        copyFileSync(loginFile, join(__dirname, 'dist', 'login.html'));
+        copyFileSync(adminFile, join(__dirname, 'dist', 'admin.html'));
+        
+        console.log('Successfully copied login.html and admin.html to dist');
+    } catch (error) {
+        console.error('Error copying files:', error);
+        process.exit(1);
+    }
 }
 
-console.log('Service Worker file verified at', swPath); 
+// Copy files
+copyFiles(); 

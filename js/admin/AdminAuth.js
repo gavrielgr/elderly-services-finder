@@ -1,29 +1,51 @@
-import { auth, db } from '../config/firebase.js';
 import { 
-    signInWithPopup,
-    GoogleAuthProvider,
+    getAuth, 
+    GoogleAuthProvider, 
+    signInWithPopup, 
     signOut,
-    onAuthStateChanged,
-    updateDoc
+    onAuthStateChanged
 } from 'firebase/auth';
 import { 
+    getFirestore, 
     doc, 
-    getDoc,
+    getDoc, 
     setDoc,
+    updateDoc,
+    serverTimestamp,
     collection,
-    addDoc,
-    serverTimestamp 
+    addDoc
 } from 'firebase/firestore';
+import { app } from '../config/firebase.js';
+
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 export class AdminAuth {
     constructor() {
-        this.currentAdmin = null;
-        this.authStateListeners = new Set();
-        this.googleProvider = new GoogleAuthProvider();
+        this.currentUser = null;
         
         // Listen to auth state changes
-        onAuthStateChanged(auth, (user) => {
-            this.handleAuthStateChange(user);
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    if (userDoc.exists() && userDoc.data().isAdmin) {
+                        this.currentUser = {
+                            uid: user.uid,
+                            email: user.email,
+                            name: user.displayName,
+                            isAdmin: userDoc.data().isAdmin
+                        };
+                    } else {
+                        this.currentUser = null;
+                    }
+                } catch (error) {
+                    console.error('Error checking user status:', error);
+                    this.currentUser = null;
+                }
+            } else {
+                this.currentUser = null;
+            }
         });
     }
 
@@ -88,56 +110,19 @@ export class AdminAuth {
         }
     }
 
-    async checkPermission(permission) {
-        if (!this.currentAdmin) return false;
+    async logActivity(action, details) {
+        if (!this.currentUser) return;
         
-        const userDoc = await getDoc(doc(db, 'users', this.currentAdmin.uid));
-        if (!userDoc.exists()) return false;
-        
-        return userDoc.data().permissions?.includes(permission) || false;
-    }
-
-    async logActivity(adminId, action, details) {
         try {
             await addDoc(collection(db, 'admin_logs'), {
-                adminId,
+                adminId: this.currentUser.uid,
                 action,
                 details,
-                timestamp: serverTimestamp(),
-                userAgent: navigator.userAgent
+                timestamp: serverTimestamp()
             });
         } catch (error) {
             console.warn('Failed to log activity:', error);
-            // Don't throw, just log the error
         }
-    }
-
-    async handleAuthStateChange(user) {
-        if (user) {
-            try {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                this.currentAdmin = userDoc.exists() && 
-                                  userDoc.data().role === 'admin' && 
-                                  userDoc.data().status === 'active' ? {
-                    uid: user.uid,
-                    ...userDoc.data()
-                } : null;
-            } catch (error) {
-                console.error('Error checking user status:', error);
-                this.currentAdmin = null;
-            }
-        } else {
-            this.currentAdmin = null;
-        }
-
-        // Notify listeners
-        this.authStateListeners.forEach(listener => listener(this.currentAdmin));
-    }
-
-    onAuthStateChanged(listener) {
-        this.authStateListeners.add(listener);
-        // Return unsubscribe function
-        return () => this.authStateListeners.delete(listener);
     }
 }
 

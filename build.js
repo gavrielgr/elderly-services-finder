@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, copyFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,15 +33,10 @@ function updateFile(path, replacements) {
     writeFileSync(path, newContent);
 }
 
-// Copy login.html and admin.html to dist
-function copyFiles() {
-    try {
-        copyFileSync(join(__dirname, 'login.html'), join(__dirname, 'dist', 'login.html'));
-        copyFileSync(join(__dirname, 'admin.html'), join(__dirname, 'dist', 'admin.html'));
-        console.log('Successfully copied login.html and admin.html to dist');
-    } catch (error) {
-        console.error('Error copying files:', error);
-    }
+// Create dist directory if it doesn't exist
+const distDir = join(__dirname, 'dist');
+if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true });
 }
 
 // Update service worker version
@@ -60,8 +55,5 @@ updateFile(
         [/export const APP_VERSION = .*?;/, `export const APP_VERSION = '${APP_VERSION}';`]
     ]
 );
-
-// Copy files after build
-copyFiles();
 
 console.log(`Updated builds with version ${APP_VERSION} and timestamp ${BUILD_TIMESTAMP}`);
