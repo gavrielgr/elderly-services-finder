@@ -7,4 +7,9 @@
   for = "/sw.js"
   [headers.values]
     Content-Type = "application/javascript"
-    Cache-Control = "no-store" 
+    Cache-Control = "no-store"
+
+[[redirects]]
+  from = "/sw.js"
+  to = "/assets/sw.js"
+  status = 200 
