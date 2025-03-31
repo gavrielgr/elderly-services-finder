@@ -14,9 +14,4 @@
   from = "/sw.js"
   to = "/assets/sw-:hash.js"
   status = 200
-  force = true
-
-[[redirects]]
-  from = "/icons/*"
-  to = "/assets/:splat"
-  status = 200 
+  force = true 
