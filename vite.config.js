@@ -39,6 +39,12 @@ export default defineConfig({
             return 'sw.js';
           }
           return 'assets/[name]-[hash].js';
+        },
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name.endsWith('.js')) {
+            return 'js/[name][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
         }
       }
     }
