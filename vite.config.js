@@ -14,14 +14,18 @@ export default defineConfig({
   // Defines aliases
   resolve: {
     alias: {
-      '@': '/src'
+      '@': '/src',
+      '/js': resolve(__dirname, 'js')
     }
   },
 
   // Additional build settings
   server: {
     port: 5173,
-    open: true
+    open: true,
+    hmr: {
+      overlay: true
+    }
   },
 
   build: {

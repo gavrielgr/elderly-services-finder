@@ -5,41 +5,222 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>התחברות - שירותי+</title>
     <link rel="stylesheet" href="/styles/main.css">
-    <link rel="stylesheet" href="/styles/admin.css">
+    <style>
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f7f9fc;
+        }
+        
+        .login-box {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+        }
+        
+        .logo {
+            margin-bottom: 24px;
+        }
+        
+        .logo img {
+            max-width: 96px;
+            height: auto;
+            margin-bottom: 8px;
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            color: #333;
+        }
+        
+        .login-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px 24px;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: background-color 0.2s;
+        }
+        
+        .login-button:hover {
+            background-color: #3367D6;
+        }
+        
+        .login-button:disabled {
+            background-color: #A4A4A4;
+            cursor: not-allowed;
+        }
+        
+        .google-logo {
+            width: 24px;
+            height: 24px;
+            margin-left: 12px;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #4285F4;
+            animation: spin 1s linear infinite;
+            margin: 20px 0;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 16px;
+            text-align: right;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .message {
+            margin-top: 16px;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
         <div class="login-box">
-            <img src="/assets/logo.png" alt="שירותי+" class="login-logo">
-            <h1>התחברות למערכת ניהול</h1>
-            <div id="status" class="alert hidden"></div>
-            <button id="login-button" class="login-button">
-                <img src="/assets/google-logo.png" alt="Google" class="google-logo">
-                התחבר עם Google
-            </button>
+            <div class="logo">
+                <img src="/icons/logo.png" alt="שירותי+">
+                <h1>שירותי+</h1>
+            </div>
+            <div id="checking-auth" class="message">
+                בודק מצב התחברות...
+                <div class="loader"></div>
+            </div>
+            <div id="login-controls" class="hidden">
+                <div id="loading-indicator" class="loader hidden"></div>
+                <div id="error-box" class="error-message hidden"></div>
+                <button id="login-btn" class="login-button">
+                    <img src="/icons/google-logo.png" alt="Google" class="google-logo">
+                    התחבר עם Google
+                </button>
+            </div>
         </div>
     </div>
+
     <script type="module">
-        import { AdminAuth } from '/js/admin/AdminAuth.js';
+        import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebase/auth';
+        import { doc, getDoc } from 'firebase/firestore';
+        import { auth, db } from '/js/config/firebase.js';
         
-        const adminAuth = new AdminAuth();
-        const loginButton = document.getElementById('login-button');
-        const status = document.getElementById('status');
+        // DOM elements
+        const loginBtn = document.getElementById('login-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorBox = document.getElementById('error-box');
+        const loginControls = document.getElementById('login-controls');
+        const checkingAuth = document.getElementById('checking-auth');
         
-        function showStatus(message, type = 'error') {
-            status.textContent = message;
-            status.className = `alert alert-${type}`;
+        // Functions
+        function showLoading() {
+            loginBtn.disabled = true;
+            loadingIndicator.classList.remove('hidden');
+            errorBox.classList.add('hidden');
         }
         
-        loginButton.addEventListener('click', async () => {
-            try {
-                loginButton.disabled = true;
-                await adminAuth.login();
-            } catch (error) {
-                showStatus(error.message);
-                loginButton.disabled = false;
+        function hideLoading() {
+            loginBtn.disabled = false;
+            loadingIndicator.classList.add('hidden');
+        }
+        
+        function showError(message) {
+            errorBox.textContent = message;
+            errorBox.classList.remove('hidden');
+            hideLoading();
+        }
+        
+        function showLoginControls() {
+            checkingAuth.classList.add('hidden');
+            loginControls.classList.remove('hidden');
+        }
+        
+        // Check if already authenticated
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                console.log('User is already signed in, checking admin status');
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', user.uid));
+                    
+                    if (userDoc.exists() && 
+                        userDoc.data().role === 'admin' && 
+                        userDoc.data().status === 'active') {
+                        
+                        // User is already an admin, redirect
+                        console.log('User is an admin, redirecting to admin page');
+                        window.location.href = '/admin';
+                        return;
+                    }
+                    
+                    // Not an admin, show login
+                    showLoginControls();
+                    
+                } catch (error) {
+                    console.error('Error checking admin status:', error);
+                    showLoginControls();
+                }
+            } else {
+                // No user, show login
+                console.log('No user signed in, showing login form');
+                showLoginControls();
             }
         });
+        
+        // Authentication logic
+        async function loginWithGoogle() {
+            try {
+                showLoading();
+                
+                // Sign in with Google
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                
+                console.log('Google sign-in successful:', user.uid);
+                
+                // The onAuthStateChanged listener will handle the redirect if successful
+                // We'll just show a message here
+                showLoading();
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                if (error.code === 'auth/popup-closed-by-user') {
+                    hideLoading();
+                } else {
+                    showError(error.message || 'שגיאה בתהליך ההתחברות');
+                }
+            }
+        }
+        
+        // Event listeners
+        loginBtn.addEventListener('click', loginWithGoogle);
     </script>
 </body>
 </html> 

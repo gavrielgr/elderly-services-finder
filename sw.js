@@ -27,8 +27,8 @@ const ASSETS_TO_CACHE = [
   '/icons/favicon-32x32.png',
   '/icons/favicon-16x16.png',
   '/icons/search.png',  
-  '/icons/logo.png',    
-  'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap',
+  '/icons/logo.png',
+  '/icons/google-logo.png',
   'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
 ];
 
@@ -75,11 +75,26 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+
+  // Handle Google Fonts requests differently
+  if (event.request.url.includes('fonts.googleapis.com') || 
+      event.request.url.includes('fonts.gstatic.com')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => response)
+        .catch(() => {
+          // If network request fails, return a fallback font or empty response
+          return new Response('', {
+            status: 200,
+            statusText: 'OK'
+          });
+        })
+    );
+    return;
+  }
   
-  // Skip cross-origin requests except for specific domains we need
+  // Skip other cross-origin requests except for specific domains we need
   if (!event.request.url.startsWith(self.location.origin) && 
-      !event.request.url.includes('fonts.googleapis.com') &&
-      !event.request.url.includes('fonts.gstatic.com') &&
       !event.request.url.includes('cdn.jsdelivr.net')) {
     return;
   }
