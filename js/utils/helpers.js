@@ -69,12 +69,24 @@ function processServiceTags(service) {
         }
     }
 
+    // אם יש תחומי עניין (interest areas), נוסיף אותם לתגיות
+    if (service.interestAreas && Array.isArray(service.interestAreas)) {
+        service.interestAreas.forEach(area => {
+            if (typeof area === 'string') {
+                tags.push(area);
+            } else if (typeof area === 'object' && area.name) {
+                tags.push(area.name);
+            }
+        });
+    }
+
     // הוספת תג לשירותים עם רשימת המתנה
     if (service['רשימת המתנה'] === 'כן') {
         tags.push('רשימת המתנה');
     }
 
-    return tags;
+    // מסירת כפילויות
+    return [...new Set(tags)];
 }
 
 export function debounce(func, wait) {

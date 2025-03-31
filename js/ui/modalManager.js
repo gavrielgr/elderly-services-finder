@@ -4,68 +4,96 @@ export class ModalManager {
         this.modal = document.getElementById('service-modal');
         this.detailsContainer = document.getElementById('service-details-container');
         this.currentService = null;
-
-        this.initializeListeners();
-    }
-
-    initializeListeners() {
-        document.querySelector('.close-modal')?.addEventListener('click', () => this.closeModal());
-        document.getElementById('call-button')?.addEventListener('click', () => this.initiateCall());
-        document.getElementById('share-button')?.addEventListener('click', () => this.shareService());
         
-        window.addEventListener('click', (e) => {
-            if (e.target === this.modal) this.closeModal();
+        this.initModal();
+    }
+    
+    initModal() {
+        // Close the modal when the X is clicked
+        const closeButton = document.querySelector('.close-modal');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                this.modal.style.display = 'none';
+            });
+        }
+
+        // Close when clicking outside of the modal content
+        window.addEventListener('click', (event) => {
+            if (event.target === this.modal) {
+                this.modal.style.display = 'none';
+            }
         });
+
+        // Set up call button event
+        const callButton = document.getElementById('call-button');
+        if (callButton) {
+            callButton.addEventListener('click', () => {
+                if (this.currentService && this.currentService.contact?.phone?.length > 0) {
+                    const phoneNumber = this.currentService.contact.phone[0].number;
+                    window.location.href = `tel:${phoneNumber}`;
+                }
+            });
+        }
+
+        // Set up share button event
+        const shareButton = document.getElementById('share-button');
+        if (shareButton) {
+            shareButton.addEventListener('click', () => {
+                this.shareService();
+            });
+        }
     }
 
     showServiceDetails(service) {
         console.log('Showing service details:', service);
         this.currentService = service;
-        if (!this.detailsContainer) return;
+        
+        if (!this.detailsContainer) {
+            console.error('Details container not found');
+            return;
+        }
+        
+        this.detailsContainer.innerHTML = '';
 
         // Get category name from the categories array
         const categories = this.uiManager.dataService.getCategories();
         const category = categories.find(cat => cat.id === service.category);
         const categoryName = category ? category.name : 'כללי';
 
+        // יצירת HTML עבור פרטי השירות
         let detailsHTML = `
-            <h2 class="service-name">${service.name}</h2>
+            <h2 class="service-details-name">${service.name}</h2>
             <div class="service-category">${categoryName}</div>
+            ${service.description ? `<p class="service-details-description">${service.description}</p>` : ''}
         `;
-        
-        if (service.description) {
-            detailsHTML += this.createDetailSection('תיאור', service.description);
-        }
-        
-        // טיפול בפרטי קשר
+
+        // גישה ליצירת קשר
         const contact = service.contact || {};
-        
+
         // טיפול בטלפונים
         if (contact.phone?.length > 0) {
-            const phoneLinks = contact.phone
+            const phoneListHTML = contact.phone
                 .map(p => {
                     const number = p.number;
                     const description = p.description;
-                    const encodedPhone = number.startsWith('*') ? 
-                        encodeURIComponent(number) : number.replace(/\D/g, '');
-                    return `<a href="tel:${encodedPhone}">${number}</a>${description ? ` - ${description}` : ''}`;
+                    return `<a href="tel:${number}" class="phone-link">${number}</a>${description ? ` - ${description}` : ''}`;
                 })
                 .join('<br>');
             
-            detailsHTML += this.createDetailSection('טלפון', phoneLinks);
+            detailsHTML += this.createDetailSection('טלפון', phoneListHTML);
         }
 
-        // טיפול באימיילים
+        // טיפול בדוא"ל
         if (contact.email?.length > 0) {
-            const emailLinks = contact.email
+            const emailListHTML = contact.email
                 .map(e => {
                     const address = e.address;
                     const description = e.description;
-                    return `<a href="mailto:${address}">${address}</a>${description ? ` - ${description}` : ''}`;
+                    return `<a href="mailto:${address}" class="email-link">${address}</a>${description ? ` - ${description}` : ''}`;
                 })
                 .join('<br>');
             
-            detailsHTML += this.createDetailSection('דוא"ל', emailLinks);
+            detailsHTML += this.createDetailSection('דוא"ל', emailListHTML);
         }
 
         // טיפול באתרים
@@ -85,15 +113,31 @@ export class ModalManager {
         // תגיות
         if (service.interestAreas?.length > 0) {
             const areasHtml = service.interestAreas
-                .map(area => `<span class="service-tag">${area.name}</span>`)
+                .map(area => {
+                    // בדיקה אם האובייקט הוא מחרוזת או אובייקט עם שדה name
+                    const areaName = typeof area === 'string' ? area : (area.name || '');
+                    return areaName ? `<span class="service-tag">${areaName}</span>` : '';
+                })
+                .filter(html => html) // מסנן תגיות ריקות
                 .join('');
-            detailsHTML += this.createDetailSection('תגיות', areasHtml);
+            
+            if (areasHtml) {
+                detailsHTML += this.createDetailSection('תגיות', areasHtml);
+            }
         } else if (service.tags?.length > 0) {
             // תמיכה בפורמט הישן של תגיות
             const tagsHtml = service.tags
-                .map(tag => `<span class="service-tag">${tag}</span>`)
+                .map(tag => {
+                    // בדיקה אם התג הוא מחרוזת או אובייקט עם שדה name
+                    const tagName = typeof tag === 'string' ? tag : (tag.name || '');
+                    return tagName ? `<span class="service-tag">${tagName}</span>` : '';
+                })
+                .filter(html => html) // מסנן תגיות ריקות
                 .join('');
-            detailsHTML += this.createDetailSection('תגיות', tagsHtml);
+            
+            if (tagsHtml) {
+                detailsHTML += this.createDetailSection('תגיות', tagsHtml);
+            }
         }
 
         // מיקום
@@ -114,105 +158,61 @@ export class ModalManager {
             if (hasPhone) {
                 callButton.style.display = 'block';
                 const phoneNumber = contact.phone[0].number;
-                callButton.dataset.phone = phoneNumber.replace(/\D/g, '');
+                callButton.dataset.phone = phoneNumber;
             } else {
                 callButton.style.display = 'none';
             }
         }
-    }
 
-    createDetailSection(label, content) {
+        // Configure share button
+        const shareButton = document.getElementById('share-button');
+        if (shareButton) {
+            shareButton.style.display = 'block';
+        }
+    }
+    
+    createDetailSection(title, content) {
         return `
-            <div class="service-detail">
-                <div class="service-detail-label">${label}</div>
-                <div class="service-detail-value">${content}</div>
+            <div class="service-detail-section">
+                <h3 class="detail-title">${title}</h3>
+                <div class="detail-content">${content}</div>
             </div>
         `;
     }
-
-    closeModal() {
-        if (this.modal) {
-            this.modal.style.display = 'none';
-            this.currentService = null;
-        }
-    }
-
-    initiateCall() {
-        const callButton = document.getElementById('call-button');
-        if (this.currentService?.contact?.phone?.length > 0 && callButton?.dataset.phone) {
-            window.location.href = `tel:${callButton.dataset.phone}`;
-        }
-    }
-
-    async shareService() {
+    
+    shareService() {
         if (!this.currentService) return;
         
-        const shareText = this.createShareText();
+        const serviceName = this.currentService.name;
+        const serviceDescription = this.currentService.description || '';
         
+        // Generate text to share
+        const shareText = `שירות: ${serviceName}\n\n${serviceDescription}`;
+        
+        // Check if the navigator.share API is available
         if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: this.currentService.name,
-                    text: shareText
-                });
-            } catch (error) {
+            navigator.share({
+                title: serviceName,
+                text: shareText
+            }).catch(error => {
                 console.error('Error sharing:', error);
                 this.fallbackShare(shareText);
-            }
+            });
         } else {
             this.fallbackShare(shareText);
         }
     }
-
-    createShareText() {
-        const service = this.currentService;
-        const parts = [service.name];
-        
-        if (service.description) parts.push(service.description);
-        
-        const contact = [];
-        if (service.contact?.phone?.length > 0) {
-            contact.push(`טלפון: ${service.contact.phone.map(p => p.number).join(', ')}`);
-        }
-        if (service.contact?.email?.length > 0) {
-            contact.push(`דוא"ל: ${service.contact.email.map(e => e.address).join(', ')}`);
-        }
-        if (service.contact?.website?.length > 0) {
-            contact.push(`אתר אינטרנט: ${service.contact.website.map(w => w.url).join(', ')}`);
-        }
-        
-        if (contact.length > 0) {
-            parts.push('\nפרטי התקשרות:\n' + contact.join('\n'));
-        }
-        
-        if (service.interestAreas?.length > 0) {
-            parts.push(`\nתגיות: ${service.interestAreas.join(', ')}`);
-        }
-        
-        if (service.city || service.address) {
-            let location = '';
-            if (service.city) location += `עיר: ${service.city}\n`;
-            if (service.address) location += `כתובת: ${service.address}\n`;
-            parts.push(`\nמיקום: ${location.trim()}`);
-        }
-        
-        return parts.join('\n');
-    }
-
+    
     fallbackShare(text) {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
+        // Fallback for browsers that don't support navigator.share
+        // Create a temporary input element
+        const input = document.createElement('textarea');
+        input.value = text;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
         
-        try {
-            document.execCommand('copy');
-            this.uiManager.showStatusMessage('המידע הועתק ללוח. ניתן להדביק ולשלוח.', 'success');
-        } catch (err) {
-            console.error('Error copying text:', err);
-            this.uiManager.showStatusMessage('לא ניתן להעתיק את המידע.', 'error');
-        }
-        
-        document.body.removeChild(textarea);
+        alert('הטקסט הועתק ללוח. כעת תוכל להדביק אותו בכל מקום.');
     }
 }

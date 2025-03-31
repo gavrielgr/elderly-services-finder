@@ -187,6 +187,8 @@ export class ResultsManager {
 
             // Process service tags properly
             let tags = [];
+            
+            // Add tags from the service.tags property
             if (service.tags) {
                 if (Array.isArray(service.tags)) {
                     service.tags.forEach(tag => {
@@ -198,6 +200,20 @@ export class ResultsManager {
                     });
                 }
             }
+            
+            // Add interest areas as tags
+            if (service.interestAreas && Array.isArray(service.interestAreas)) {
+                service.interestAreas.forEach(area => {
+                    if (typeof area === 'string') {
+                        tags.push(area);
+                    } else if (typeof area === 'object' && area.name) {
+                        tags.push(area.name);
+                    }
+                });
+            }
+            
+            // Remove duplicates
+            tags = [...new Set(tags)];
 
             card.innerHTML = `
                 <div class="result-category-tag">${categoryName}</div>

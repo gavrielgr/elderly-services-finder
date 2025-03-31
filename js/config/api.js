@@ -62,10 +62,11 @@ async function fetchFromServer() {
     try {
         console.log('Fetching data from Firebase...');
         
-        const [servicesSnapshot, categoriesSnapshot, interestAreasSnapshot] = await Promise.all([
+        const [servicesSnapshot, categoriesSnapshot, interestAreasSnapshot, serviceAreasSnapshot] = await Promise.all([
             getDocs(collection(db, 'services')),
             getDocs(collection(db, 'categories')),
-            getDocs(collection(db, 'interest-areas'))
+            getDocs(collection(db, 'interest-areas')),
+            getDocs(collection(db, 'service-interest-areas'))
         ]);
 
         const services = servicesSnapshot.docs.map(doc => ({
@@ -83,9 +84,32 @@ async function fetchFromServer() {
             ...doc.data()
         }));
 
+        // יצירת מיפוי של מזהי שירותים לתחומי עניין
+        const serviceInterestAreasMap = {};
+        serviceAreasSnapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (!serviceInterestAreasMap[data.serviceId]) {
+                serviceInterestAreasMap[data.serviceId] = [];
+            }
+            serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
+        });
+
+        // הוספת תחומי עניין לכל שירות
+        services.forEach(service => {
+            const interestAreaIds = serviceInterestAreasMap[service.id] || [];
+            // מוסיף את אובייקטי תחומי העניין המלאים לשירות
+            service.interestAreas = interestAreaIds
+                .map(areaId => {
+                    const area = interestAreas.find(a => a.id === areaId);
+                    return area ? { id: area.id, name: area.name } : null;
+                })
+                .filter(area => area !== null);
+        });
+
         console.log(`Retrieved ${services.length} services`);
         console.log(`Retrieved ${categories.length} categories`);
         console.log(`Retrieved ${interestAreas.length} interest areas`);
+        console.log(`Retrieved ${serviceAreasSnapshot.size} service-interest-area links`);
 
         return {
             services,
