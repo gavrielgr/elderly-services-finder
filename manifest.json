@@ -1,15 +1,23 @@
 {
-  "name": "מציאת שירותים לקשישים",
-  "short_name": "שירותים לקשישים",
-  "description": "אפליקציה למציאת שירותים לקשישים",
+  "name": "שירותי+ מבית יד ביד",
+  "short_name": "שירותי+",
+  "description": "אפליקציה למציאת שירותים לקשישים וגיל שלישי",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4CAF50",
+  "theme_color": "#01b3a7",
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "he",
   "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "חיפוש שירותים",
+      "url": "/?search",
+      "description": "חיפוש מהיר של שירותים"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -50,7 +58,8 @@
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

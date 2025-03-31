@@ -13,7 +13,7 @@ export const dataService = new DataService();
 // Register Service Worker
 if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
+        navigator.serviceWorker.register('/sw.js')
             .then(registration => {
                 console.log('ServiceWorker registered with scope:', registration.scope);
             })
