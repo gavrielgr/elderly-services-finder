@@ -35,7 +35,8 @@ export default defineConfig({
       input: {
         main: 'index.html',
         login: 'login.html',
-        admin: 'admin.html'
+        admin: 'admin.html',
+        sw: 'sw.js'
       },
       output: {
         entryFileNames: (chunkInfo) => {
