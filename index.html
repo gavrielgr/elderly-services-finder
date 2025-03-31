@@ -24,33 +24,23 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="app-header">
-            <img src="icons/logo.png" alt="Logo" class="header-logo">
-            <div class="header-title">
-                <span class="primary-title">שירותי+</span>
-                <a href="https://www.yadbeyad-care.co.il/" target="_blank" rel="noopener noreferrer" class="subtitle no-link-style">
-                    מבית יד ביד | שירותי סיוע ותמיכה למשפחה המטפלת
-                </a>
-            </div>
-            <div class="header-status">
-                <div class="last-updated">
-                    <span id="last-updated-text">עודכן: טוען...</span>
-                    <button id="refresh-button" title="רענן מידע">🔄</button>
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="assets/logo.png" alt="שירותי+">
+                    <span>שירותי+</span>
                 </div>
-                <div id="connection-status" class="connection-status" title="סטטוס חיבור">
-                    <span class="status-icon online">🟢</span>
-                    <span class="status-icon offline hidden">🔴</span>
+                <div class="header-actions">
+                    <a href="/admin" class="admin-link">מנהל מערכת</a>
+                    <button id="theme-toggle" class="theme-toggle" aria-label="החלף מצב תצוגה">
+                        <span class="light-icon">☀️</span>
+                        <span class="dark-icon">🌙</span>
+                    </button>
+                    <button id="install-button" class="install-button" aria-label="התקן אפליקציה">
+                        📥
+                    </button>
                 </div>
             </div>
-            <button id="theme-switch" aria-label="החלף מצב תצוגה" class="theme-switch">
-                <span class="light-mode-icon">☀️</span>
-                <span class="dark-mode-icon">🌙</span>
-            </button>
-
-            <!-- Install button with emoji icon -->
-            <button id="header-install-button" class="theme-switch" aria-label="התקן את האפליקציה">
-                📥
-            </button>
         </header>
 
         <!-- Search Section -->

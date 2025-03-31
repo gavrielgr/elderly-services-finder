@@ -3,7 +3,8 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     signOut,
-    onAuthStateChanged 
+    onAuthStateChanged,
+    updateDoc
 } from 'firebase/auth';
 import { 
     doc, 
@@ -28,82 +29,63 @@ export class AdminAuth {
 
     async login() {
         try {
-            // 1. Firebase authentication with Google
-            const userCredential = await signInWithPopup(auth, this.googleProvider);
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
             
-            // 2. Check if user exists in users collection
-            const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+            // בדיקה אם המשתמש קיים במאגר
+            const userDoc = await getDoc(doc(db, 'users', user.uid));
             
             if (!userDoc.exists()) {
-                // Create new user document
-                await setDoc(doc(db, 'users', userCredential.user.uid), {
-                    email: userCredential.user.email,
-                    name: userCredential.user.displayName,
-                    role: 'user',
-                    status: 'pending',
+                // יצירת משתמש חדש
+                await setDoc(doc(db, 'users', user.uid), {
+                    email: user.email,
+                    name: user.displayName,
+                    isAdmin: false,
                     createdAt: serverTimestamp(),
-                    provider: 'google.com'
+                    lastLogin: serverTimestamp()
                 });
                 
-                await signOut(auth);
-                throw new Error('unauthorized_new_user');
-            }
-
-            const userData = userDoc.data();
-            if (userData.role !== 'admin' || userData.status !== 'active') {
-                await signOut(auth);
-                throw new Error('unauthorized');
-            }
-
-            // 3. Log successful login
-            try {
-                await this.logActivity(userCredential.user.uid, 'login', {
-                    timestamp: serverTimestamp(),
-                    success: true
-                });
-            } catch (error) {
-                console.warn('Failed to log activity:', error);
-                // Continue despite logging failure
-            }
-
-            return {
-                uid: userCredential.user.uid,
-                email: userCredential.user.email,
-                ...userData
-            };
-
-        } catch (error) {
-            // Log failed attempt if possible
-            try {
-                await this.logActivity(null, 'login_failed', {
-                    timestamp: serverTimestamp(),
-                    error: error.message
-                });
-            } catch (logError) {
-                console.warn('Failed to log failed login attempt:', logError);
+                throw new Error('אין לך הרשאות מנהל. אנא פנה למנהל המערכת.');
             }
             
-            if (error.message === 'unauthorized_new_user') {
-                throw new Error('המשתמש נרשם בהצלחה אך מחכה לאישור מנהל');
-            } else if (error.message === 'unauthorized') {
-                throw new Error('אין לך הרשאות מנהל');
-            } else {
-                throw new Error('אימות נכשל');
+            const userData = userDoc.data();
+            
+            if (!userData.isAdmin) {
+                throw new Error('אין לך הרשאות מנהל. אנא פנה למנהל המערכת.');
             }
+            
+            // עדכון זמן התחברות אחרון
+            await updateDoc(doc(db, 'users', user.uid), {
+                lastLogin: serverTimestamp()
+            });
+            
+            // שמירת פרטי המשתמש
+            this.currentUser = {
+                uid: user.uid,
+                email: user.email,
+                name: user.displayName,
+                isAdmin: userData.isAdmin
+            };
+            
+            // ניתוב לדף הניהול
+            window.location.href = '/admin';
+            
+        } catch (error) {
+            console.error('Login error:', error);
+            throw error;
         }
     }
 
     async logout() {
-        if (this.currentAdmin) {
-            try {
-                await this.logActivity(this.currentAdmin.uid, 'logout', {
-                    timestamp: serverTimestamp()
-                });
-            } catch (error) {
-                console.warn('Failed to log logout:', error);
-            }
+        try {
+            await signOut(auth);
+            this.currentUser = null;
+            window.location.href = '/login';
+        } catch (error) {
+            console.error('Logout error:', error);
+            throw error;
         }
-        await signOut(auth);
     }
 
     async checkPermission(permission) {
