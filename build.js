@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,6 +38,16 @@ updateFile(
     [
         [/const CACHE_VERSION = .*?;/, `const CACHE_VERSION = '${APP_VERSION}';`]
     ]
+);
+
+// Copy service worker to dist
+const distDir = join(__dirname, 'dist');
+if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true });
+}
+copyFileSync(
+    join(__dirname, 'sw.js'),
+    join(distDir, 'sw.js')
 );
 
 // Update constants.js with more specific replacements
