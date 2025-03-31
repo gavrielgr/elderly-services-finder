@@ -154,21 +154,6 @@
 
     
 
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/assets/sw-Buv75c_e.js')
-                    .then(registration => {
-                        console.log('Service Worker registered successfully');
-                    })
-                    .catch(error => {
-                        console.log('Service Worker registration failed:', error);
-                    });
-            });
-        }
-    </script>
-    
     <!-- Scripts -->
     <script type="module" src="js/config/firebase.js"></script>
     <script type="module" src="js/main.js"></script>

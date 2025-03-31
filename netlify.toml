@@ -1,8 +1,14 @@
 [[headers]]
+  for = "/*"
+  [headers.values]
+    Service-Worker-Allowed = "/"
+
+[[headers]]
   for = "/sw.js"
   [headers.values]
     Cache-Control = "no-cache"
     Content-Type = "application/javascript"
+    Service-Worker-Allowed = "/"
 
 [[headers]]
   for = "/assets/*"
