@@ -22,6 +22,8 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Header */
@@ -37,7 +39,7 @@
         .admin-logo {
             font-size: 24px;
             font-weight: bold;
-            color: #333;
+            color: var(--primary-color, #01b3a7);
         }
 
         .admin-user-info {
@@ -54,12 +56,28 @@
             gap: 10px;
         }
         
+        /* Main area with sidebar */
+        .admin-main {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+        }
+        
+        .admin-sidebar {
+            width: 200px;
+            flex-shrink: 0;
+        }
+        
+        .admin-content {
+            flex: 1;
+        }
+        
         /* Navigation */
         .admin-nav {
             display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
+            flex-direction: column;
             gap: 10px;
+            margin-bottom: 20px;
         }
         
         .admin-nav button {
@@ -69,10 +87,11 @@
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
+            text-align: right;
         }
         
         .admin-nav button.active {
-            background-color: #4285f4;
+            background-color: var(--primary-color, #01b3a7);
             color: white;
         }
 
@@ -121,7 +140,7 @@
             width: 40px;
             height: 40px;
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border-top: 4px solid var(--primary-color, #01b3a7);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -154,8 +173,8 @@
             opacity: 0.9;
         }
         
-        .add-button {
-            background-color: #4caf50;
+        .add-button, .primary-button, .save-button {
+            background-color: var(--primary-color, #01b3a7);
             color: white;
             border: none;
             border-radius: 4px;
@@ -163,8 +182,16 @@
             font-weight: bold;
         }
         
+        .cancel-button {
+            background-color: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+        }
+        
         /* Items list */
-        .admin-list {
+        .list-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 15px;
@@ -324,7 +351,7 @@
         }
         
         .btn-primary {
-            background-color: #4285f4;
+            background-color: var(--primary-color, #01b3a7);
             color: white;
         }
         
@@ -394,7 +421,7 @@
         }
         
         .admin-message.info {
-            background-color: #2196F3;
+            background-color: var(--primary-color, #01b3a7);
         }
         
         /* Refresh Button */
@@ -412,6 +439,23 @@
         
         .refresh-button::before {
             content: '🔄';
+        }
+
+        /* Header titles */
+        .header-title {
+            color: var(--primary-color, #01b3a7);
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .results-info {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .section-actions {
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -436,20 +480,13 @@
             </div>
         </header>
         
-        <nav class="admin-nav">
-            <button class="active" data-section="services-section">שירותים</button>
-            <button data-section="categories-section">קטגוריות</button>
-            <button data-section="interest-areas-section">תחומי עניין</button>
-            <button data-section="users-section">משתמשים</button>
-        </nav>
-        
         <main class="admin-main">
             <div class="admin-sidebar">
                 <nav class="admin-nav">
-                    <button class="nav-button active" data-section="services">שירותים</button>
-                    <button class="nav-button" data-section="categories">קטגוריות</button>
-                    <button class="nav-button" data-section="interest-areas">תחומי עניין</button>
-                    <button class="nav-button" data-section="users">משתמשים</button>
+                    <button class="nav-button active" data-section="services-section">שירותים</button>
+                    <button class="nav-button" data-section="categories-section">קטגוריות</button>
+                    <button class="nav-button" data-section="interest-areas-section">תחומי עניין</button>
+                    <button class="nav-button" data-section="users-section">משתמשים</button>
                 </nav>
             </div>
             
@@ -769,14 +806,37 @@
         function formatDate(timestamp) {
             if (!timestamp) return 'לא ידוע';
             
-            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return new Intl.DateTimeFormat('he-IL', {
-                year: 'numeric',
-                month: 'numeric',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: 'numeric'
-            }).format(date);
+            try {
+                let date;
+                if (timestamp.toDate) {
+                    // Firestore Timestamp
+                    date = timestamp.toDate();
+                } else if (typeof timestamp === 'string') {
+                    // ISO String or other date string
+                    date = new Date(timestamp);
+                    // Check if valid date
+                    if (isNaN(date.getTime())) {
+                        return 'תאריך לא תקין';
+                    }
+                } else if (timestamp instanceof Date) {
+                    // JavaScript Date object
+                    date = timestamp;
+                } else {
+                    // Unknown format
+                    return 'תאריך לא תקין';
+                }
+                
+                return new Intl.DateTimeFormat('he-IL', {
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric'
+                }).format(date);
+            } catch (error) {
+                console.error('Error formatting date:', error, timestamp);
+                return 'תאריך לא תקין';
+            }
         }
         
         // Search debounce function
@@ -859,77 +919,93 @@
             
             let html = '';
             services.forEach((service) => {
-                // מציאת שם הקטגוריה לפי ה-ID
-                let categoryName = 'לא מוגדר';
-                let categoryId = null;
-                
-                console.log(`שירות: ${service.name}, קטגוריה ID: ${service.categoryId}, מבנה קטגוריה:`, service.category);
-                
-                // בדיקות שונות למציאת שם הקטגוריה
-                if (service.categoryId) {
-                    // חיפוש לפי ID
-                    categoryId = service.categoryId;
-                } else if (service.category) {
-                    if (typeof service.category === 'string') {
-                        // אם זה מחרוזת, נתייחס אליה כמזהה קטגוריה (category ID)
-                        categoryId = service.category;
-                    } else if (service.category.id) {
-                        // אם זה אובייקט עם ID
-                        categoryId = service.category.id;
-                    } else if (service.category.name) {
-                        // אם יש שדה name ישיר באובייקט, נשתמש בו
-                        categoryName = service.category.name;
-                    }
-                }
-                
-                // אם יש לנו categoryId, נחפש את שם הקטגוריה בעברית
-                if (categoryId && allCategories.length > 0) {
-                    const category = allCategories.find(c => c.id === categoryId);
-                    if (category) {
-                        categoryName = category.name;
-                        console.log(`נמצאה קטגוריה לפי ID ${categoryId}: ${categoryName}`);
-                    } else {
-                        // אם לא מצאנו לפי ID מדויק, ננסה למצוא קטגוריה שה-ID שלה מכיל את הערך שלנו
-                        // (למקרה שיש הבדלי פורמט קטן כמו מקפים וכו')
-                        for (const cat of allCategories) {
-                            if (cat.id.includes(categoryId) || categoryId.includes(cat.id)) {
-                                categoryName = cat.name;
-                                console.log(`נמצאה קטגוריה לפי חלקי ID: ${categoryName}`);
-                                break;
-                            }
-                        }
-                        
-                        // אם עדיין לא מצאנו, ננסה למצוא קטגוריה עם אותו שם
-                        if (categoryName === 'לא מוגדר') {
-                            const cat = allCategories.find(c => 
-                                c.name.toLowerCase() === categoryId.toLowerCase() || 
-                                c.id.toLowerCase() === categoryId.toLowerCase());
-                            if (cat) {
-                                categoryName = cat.name;
-                                console.log(`נמצאה קטגוריה לפי שם: ${categoryName}`);
-                            } else {
-                                // אם לא מצאנו התאמה, נשאיר את מזהה הקטגוריה כפי שהוא
-                                categoryName = categoryId;
-                                console.log(`לא נמצאה קטגוריה תואמת ל: ${categoryId}`);
-                            }
+                try {
+                    // מציאת שם הקטגוריה לפי ה-ID
+                    let categoryName = 'לא מוגדר';
+                    let categoryId = null;
+                    
+                    console.log(`שירות: ${service.name}, קטגוריה ID: ${service.categoryId}, מבנה קטגוריה:`, service.category);
+                    
+                    // בדיקות שונות למציאת שם הקטגוריה
+                    if (service.categoryId) {
+                        // חיפוש לפי ID
+                        categoryId = service.categoryId;
+                    } else if (service.category) {
+                        if (typeof service.category === 'string') {
+                            // אם זה מחרוזת, נתייחס אליה כמזהה קטגוריה (category ID)
+                            categoryId = service.category;
+                        } else if (service.category && service.category.id) {
+                            // אם זה אובייקט עם ID
+                            categoryId = service.category.id;
+                        } else if (service.category && service.category.name) {
+                            // אם יש שדה name ישיר באובייקט, נשתמש בו
+                            categoryName = service.category.name;
                         }
                     }
-                }
+                    
+                    // אם יש לנו categoryId, נחפש את שם הקטגוריה בעברית
+                    if (categoryId && allCategories && allCategories.length > 0) {
+                        const category = allCategories.find(c => c && c.id === categoryId);
+                        if (category) {
+                            categoryName = category.name;
+                            console.log(`נמצאה קטגוריה לפי ID ${categoryId}: ${categoryName}`);
+                        } else {
+                            // אם לא מצאנו לפי ID מדויק, ננסה למצוא קטגוריה שה-ID שלה מכיל את הערך שלנו
+                            // (למקרה שיש הבדלי פורמט קטן כמו מקפים וכו')
+                            for (const cat of allCategories) {
+                                if (cat && cat.id && categoryId && 
+                                    (cat.id.includes(categoryId) || categoryId.includes(cat.id))) {
+                                    categoryName = cat.name;
+                                    console.log(`נמצאה קטגוריה לפי חלקי ID: ${categoryName}`);
+                                    break;
+                                }
+                            }
+                            
+                            // אם עדיין לא מצאנו, ננסה למצוא קטגוריה עם אותו שם
+                            if (categoryName === 'לא מוגדר' && categoryId) {
+                                const lowerCatId = categoryId.toLowerCase();
+                                const cat = allCategories.find(c => 
+                                    c && c.name && c.id && (
+                                    c.name.toLowerCase() === lowerCatId || 
+                                    c.id.toLowerCase() === lowerCatId));
+                                if (cat) {
+                                    categoryName = cat.name;
+                                    console.log(`נמצאה קטגוריה לפי שם: ${categoryName}`);
+                                } else {
+                                    // אם לא מצאנו התאמה, נשאיר את מזהה הקטגוריה כפי שהוא
+                                    categoryName = categoryId;
+                                    console.log(`לא נמצאה קטגוריה תואמת ל: ${categoryId}`);
+                                }
+                            }
+                        }
+                    }
 
-                html += `
-                    <div class="item-card" data-id="${service.id}">
-                        <div class="item-actions">
-                            <button class="action-button edit-button" data-id="${service.id}" title="ערוך">✏️</button>
-                            <button class="action-button delete-button" data-id="${service.id}" title="מחק">🗑️</button>
+                    html += `
+                        <div class="item-card" data-id="${service.id}">
+                            <div class="item-actions">
+                                <button class="action-button edit-button" data-id="${service.id}" title="ערוך">✏️</button>
+                                <button class="action-button delete-button" data-id="${service.id}" title="מחק">🗑️</button>
+                            </div>
+                            <div class="item-title">${service.name || 'ללא שם'}</div>
+                            <div class="item-details">
+                                <div>${service.description || 'אין תיאור'}</div>
+                                <div>קטגוריה: ${categoryName}</div>
+                                <div>עודכן: ${formatDate(service.updatedAt)}</div>
+                            </div>
                         </div>
-                        <div class="item-title">${service.name}</div>
-                        <div class="item-details">
-                            <div>${service.description || 'אין תיאור'}</div>
-                            <div>קטגוריה: ${categoryName}</div>
-                            <div>עודכן: ${formatDate(service.updatedAt)}</div>
+                    `;
+                } catch (error) {
+                    console.error('Error rendering service:', error, service);
+                    // במקרה של שגיאה בהצגת שירות בודד, הוספת שירות עם הודעת שגיאה
+                    html += `
+                        <div class="item-card" data-id="${service.id}">
+                            <div class="item-title">${service.name || 'שירות #' + service.id}</div>
+                            <div class="item-details">
+                                <div class="error-message">שגיאה בהצגת השירות</div>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
             });
             
             servicesListContainer.innerHTML = html;
@@ -1900,10 +1976,10 @@
         }
         
         // Navigation buttons
-        document.querySelectorAll('.admin-nav button').forEach(button => {
+        document.querySelectorAll('.nav-button').forEach(button => {
             button.addEventListener('click', function() {
                 // Remove active class from all buttons
-                document.querySelectorAll('.admin-nav button').forEach(btn => {
+                document.querySelectorAll('.nav-button').forEach(btn => {
                     btn.classList.remove('active');
                 });
                 
