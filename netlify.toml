@@ -19,7 +19,7 @@
 
 [[redirects]]
   from = "/sw.js"
-  to = "/assets/sw-:hash.js"
+  to = "/assets/sw-BxqdjuW8.js"
   status = 200
   force = true
 
