@@ -40,14 +40,28 @@ updateFile(
     ]
 );
 
-// Copy service worker to dist
+// Copy service worker to dist and assets
 const distDir = join(__dirname, 'dist');
+const distAssetsDir = join(distDir, 'assets');
+
 if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
 }
+
+if (!existsSync(distAssetsDir)) {
+    mkdirSync(distAssetsDir, { recursive: true });
+}
+
+// Copy to root for direct access
 copyFileSync(
     join(__dirname, 'sw.js'),
     join(distDir, 'sw.js')
+);
+
+// Copy to assets for hashed version
+copyFileSync(
+    join(__dirname, 'sw.js'),
+    join(distAssetsDir, `sw-${APP_VERSION.replace(/\./g, '_')}.js`)
 );
 
 // Update constants.js with more specific replacements
@@ -67,7 +81,6 @@ if (process.argv.includes('--bump')) {
 
 // Function to update netlify.toml after the build
 const updateNetlifyConfig = () => {
-  const distAssetsDir = join(__dirname, 'dist', 'assets');
   const files = readdirSync(distAssetsDir);
   const swFile = files.find(file => file.startsWith('sw-') && file.endsWith('.js'));
   
@@ -88,7 +101,7 @@ const updateNetlifyConfig = () => {
 
 // Watch for changes in the dist directory
 const watchDist = () => {
-  const watcher = watch(join(__dirname, 'dist', 'assets'), (eventType, filename) => {
+  const watcher = watch(distAssetsDir, (eventType, filename) => {
     if (filename && filename.startsWith('sw-') && filename.endsWith('.js')) {
       updateNetlifyConfig();
       watcher.close();
