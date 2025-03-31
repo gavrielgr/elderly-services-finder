@@ -1,12 +1,31 @@
-import { copyFileSync, existsSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Copy login.html and admin.html to dist
+// Create necessary directories
+function createDirectories() {
+    const dirs = [
+        join(__dirname, 'dist'),
+        join(__dirname, 'dist', 'assets'),
+        join(__dirname, 'dist', 'js'),
+        join(__dirname, 'dist', 'css')
+    ];
+    
+    for (const dir of dirs) {
+        if (!existsSync(dir)) {
+            mkdirSync(dir, { recursive: true });
+        }
+    }
+}
+
+// Copy HTML files and assets
 function copyFiles() {
     try {
+        // Create directories first
+        createDirectories();
+        
         // Verify source files exist
         const loginFile = join(__dirname, 'login.html');
         const adminFile = join(__dirname, 'admin.html');
@@ -29,5 +48,6 @@ function copyFiles() {
     }
 }
 
-// Copy files
+// Run the build steps
+createDirectories();
 copyFiles(); 

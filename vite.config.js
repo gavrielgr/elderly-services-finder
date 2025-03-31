@@ -41,13 +41,30 @@ export default defineConfig({
           return 'assets/[name]-[hash].js';
         },
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name.endsWith('.js')) {
+          const info = assetInfo.name.split('.');
+          const ext = info[info.length - 1];
+          
+          // Keep original names for assets in public/assets
+          if (assetInfo.name.startsWith('public/assets/')) {
+            return assetInfo.name.replace('public/', '');
+          }
+          
+          // Handle other assets
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
+            return 'assets/images/[name][extname]';
+          }
+          if (ext === 'css') {
+            return 'assets/css/[name][extname]';
+          }
+          if (ext === 'js') {
             return 'js/[name][extname]';
           }
           return 'assets/[name]-[hash][extname]';
         }
       }
-    }
+    },
+    // Copy files from public to dist
+    copyPublicDir: true
   },
 
   optimizeDeps: {
