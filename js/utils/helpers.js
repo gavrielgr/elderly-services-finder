@@ -55,10 +55,21 @@ function getCategoryIcon(categoryName) {
 function processServiceTags(service) {
     const tags = [];
     
+    // אם המערך tags קיים, נמפה אותו
     if (service.tags) {
-        tags.push(...service.tags.map(tag => tag.name));
+        // בדיקה אם כל תג הוא כבר מחרוזת או שצריך לחלץ את שם התג
+        if (Array.isArray(service.tags)) {
+            service.tags.forEach(tag => {
+                if (typeof tag === 'string') {
+                    tags.push(tag);
+                } else if (typeof tag === 'object' && tag.name) {
+                    tags.push(tag.name);
+                }
+            });
+        }
     }
 
+    // הוספת תג לשירותים עם רשימת המתנה
     if (service['רשימת המתנה'] === 'כן') {
         tags.push('רשימת המתנה');
     }

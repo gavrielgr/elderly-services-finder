@@ -185,6 +185,20 @@ export class ResultsManager {
             const category = categories.find(cat => cat.id === service.category);
             const categoryName = category ? category.name : 'כללי';
 
+            // Process service tags properly
+            let tags = [];
+            if (service.tags) {
+                if (Array.isArray(service.tags)) {
+                    service.tags.forEach(tag => {
+                        if (typeof tag === 'string') {
+                            tags.push(tag);
+                        } else if (typeof tag === 'object' && tag.name) {
+                            tags.push(tag.name);
+                        }
+                    });
+                }
+            }
+
             card.innerHTML = `
                 <div class="result-category-tag">${categoryName}</div>
                 <h3 class="result-name">${service.name}</h3>
@@ -195,9 +209,9 @@ export class ResultsManager {
                     ${service.email ? `<div class="result-email"><i class="fas fa-envelope"></i> ${service.email}</div>` : ''}
                     ${service.website ? `<div class="result-website"><i class="fas fa-globe"></i> <a href="${service.website}" target="_blank">${service.website}</a></div>` : ''}
                 </div>
-                ${service.tags?.length > 0 ? `
+                ${tags.length > 0 ? `
                     <div class="result-tags">
-                        ${service.tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+                        ${tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
                     </div>
                 ` : ''}
             `;
