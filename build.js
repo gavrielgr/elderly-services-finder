@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, copyFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -33,49 +33,13 @@ function updateFile(path, replacements) {
     writeFileSync(path, newContent);
 }
 
-// Update service worker
+// Update service worker version
 updateFile(
     join(__dirname, 'sw.js'),
     [
         [/const CACHE_VERSION = .*?;/, `const CACHE_VERSION = '${APP_VERSION}';`]
     ]
 );
-
-// Copy service worker to dist and assets
-const distDir = join(__dirname, 'dist');
-const distAssetsDir = join(distDir, 'assets');
-
-if (!existsSync(distDir)) {
-    mkdirSync(distDir, { recursive: true });
-}
-
-if (!existsSync(distAssetsDir)) {
-    mkdirSync(distAssetsDir, { recursive: true });
-}
-
-// Generate the service worker filename
-const swFileName = `sw-${APP_VERSION.replace(/\./g, '_')}.js`;
-
-// Copy to root for direct access
-copyFileSync(
-    join(__dirname, 'sw.js'),
-    join(distDir, 'sw.js')
-);
-
-// Copy to assets for hashed version
-copyFileSync(
-    join(__dirname, 'sw.js'),
-    join(distAssetsDir, swFileName)
-);
-
-// Update netlify.toml with the new service worker filename
-const netlifyConfig = readFileSync('netlify.toml', 'utf8');
-const updatedConfig = netlifyConfig.replace(
-    /to = "\/assets\/sw-[^"]+\.js"/,
-    `to = "/assets/${swFileName}"`
-);
-writeFileSync('netlify.toml', updatedConfig);
-console.log(`Updated netlify.toml with Service Worker file: ${swFileName}`);
 
 // Update constants.js with more specific replacements
 updateFile(

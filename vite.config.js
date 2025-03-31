@@ -2,23 +2,23 @@ import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
 export default defineConfig({
-  // מאפשר טעינת משתני סביבה
+  // Enables loading environment variables
   envDir: '.',
   
-  // מגדיר את תיקיית המקור
+  // Sets the source directory
   root: '.',
 
-  // מגדיר את ה-base URL
-  base: './',
+  // Sets the base URL
+  base: '/',
 
-  // הגדרת aliases
+  // Defines aliases
   resolve: {
     alias: {
       '@': '/src'
     }
   },
 
-  // הגדרות נוספות של הבנייה
+  // Additional build settings
   server: {
     port: 5173,
     open: true
@@ -31,6 +31,14 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'index.html'),
         sw: resolve(__dirname, 'sw.js')
+      },
+      output: {
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'sw') {
+            return 'sw.js';
+          }
+          return 'assets/[name]-[hash].js';
+        }
       }
     }
   },
