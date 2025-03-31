@@ -4,20 +4,11 @@
 const CACHE_VERSION = '1.99.94'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 
-// Function to get asset path with hash
-const getAssetPath = (path) => {
-  // If the path is already an absolute URL, return it as is
-  if (path.startsWith('http')) {
-    return path;
-  }
-  
-  // If the path is for an icon, use it as is
-  if (path.startsWith('/icons/')) {
-    return path;
-  }
-  
-  // For other assets, they will be handled by the fetch event
-  return path;
+// Function to normalize URL
+const normalizeUrl = (url) => {
+  const urlObj = new URL(url, self.location.origin);
+  // Remove hash from the URL if it exists
+  return urlObj.origin + urlObj.pathname;
 };
 
 const ASSETS_TO_CACHE = [
@@ -39,7 +30,7 @@ const ASSETS_TO_CACHE = [
   '/icons/logo.png',    
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap',
   'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
-].map(getAssetPath);
+];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -63,7 +54,6 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   console.log(`Activating new service worker version ${CACHE_VERSION}`);
   
-  // Remove all caches that don't match current version
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -77,16 +67,6 @@ self.addEventListener('activate', (event) => {
     }).then(() => {
       // Claim clients to ensure the new service worker takes control immediately
       return self.clients.claim();
-    }).then(() => {
-      // Notify all clients that the service worker has been updated
-      return self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'SERVICE_WORKER_UPDATED',
-            version: CACHE_VERSION
-          });
-        });
-      });
     })
   );
 });
@@ -99,10 +79,11 @@ self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests except for specific domains we need
   if (!event.request.url.startsWith(self.location.origin) && 
       !event.request.url.includes('fonts.googleapis.com') &&
-      !event.request.url.includes('fonts.gstatic.com')) {
+      !event.request.url.includes('fonts.gstatic.com') &&
+      !event.request.url.includes('cdn.jsdelivr.net')) {
     return;
   }
-  
+
   // Handle API requests differently
   if (event.request.url.includes('script.google.com/macros')) {
     // Network first for API requests, with cache fallback
@@ -123,36 +104,38 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-  
-  // For all other requests, use Cache First strategy
+
+  // For all other requests, use Cache First strategy with network fallback
   event.respondWith(
-    caches.match(event.request)
+    caches.match(normalizeUrl(event.request.url))
       .then((response) => {
-        // Return the cached response if found
         if (response) {
           return response;
         }
-        
-        // If not in cache, fetch from network
+
         return fetch(event.request).then(
           (response) => {
             // Check if we received a valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
-            
-            // Clone the response as it can only be consumed once
+
+            // Clone the response
             const responseToCache = response.clone();
-            
-            // Add the new response to the cache
+
+            // Cache the response
             caches.open(CACHE_NAME)
               .then((cache) => {
-                cache.put(event.request, responseToCache);
+                const normalizedUrl = normalizeUrl(event.request.url);
+                cache.put(normalizedUrl, responseToCache);
               });
-            
+
             return response;
           }
-        );
+        ).catch((error) => {
+          console.error('Fetch failed:', error);
+          throw error;
+        });
       })
   );
 });

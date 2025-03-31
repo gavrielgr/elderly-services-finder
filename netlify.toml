@@ -19,6 +19,11 @@
 
 [[redirects]]
   from = "/sw.js"
-  to = "/assets/sw-:splat.js"
+  to = "/assets/sw-:hash.js"
   status = 200
-  force = true 
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 
