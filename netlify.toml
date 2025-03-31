@@ -4,6 +4,13 @@
     Service-Worker-Allowed = "/"
 
 [[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "no-store"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
   for = "/assets/sw-*.js"
   [headers.values]
     Content-Type = "application/javascript"
@@ -12,6 +19,6 @@
 
 [[redirects]]
   from = "/sw.js"
-  to = "/assets/sw-:hash.js"
+  to = "/assets/sw-:splat.js"
   status = 200
   force = true 

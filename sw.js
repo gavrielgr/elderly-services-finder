@@ -3,6 +3,23 @@
 // This version is injected during build
 const CACHE_VERSION = '1.99.94'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
+
+// Function to get asset path with hash
+const getAssetPath = (path) => {
+  // If the path is already an absolute URL, return it as is
+  if (path.startsWith('http')) {
+    return path;
+  }
+  
+  // If the path is for an icon, use it as is
+  if (path.startsWith('/icons/')) {
+    return path;
+  }
+  
+  // For other assets, they will be handled by the fetch event
+  return path;
+};
+
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -22,7 +39,7 @@ const ASSETS_TO_CACHE = [
   '/icons/logo.png',    
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap',
   'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
-];
+].map(getAssetPath);
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
