@@ -1,11 +1,11 @@
 {
   "name": "elderly-services-finder",
   "private": true,
-  "version": "1.99.92",
+  "version": "1.99.93",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node build.js",
+    "build": "node build.js && vite build",
     "bump": "node build.js --bump",
     "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"
   },
