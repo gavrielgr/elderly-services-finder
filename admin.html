@@ -354,33 +354,23 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/config/firebase.js"></script>
+    <script type="module" src="js/admin/AdminAuth.js"></script>
+    <script type="module" src="js/admin/ui.js"></script>
     <script type="module">
-        import { AdminAuth } from './js/admin/AdminAuth.js';
-        import { initializeUI } from './js/admin/ui.js';
-        import { initializeServices } from './js/admin/services.js';
-        import { initializeCategories } from './js/admin/categories.js';
-        import { initializeInterestAreas } from './js/admin/interest-areas.js';
-        import { initializeUsers } from './js/admin/users.js';
-        import { initializeRatings } from './js/admin/ratings.js';
+        import { initializeApp } from './js/admin/ui.js';
+        import { adminAuth } from './js/admin/AdminAuth.js';
 
-        // Initialize admin auth
-        const adminAuth = new AdminAuth();
-        adminAuth.onAuthStateChange(async (user) => {
-            if (user) {
-                // Initialize UI
-                initializeUI();
-                
-                // Load data
-                await Promise.all([
-                    initializeServices(),
-                    initializeCategories(),
-                    initializeInterestAreas(),
-                    initializeUsers(),
-                    initializeRatings()
-                ]);
-            } else {
-                window.location.href = '/login.html';
+        // Check authentication state
+        adminAuth.onAuthStateChanged((admin) => {
+            if (!admin) {
+                window.location.href = 'login.html';
             }
+        });
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeApp();
         });
     </script>
 </body>

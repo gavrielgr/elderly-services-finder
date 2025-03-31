@@ -1,5 +1,5 @@
 import { loadUsers, saveUser, deleteUser as deleteUserFromDb, getUser } from './users.js';
-import { signOutUser } from './auth.js';
+import { adminAuth } from './AdminAuth.js';
 import { 
     saveService as saveServiceToDb, 
     deleteService as deleteServiceFromDb, 
@@ -203,12 +203,12 @@ async function loadInterestAreasTable(tableBody) {
 
 // Initialize event listeners
 export function initializeEventListeners() {
-    // Logout
     const signOutBtn = document.getElementById('signOutBtn');
     if (signOutBtn) {
         signOutBtn.addEventListener('click', async () => {
             try {
-                await signOutUser();
+                await adminAuth.logout();
+                window.location.href = 'login.html';
             } catch (error) {
                 console.error('Error signing out:', error);
                 showStatus('שגיאה בהתנתקות', 'error');
