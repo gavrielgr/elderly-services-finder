@@ -29,8 +29,9 @@ export default defineConfig({
     assetsDir: 'assets',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        sw: resolve(__dirname, 'sw.js')
+        main: 'index.html',
+        login: 'login.html',
+        admin: 'admin.html'
       },
       output: {
         entryFileNames: (chunkInfo) => {
