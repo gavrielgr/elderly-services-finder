@@ -105,7 +105,7 @@
 
         /* Loading overlay */
         .loading-overlay {
-            display: none;
+            display: flex;
             position: fixed;
             top: 0;
             left: 0;
@@ -133,12 +133,15 @@
 
         /* Error container */
         .error-container {
-            display: none;
             background-color: #f8d7da;
             color: #721c24;
             padding: 10px 20px;
             border-radius: 4px;
             margin-bottom: 20px;
+        }
+        
+        .error-container.hidden {
+            display: none;
         }
         
         /* Buttons */
@@ -413,11 +416,11 @@
     </style>
 </head>
 <body>
-    <div class="loading-overlay">
+    <div id="loading-overlay" class="loading-overlay">
         <div class="spinner"></div>
     </div>
     
-    <div id="error-container" class="error-container">
+    <div id="error-container" class="error-container hidden">
         <div id="error-message"></div>
     </div>
     
