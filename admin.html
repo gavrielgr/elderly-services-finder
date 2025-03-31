@@ -114,6 +114,233 @@
             color: #666;
             padding: 30px;
         }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4285F4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        .results-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .header-title {
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .search-container {
+                margin-top: 12px;
+                max-width: 100%;
+            }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-modal:hover {
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-select {
+            height: 38px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 24px;
+        }
+
+        .cancel-button {
+            background-color: #f2f2f2;
+            color: #333;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .save-button {
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .cancel-button:hover {
+            background-color: #e6e6e6;
+        }
+
+        .save-button:hover {
+            background-color: #3367d6;
+        }
+
+        .status-toggle {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4285F4;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4285F4;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(24px);
+            -ms-transform: translateX(24px);
+            transform: translateX(24px);
+        }
+
+        .error-text {
+            color: #DC3545;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -145,13 +372,20 @@
                 <nav class="admin-nav">
                     <button class="nav-button active" data-section="services">שירותים</button>
                     <button class="nav-button" data-section="categories">קטגוריות</button>
+                    <button class="nav-button" data-section="interest-areas">תחומי עניין</button>
                     <button class="nav-button" data-section="users">משתמשים</button>
                 </nav>
             </div>
             
             <div class="admin-content">
                 <div id="services-section" class="admin-section active">
-                    <h2>ניהול שירותים</h2>
+                    <div class="header-container">
+                        <h2 class="header-title">ניהול שירותים</h2>
+                        <div class="search-container">
+                            <input type="text" id="services-search" class="search-input" placeholder="חיפוש שירותים...">
+                        </div>
+                    </div>
+                    <div class="results-info" id="services-results-info"></div>
                     <div class="section-actions">
                         <button id="add-service" class="primary-button">הוסף שירות חדש</button>
                     </div>
@@ -161,7 +395,13 @@
                 </div>
                 
                 <div id="categories-section" class="admin-section">
-                    <h2>ניהול קטגוריות</h2>
+                    <div class="header-container">
+                        <h2 class="header-title">ניהול קטגוריות</h2>
+                        <div class="search-container">
+                            <input type="text" id="categories-search" class="search-input" placeholder="חיפוש קטגוריות...">
+                        </div>
+                    </div>
+                    <div class="results-info" id="categories-results-info"></div>
                     <div class="section-actions">
                         <button id="add-category" class="primary-button">הוסף קטגוריה חדשה</button>
                     </div>
@@ -170,14 +410,166 @@
                     </div>
                 </div>
                 
+                <div id="interest-areas-section" class="admin-section">
+                    <div class="header-container">
+                        <h2 class="header-title">ניהול תחומי עניין</h2>
+                        <div class="search-container">
+                            <input type="text" id="interest-areas-search" class="search-input" placeholder="חיפוש תחומי עניין...">
+                        </div>
+                    </div>
+                    <div class="results-info" id="interest-areas-results-info"></div>
+                    <div class="section-actions">
+                        <button id="add-interest-area" class="primary-button">הוסף תחום עניין חדש</button>
+                    </div>
+                    <div id="interest-areas-list" class="list-container">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                
                 <div id="users-section" class="admin-section">
-                    <h2>ניהול משתמשים</h2>
+                    <div class="header-container">
+                        <h2 class="header-title">ניהול משתמשים</h2>
+                        <div class="search-container">
+                            <input type="text" id="users-search" class="search-input" placeholder="חיפוש משתמשים...">
+                        </div>
+                    </div>
+                    <div class="results-info" id="users-results-info"></div>
                     <div id="users-list" class="list-container">
                         <div class="spinner"></div>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+    
+    <!-- Service Modal -->
+    <div id="service-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="service-modal-title">הוספת שירות חדש</h3>
+                <button class="close-modal" id="close-service-modal">&times;</button>
+            </div>
+            <form id="service-form">
+                <input type="hidden" id="service-id">
+                <div class="form-group">
+                    <label for="service-name" class="form-label">שם השירות</label>
+                    <input type="text" id="service-name" class="form-input" required>
+                    <div class="error-text" id="service-name-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="service-description" class="form-label">תיאור</label>
+                    <textarea id="service-description" class="form-textarea"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="service-category" class="form-label">קטגוריה</label>
+                    <select id="service-category" class="form-select">
+                        <option value="">בחר קטגוריה</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="service-interest-areas" class="form-label">תחומי עניין</label>
+                    <div id="service-interest-areas-container" style="margin-top: 8px;"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" id="cancel-service">ביטול</button>
+                    <button type="submit" class="save-button">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="category-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="category-modal-title">הוספת קטגוריה חדשה</h3>
+                <button class="close-modal" id="close-category-modal">&times;</button>
+            </div>
+            <form id="category-form">
+                <input type="hidden" id="category-id">
+                <div class="form-group">
+                    <label for="category-name" class="form-label">שם הקטגוריה</label>
+                    <input type="text" id="category-name" class="form-input" required>
+                    <div class="error-text" id="category-name-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="category-description" class="form-label">תיאור</label>
+                    <textarea id="category-description" class="form-textarea"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" id="cancel-category">ביטול</button>
+                    <button type="submit" class="save-button">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Interest Area Modal -->
+    <div id="interest-area-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="interest-area-modal-title">הוספת תחום עניין חדש</h3>
+                <button class="close-modal" id="close-interest-area-modal">&times;</button>
+            </div>
+            <form id="interest-area-form">
+                <input type="hidden" id="interest-area-id">
+                <div class="form-group">
+                    <label for="interest-area-name" class="form-label">שם תחום העניין</label>
+                    <input type="text" id="interest-area-name" class="form-input" required>
+                    <div class="error-text" id="interest-area-name-error"></div>
+                </div>
+                <div class="form-group">
+                    <label for="interest-area-description" class="form-label">תיאור</label>
+                    <textarea id="interest-area-description" class="form-textarea"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" id="cancel-interest-area">ביטול</button>
+                    <button type="submit" class="save-button">שמור</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="user-modal-title">עריכת משתמש</h3>
+                <button class="close-modal" id="close-user-modal">&times;</button>
+            </div>
+            <form id="user-form">
+                <input type="hidden" id="user-id">
+                <div class="form-group">
+                    <label for="user-name" class="form-label">שם</label>
+                    <input type="text" id="user-name" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="user-email" class="form-label">אימייל</label>
+                    <input type="email" id="user-email" class="form-input" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="user-role" class="form-label">תפקיד</label>
+                    <select id="user-role" class="form-select">
+                        <option value="user">משתמש</option>
+                        <option value="admin">מנהל</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">סטטוס</label>
+                    <div class="status-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="user-status">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="status-text">פעיל</span>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" id="cancel-user">ביטול</button>
+                    <button type="submit" class="save-button">שמור</button>
+                </div>
+            </form>
+        </div>
     </div>
     
     <script type="module">
@@ -190,8 +582,12 @@
             getDocs, 
             query, 
             orderBy,
+            addDoc,
             deleteDoc,
-            updateDoc
+            updateDoc,
+            serverTimestamp,
+            where,
+            deleteField
         } from 'firebase/firestore';
         
         // DOM elements
@@ -205,11 +601,31 @@
         // List containers
         const servicesListContainer = document.getElementById('services-list');
         const categoriesListContainer = document.getElementById('categories-list');
+        const interestAreasListContainer = document.getElementById('interest-areas-list');
         const usersListContainer = document.getElementById('users-list');
+        
+        // Search inputs
+        const servicesSearchInput = document.getElementById('services-search');
+        const categoriesSearchInput = document.getElementById('categories-search');
+        const interestAreasSearchInput = document.getElementById('interest-areas-search');
+        const usersSearchInput = document.getElementById('users-search');
+        
+        // Results info elements
+        const servicesResultsInfo = document.getElementById('services-results-info');
+        const categoriesResultsInfo = document.getElementById('categories-results-info');
+        const interestAreasResultsInfo = document.getElementById('interest-areas-results-info');
+        const usersResultsInfo = document.getElementById('users-results-info');
         
         // Add buttons
         const addServiceButton = document.getElementById('add-service');
         const addCategoryButton = document.getElementById('add-category');
+        const addInterestAreaButton = document.getElementById('add-interest-area');
+        
+        // Data storage
+        let allServices = [];
+        let allCategories = [];
+        let allInterestAreas = [];
+        let allUsers = [];
         
         // UI Helper Functions
         function showError(message) {
@@ -237,100 +653,313 @@
             }).format(date);
         }
         
+        // Search debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
         // Data Loading Functions
         async function loadServices() {
             try {
                 servicesListContainer.innerHTML = '<div class="spinner"></div>';
+                
+                // תמיד לטעון קטגוריות קודם כדי לוודא שהן זמינות להצגה
+                console.log("טוען קטגוריות לפני שירותים...");
+                if (allCategories.length === 0) {
+                    await loadCategories();
+                } else {
+                    console.log(`קטגוריות כבר טעונות: ${allCategories.length}`);
+                }
+                console.log(`קטגוריות טעונות: ${allCategories.length}`);
                 
                 const servicesQuery = query(collection(db, 'services'), orderBy('name'));
                 const querySnapshot = await getDocs(servicesQuery);
                 
                 if (querySnapshot.empty) {
                     servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+                    servicesResultsInfo.textContent = '0 שירותים';
+                    allServices = [];
                     return;
                 }
                 
-                let html = '';
-                querySnapshot.forEach((doc) => {
-                    const service = { id: doc.id, ...doc.data() };
-                    html += `
-                        <div class="item-card" data-id="${service.id}">
-                            <div class="item-actions">
-                                <button class="action-button edit-button" data-id="${service.id}" title="ערוך">✏️</button>
-                                <button class="action-button delete-button" data-id="${service.id}" title="מחק">🗑️</button>
-                            </div>
-                            <div class="item-title">${service.name}</div>
-                            <div class="item-details">
-                                <div>${service.description || 'אין תיאור'}</div>
-                                <div>קטגוריה: ${service.category || 'לא מוגדר'}</div>
-                                <div>עודכן: ${formatDate(service.updatedAt)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
+                allServices = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
                 
-                servicesListContainer.innerHTML = html;
+                console.log(`שירותים שנטענו: ${allServices.length}`);
                 
-                // Add event listeners to edit and delete buttons
-                servicesListContainer.querySelectorAll('.edit-button').forEach(button => {
-                    button.addEventListener('click', () => editService(button.dataset.id));
-                });
-                
-                servicesListContainer.querySelectorAll('.delete-button').forEach(button => {
-                    button.addEventListener('click', () => deleteService(button.dataset.id));
-                });
+                renderServices(allServices);
+                servicesResultsInfo.textContent = `${allServices.length} שירותים`;
                 
             } catch (error) {
                 console.error('Error loading services:', error);
                 servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים. אנא נסה שוב.</div>';
+                servicesResultsInfo.textContent = '';
             }
+        }
+        
+        function renderServices(services) {
+            if (!services || services.length === 0) {
+                servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
+                return;
+            }
+            
+            // בדיקה שקטגוריות אכן טעונות
+            if (allCategories.length === 0) {
+                console.warn("קטגוריות לא טעונות בעת הצגת שירותים!");
+            }
+            
+            let html = '';
+            services.forEach((service) => {
+                // מציאת שם הקטגוריה לפי ה-ID
+                let categoryName = 'לא מוגדר';
+                let categoryId = null;
+                
+                console.log(`שירות: ${service.name}, קטגוריה ID: ${service.categoryId}, מבנה קטגוריה:`, service.category);
+                
+                // בדיקות שונות למציאת שם הקטגוריה
+                if (service.categoryId) {
+                    // חיפוש לפי ID
+                    categoryId = service.categoryId;
+                } else if (service.category) {
+                    if (typeof service.category === 'string') {
+                        // אם זה מחרוזת, נתייחס אליה כמזהה קטגוריה (category ID)
+                        categoryId = service.category;
+                    } else if (service.category.id) {
+                        // אם זה אובייקט עם ID
+                        categoryId = service.category.id;
+                    } else if (service.category.name) {
+                        // אם יש שדה name ישיר באובייקט, נשתמש בו
+                        categoryName = service.category.name;
+                    }
+                }
+                
+                // אם יש לנו categoryId, נחפש את שם הקטגוריה בעברית
+                if (categoryId && allCategories.length > 0) {
+                    const category = allCategories.find(c => c.id === categoryId);
+                    if (category) {
+                        categoryName = category.name;
+                        console.log(`נמצאה קטגוריה לפי ID ${categoryId}: ${categoryName}`);
+                    } else {
+                        // אם לא מצאנו לפי ID מדויק, ננסה למצוא קטגוריה שה-ID שלה מכיל את הערך שלנו
+                        // (למקרה שיש הבדלי פורמט קטן כמו מקפים וכו')
+                        for (const cat of allCategories) {
+                            if (cat.id.includes(categoryId) || categoryId.includes(cat.id)) {
+                                categoryName = cat.name;
+                                console.log(`נמצאה קטגוריה לפי חלקי ID: ${categoryName}`);
+                                break;
+                            }
+                        }
+                        
+                        // אם עדיין לא מצאנו, ננסה למצוא קטגוריה עם אותו שם
+                        if (categoryName === 'לא מוגדר') {
+                            const cat = allCategories.find(c => 
+                                c.name.toLowerCase() === categoryId.toLowerCase() || 
+                                c.id.toLowerCase() === categoryId.toLowerCase());
+                            if (cat) {
+                                categoryName = cat.name;
+                                console.log(`נמצאה קטגוריה לפי שם: ${categoryName}`);
+                            } else {
+                                // אם לא מצאנו התאמה, נשאיר את מזהה הקטגוריה כפי שהוא
+                                categoryName = categoryId;
+                                console.log(`לא נמצאה קטגוריה תואמת ל: ${categoryId}`);
+                            }
+                        }
+                    }
+                }
+
+                html += `
+                    <div class="item-card" data-id="${service.id}">
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${service.id}" title="ערוך">✏️</button>
+                            <button class="action-button delete-button" data-id="${service.id}" title="מחק">🗑️</button>
+                        </div>
+                        <div class="item-title">${service.name}</div>
+                        <div class="item-details">
+                            <div>${service.description || 'אין תיאור'}</div>
+                            <div>קטגוריה: ${categoryName}</div>
+                            <div>עודכן: ${formatDate(service.updatedAt)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            servicesListContainer.innerHTML = html;
+            
+            // Add event listeners to edit and delete buttons
+            servicesListContainer.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', () => editService(button.dataset.id));
+            });
+            
+            servicesListContainer.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', () => deleteService(button.dataset.id));
+            });
         }
         
         async function loadCategories() {
             try {
+                // אם כבר יש קטגוריות טעונות, אין צורך לטעון שוב
+                if (allCategories.length > 0) {
+                    console.log("קטגוריות כבר טעונות:", allCategories.length);
+                    return allCategories;
+                }
+                
+                console.log("טוען קטגוריות מ-Firestore...");
                 categoriesListContainer.innerHTML = '<div class="spinner"></div>';
                 
                 const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
                 const querySnapshot = await getDocs(categoriesQuery);
                 
                 if (querySnapshot.empty) {
+                    console.log("לא נמצאו קטגוריות");
                     categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה.</div>';
-                    return;
+                    categoriesResultsInfo.textContent = '0 קטגוריות';
+                    allCategories = [];
+                    return allCategories;
                 }
                 
-                let html = '';
-                querySnapshot.forEach((doc) => {
-                    const category = { id: doc.id, ...doc.data() };
-                    html += `
-                        <div class="item-card" data-id="${category.id}">
-                            <div class="item-actions">
-                                <button class="action-button edit-button" data-id="${category.id}" title="ערוך">✏️</button>
-                                <button class="action-button delete-button" data-id="${category.id}" title="מחק">🗑️</button>
-                            </div>
-                            <div class="item-title">${category.name}</div>
-                            <div class="item-details">
-                                <div>${category.description || 'אין תיאור'}</div>
-                                <div>עודכן: ${formatDate(category.updatedAt)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
+                allCategories = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
                 
-                categoriesListContainer.innerHTML = html;
+                console.log(`נטענו ${allCategories.length} קטגוריות:`);
+                allCategories.forEach(cat => console.log(`- ${cat.id}: ${cat.name}`));
                 
-                // Add event listeners to edit and delete buttons
-                categoriesListContainer.querySelectorAll('.edit-button').forEach(button => {
-                    button.addEventListener('click', () => editCategory(button.dataset.id));
-                });
+                renderCategories(allCategories);
+                categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
                 
-                categoriesListContainer.querySelectorAll('.delete-button').forEach(button => {
-                    button.addEventListener('click', () => deleteCategory(button.dataset.id));
-                });
+                return allCategories;
                 
             } catch (error) {
                 console.error('Error loading categories:', error);
                 categoriesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת הקטגוריות. אנא נסה שוב.</div>';
+                categoriesResultsInfo.textContent = '';
+                return [];
             }
+        }
+        
+        function renderCategories(categories) {
+            if (!categories || categories.length === 0) {
+                categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
+                return;
+            }
+            
+            let html = '';
+            categories.forEach((category) => {
+                html += `
+                    <div class="item-card" data-id="${category.id}">
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${category.id}" title="ערוך">✏️</button>
+                            <button class="action-button delete-button" data-id="${category.id}" title="מחק">🗑️</button>
+                        </div>
+                        <div class="item-title">${category.name}</div>
+                        <div class="item-details">
+                            <div>${category.description || 'אין תיאור'}</div>
+                            <div>עודכן: ${formatDate(category.updatedAt)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            categoriesListContainer.innerHTML = html;
+            
+            // Add event listeners to edit and delete buttons
+            categoriesListContainer.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', () => editCategory(button.dataset.id));
+            });
+            
+            categoriesListContainer.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', () => deleteCategory(button.dataset.id));
+            });
+        }
+
+        async function loadInterestAreas() {
+            try {
+                interestAreasListContainer.innerHTML = '<div class="spinner"></div>';
+                
+                // שלב 1: טעינת כל תחומי העניין
+                const interestAreasQuery = query(collection(db, 'interest-areas'), orderBy('name'));
+                const interestAreasSnapshot = await getDocs(interestAreasQuery);
+                
+                if (interestAreasSnapshot.empty) {
+                    interestAreasListContainer.innerHTML = '<div class="empty-message">אין תחומי עניין ברשימה.</div>';
+                    interestAreasResultsInfo.textContent = '0 תחומי עניין';
+                    allInterestAreas = [];
+                    return;
+                }
+                
+                // שלב 2: טעינת כל הקשרים בין שירותים לתחומי עניין לחישוב ספירה
+                const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
+                
+                // שלב 3: יצירת מפה לספירת שירותים לכל תחום עניין
+                const areaServicesCount = {};
+                serviceAreasSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.interestAreaId) {
+                        areaServicesCount[data.interestAreaId] = (areaServicesCount[data.interestAreaId] || 0) + 1;
+                    }
+                });
+                
+                allInterestAreas = interestAreasSnapshot.docs.map(doc => {
+                    const area = { id: doc.id, ...doc.data() };
+                    const servicesCount = areaServicesCount[area.id] || 0;
+                    return { ...area, servicesCount };
+                });
+                
+                renderInterestAreas(allInterestAreas);
+                interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
+                
+            } catch (error) {
+                console.error('Error loading interest areas:', error);
+                interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי העניין. אנא נסה שוב.</div>';
+                interestAreasResultsInfo.textContent = '';
+            }
+        }
+        
+        function renderInterestAreas(areas) {
+            if (!areas || areas.length === 0) {
+                interestAreasListContainer.innerHTML = '<div class="empty-message">אין תחומי עניין ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
+                return;
+            }
+            
+            let html = '';
+            areas.forEach((area) => {
+                html += `
+                    <div class="item-card" data-id="${area.id}">
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${area.id}" title="ערוך">✏️</button>
+                            <button class="action-button delete-button" data-id="${area.id}" title="מחק">🗑️</button>
+                        </div>
+                        <div class="item-title">${area.name}</div>
+                        <div class="item-details">
+                            <div>${area.description || 'אין תיאור'}</div>
+                            <div>מספר שירותים: ${area.servicesCount}</div>
+                            <div>עודכן: ${formatDate(area.metadata?.lastUpdated)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            interestAreasListContainer.innerHTML = html;
+            
+            // הוספת מאזיני אירועים לכפתורי עריכה ומחיקה
+            interestAreasListContainer.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', () => editInterestArea(button.dataset.id));
+            });
+            
+            interestAreasListContainer.querySelectorAll('.delete-button').forEach(button => {
+                button.addEventListener('click', () => deleteInterestArea(button.dataset.id));
+            });
         }
         
         async function loadUsers() {
@@ -342,67 +971,814 @@
                 
                 if (querySnapshot.empty) {
                     usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה.</div>';
+                    usersResultsInfo.textContent = '0 משתמשים';
+                    allUsers = [];
                     return;
                 }
                 
-                let html = '';
-                querySnapshot.forEach((doc) => {
-                    const user = { id: doc.id, ...doc.data() };
-                    const statusClass = user.status === 'active' ? 'text-success' : 'text-danger';
-                    html += `
-                        <div class="item-card" data-id="${user.id}">
-                            <div class="item-actions">
-                                <button class="action-button edit-button" data-id="${user.id}" title="ערוך">✏️</button>
-                            </div>
-                            <div class="item-title">${user.name || user.email}</div>
-                            <div class="item-details">
-                                <div>אימייל: ${user.email || 'לא מוגדר'}</div>
-                                <div>תפקיד: ${user.role || 'משתמש'}</div>
-                                <div>סטטוס: <span class="${statusClass}">${user.status === 'active' ? 'פעיל' : 'מושהה'}</span></div>
-                                <div>כניסה אחרונה: ${formatDate(user.lastLogin)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
+                allUsers = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
                 
-                usersListContainer.innerHTML = html;
-                
-                // Add event listeners to edit buttons
-                usersListContainer.querySelectorAll('.edit-button').forEach(button => {
-                    button.addEventListener('click', () => editUser(button.dataset.id));
-                });
+                renderUsers(allUsers);
+                usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
                 
             } catch (error) {
                 console.error('Error loading users:', error);
                 usersListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת המשתמשים. אנא נסה שוב.</div>';
+                usersResultsInfo.textContent = '';
             }
         }
         
-        // Action Functions (Placeholders - will be implemented later)
-        function editService(id) {
-            alert(`עריכת שירות ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+        function renderUsers(users) {
+            if (!users || users.length === 0) {
+                usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
+                return;
+            }
+            
+            let html = '';
+            users.forEach((user) => {
+                const statusClass = user.status === 'active' ? 'text-success' : 'text-danger';
+                html += `
+                    <div class="item-card" data-id="${user.id}">
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${user.id}" title="ערוך">✏️</button>
+                        </div>
+                        <div class="item-title">${user.name || user.email}</div>
+                        <div class="item-details">
+                            <div>אימייל: ${user.email || 'לא מוגדר'}</div>
+                            <div>תפקיד: ${user.role || 'משתמש'}</div>
+                            <div>סטטוס: <span class="${statusClass}">${user.status === 'active' ? 'פעיל' : 'מושהה'}</span></div>
+                            <div>כניסה אחרונה: ${formatDate(user.lastLogin)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            usersListContainer.innerHTML = html;
+            
+            // Add event listeners to edit buttons
+            usersListContainer.querySelectorAll('.edit-button').forEach(button => {
+                button.addEventListener('click', () => editUser(button.dataset.id));
+            });
         }
         
-        function deleteService(id) {
+        // Search Functions
+        function filterServices(query) {
+            query = query.trim().toLowerCase();
+            if (!query) {
+                renderServices(allServices);
+                servicesResultsInfo.textContent = `${allServices.length} שירותים`;
+                return;
+            }
+            
+            const filteredServices = allServices.filter(service => {
+                return (
+                    (service.name && service.name.toLowerCase().includes(query)) ||
+                    (service.description && service.description.toLowerCase().includes(query))
+                );
+            });
+            
+            renderServices(filteredServices);
+            servicesResultsInfo.textContent = `${filteredServices.length} שירותים מתוך ${allServices.length}`;
+        }
+        
+        function filterCategories(query) {
+            query = query.trim().toLowerCase();
+            if (!query) {
+                renderCategories(allCategories);
+                categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
+                return;
+            }
+            
+            const filteredCategories = allCategories.filter(category => {
+                return (
+                    (category.name && category.name.toLowerCase().includes(query)) ||
+                    (category.description && category.description.toLowerCase().includes(query))
+                );
+            });
+            
+            renderCategories(filteredCategories);
+            categoriesResultsInfo.textContent = `${filteredCategories.length} קטגוריות מתוך ${allCategories.length}`;
+        }
+        
+        function filterInterestAreas(query) {
+            query = query.trim().toLowerCase();
+            if (!query) {
+                renderInterestAreas(allInterestAreas);
+                interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
+                return;
+            }
+            
+            const filteredAreas = allInterestAreas.filter(area => {
+                return (
+                    (area.name && area.name.toLowerCase().includes(query)) ||
+                    (area.description && area.description.toLowerCase().includes(query))
+                );
+            });
+            
+            renderInterestAreas(filteredAreas);
+            interestAreasResultsInfo.textContent = `${filteredAreas.length} תחומי עניין מתוך ${allInterestAreas.length}`;
+        }
+        
+        function filterUsers(query) {
+            query = query.trim().toLowerCase();
+            if (!query) {
+                renderUsers(allUsers);
+                usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
+                return;
+            }
+            
+            const filteredUsers = allUsers.filter(user => {
+                return (
+                    (user.name && user.name.toLowerCase().includes(query)) ||
+                    (user.email && user.email.toLowerCase().includes(query)) ||
+                    (user.role && user.role.toLowerCase().includes(query))
+                );
+            });
+            
+            renderUsers(filteredUsers);
+            usersResultsInfo.textContent = `${filteredUsers.length} משתמשים מתוך ${allUsers.length}`;
+        }
+        
+        // Action Functions
+        function openServiceModal(id = null) {
+            const modalTitle = document.getElementById('service-modal-title');
+            const serviceForm = document.getElementById('service-form');
+            const serviceId = document.getElementById('service-id');
+            const serviceName = document.getElementById('service-name');
+            const serviceDescription = document.getElementById('service-description');
+            const serviceCategory = document.getElementById('service-category');
+            const serviceModal = document.getElementById('service-modal');
+            
+            // Clear previous form data
+            serviceForm.reset();
+            document.getElementById('service-name-error').textContent = '';
+            
+            // Clear interest areas and populate them again
+            const interestAreasContainer = document.getElementById('service-interest-areas-container');
+            interestAreasContainer.innerHTML = '<div class="spinner"></div>';
+            
+            // Populate categories dropdown
+            serviceCategory.innerHTML = '<option value="">בחר קטגוריה</option>';
+            allCategories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                serviceCategory.appendChild(option);
+            });
+            
+            if (id) {
+                // Edit existing service
+                modalTitle.textContent = 'עריכת שירות';
+                
+                const service = allServices.find(s => s.id === id);
+                if (service) {
+                    serviceId.value = service.id;
+                    serviceName.value = service.name || '';
+                    serviceDescription.value = service.description || '';
+                    
+                    // זיהוי ובחירת הקטגוריה המתאימה
+                    let categoryId = '';
+                    
+                    // בדיקה לפי סדר עדיפות
+                    if (service.categoryId) {
+                        // אם יש categoryId מוגדר
+                        categoryId = service.categoryId;
+                        console.log(`בחירת קטגוריה לפי categoryId: ${categoryId}`);
+                    } else if (service.category) {
+                        // אם יש שדה category
+                        if (typeof service.category === 'string') {
+                            // אם category הוא מחרוזת, נתייחס אליו כמזהה קטגוריה
+                            categoryId = service.category;
+                            console.log(`בחירת קטגוריה לפי מחרוזת category: ${categoryId}`);
+                        } else if (service.category.id) {
+                            // אם category הוא אובייקט עם שדה id
+                            categoryId = service.category.id;
+                            console.log(`בחירת קטגוריה לפי category.id: ${categoryId}`);
+                        }
+                    }
+                    
+                    if (categoryId) {
+                        // בדיקה אם יש קטגוריה עם אותו ID בדיוק
+                        let found = false;
+                        for (const option of serviceCategory.options) {
+                            if (option.value === categoryId) {
+                                serviceCategory.value = categoryId;
+                                found = true;
+                                console.log(`נמצאה קטגוריה תואמת בדיוק: ${categoryId}`);
+                                break;
+                            }
+                        }
+                        
+                        // אם לא נמצא, נחפש התאמה חלקית
+                        if (!found) {
+                            // נחפש קטגוריה בטבלת categories שהמזהה שלה דומה לcategoryId
+                            const similarCategory = allCategories.find(category => 
+                                category.id.includes(categoryId) || categoryId.includes(category.id)
+                            );
+                            
+                            if (similarCategory) {
+                                serviceCategory.value = similarCategory.id;
+                                console.log(`נמצאה קטגוריה דומה: ${categoryId} -> ${similarCategory.id}`);
+                                found = true;
+                            }
+                            
+                            // אם עדיין לא נמצא, ננסה למצוא לפי התאמה חלקית בתוך אפשרויות הדרופדאון
+                            if (!found) {
+                                for (const option of serviceCategory.options) {
+                                    if (option.value.includes(categoryId) || categoryId.includes(option.value)) {
+                                        serviceCategory.value = option.value;
+                                        console.log(`נמצאה קטגוריה לפי התאמה חלקית: ${categoryId} -> ${option.value}`);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (!found) {
+                                console.log(`לא נמצאה קטגוריה תואמת ל: ${categoryId}`);
+                            }
+                        }
+                    }
+                    
+                    // Load interest areas and set checked state
+                    loadInterestAreasForService(service.id);
+                }
+            } else {
+                // Add new service
+                modalTitle.textContent = 'הוספת שירות חדש';
+                serviceId.value = '';
+                
+                // Load all interest areas as unchecked
+                loadInterestAreasForService(null);
+            }
+            
+            // Show modal
+            serviceModal.style.display = 'flex';
+        }
+        
+        async function loadInterestAreasForService(serviceId) {
+            try {
+                const interestAreasContainer = document.getElementById('service-interest-areas-container');
+                
+                // Get all interest areas
+                if (allInterestAreas.length === 0) {
+                    const interestAreasQuery = query(collection(db, 'interest-areas'), orderBy('name'));
+                    const snapshot = await getDocs(interestAreasQuery);
+                    allInterestAreas = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                }
+                
+                // Get service's interest areas
+                let serviceInterestAreas = [];
+                if (serviceId) {
+                    const serviceAreasQuery = query(collection(db, 'service-interest-areas'), where('serviceId', '==', serviceId));
+                    const snapshot = await getDocs(serviceAreasQuery);
+                    serviceInterestAreas = snapshot.docs.map(doc => doc.data().interestAreaId);
+                }
+                
+                // Create checkboxes for each interest area
+                let html = '';
+                allInterestAreas.forEach(area => {
+                    const isChecked = serviceInterestAreas.includes(area.id);
+                    html += `
+                        <div style="margin-bottom: 8px;">
+                            <label style="display: flex; align-items: center;">
+                                <input type="checkbox" name="interest-area" value="${area.id}" 
+                                    ${isChecked ? 'checked' : ''} style="margin-left: 8px;">
+                                ${area.name}
+                            </label>
+                        </div>
+                    `;
+                });
+                
+                interestAreasContainer.innerHTML = html || '<div>לא נמצאו תחומי עניין</div>';
+                
+            } catch (error) {
+                console.error('Error loading interest areas for service:', error);
+                const interestAreasContainer = document.getElementById('service-interest-areas-container');
+                interestAreasContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי עניין</div>';
+            }
+        }
+        
+        async function saveService(event) {
+            event.preventDefault();
+            
+            const serviceId = document.getElementById('service-id').value;
+            const serviceName = document.getElementById('service-name').value.trim();
+            const serviceDescription = document.getElementById('service-description').value.trim();
+            const categoryId = document.getElementById('service-category').value;
+            const nameError = document.getElementById('service-name-error');
+            
+            // Validate name
+            if (!serviceName) {
+                nameError.textContent = 'שם השירות הוא שדה חובה';
+                return;
+            } else {
+                nameError.textContent = '';
+            }
+            
+            try {
+                const serviceData = {
+                    name: serviceName,
+                    description: serviceDescription,
+                    categoryId: categoryId || null,
+                    updatedAt: serverTimestamp()
+                };
+                
+                // מחיקת שדה category הישן אם קיים
+                if (serviceId) {
+                    const serviceDoc = await getDoc(doc(db, 'services', serviceId));
+                    if (serviceDoc.exists()) {
+                        // בדיקת האם קיימים שדות שיש למחוק
+                        if (serviceDoc.data().category) {
+                            serviceData.category = deleteField();
+                            console.log("מוחק שדה 'category' ישן");
+                        }
+                    }
+                }
+                
+                // Get selected interest areas
+                const selectedInterestAreas = Array.from(
+                    document.querySelectorAll('input[name="interest-area"]:checked')
+                ).map(checkbox => checkbox.value);
+                
+                if (serviceId) {
+                    // Update existing service
+                    console.log(`מעדכן שירות קיים (ID: ${serviceId}) עם קטגוריה ID: ${categoryId}`);
+                    await updateDoc(doc(db, 'services', serviceId), serviceData);
+                    
+                    // Update interest areas
+                    // First, find existing mappings
+                    const serviceAreasQuery = query(collection(db, 'service-interest-areas'), where('serviceId', '==', serviceId));
+                    const snapshot = await getDocs(serviceAreasQuery);
+                    
+                    // Remove mappings that are no longer selected
+                    for (const doc of snapshot.docs) {
+                        const data = doc.data();
+                        if (!selectedInterestAreas.includes(data.interestAreaId)) {
+                            await deleteDoc(doc.ref);
+                        }
+                    }
+                    
+                    // Add new mappings
+                    const existingAreas = snapshot.docs.map(doc => doc.data().interestAreaId);
+                    for (const areaId of selectedInterestAreas) {
+                        if (!existingAreas.includes(areaId)) {
+                            await addDoc(collection(db, 'service-interest-areas'), {
+                                serviceId: serviceId,
+                                interestAreaId: areaId,
+                                createdAt: serverTimestamp()
+                            });
+                        }
+                    }
+                    
+                } else {
+                    // Add new service
+                    serviceData.createdAt = serverTimestamp();
+                    console.log(`יוצר שירות חדש עם קטגוריה ID: ${categoryId}`);
+                    const serviceRef = await addDoc(collection(db, 'services'), serviceData);
+                    
+                    // Add interest areas mappings
+                    for (const areaId of selectedInterestAreas) {
+                        await addDoc(collection(db, 'service-interest-areas'), {
+                            serviceId: serviceRef.id,
+                            interestAreaId: areaId,
+                            createdAt: serverTimestamp()
+                        });
+                    }
+                }
+                
+                // Close modal and reload services
+                document.getElementById('service-modal').style.display = 'none';
+                await loadServices();
+                
+            } catch (error) {
+                console.error('Error saving service:', error);
+                alert('שגיאה בשמירת השירות. אנא נסה שוב.');
+            }
+        }
+        
+        async function deleteService(id) {
             if (confirm(`האם אתה בטוח שברצונך למחוק את השירות?`)) {
-                alert(`מחיקת שירות ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+                try {
+                    // Delete service
+                    await deleteDoc(doc(db, 'services', id));
+                    
+                    // Delete associated interest areas mappings
+                    const serviceAreasQuery = query(collection(db, 'service-interest-areas'), where('serviceId', '==', id));
+                    const snapshot = await getDocs(serviceAreasQuery);
+                    
+                    for (const doc of snapshot.docs) {
+                        await deleteDoc(doc.ref);
+                    }
+                    
+                    // Reload services
+                    await loadServices();
+                    
+                } catch (error) {
+                    console.error('Error deleting service:', error);
+                    alert('שגיאה במחיקת השירות. אנא נסה שוב.');
+                }
             }
+        }
+        
+        function openCategoryModal(id = null) {
+            const modalTitle = document.getElementById('category-modal-title');
+            const categoryForm = document.getElementById('category-form');
+            const categoryId = document.getElementById('category-id');
+            const categoryName = document.getElementById('category-name');
+            const categoryDescription = document.getElementById('category-description');
+            const categoryModal = document.getElementById('category-modal');
+            
+            // Clear previous form data
+            categoryForm.reset();
+            document.getElementById('category-name-error').textContent = '';
+            
+            if (id) {
+                // Edit existing category
+                modalTitle.textContent = 'עריכת קטגוריה';
+                
+                const category = allCategories.find(c => c.id === id);
+                if (category) {
+                    categoryId.value = category.id;
+                    categoryName.value = category.name || '';
+                    categoryDescription.value = category.description || '';
+                }
+            } else {
+                // Add new category
+                modalTitle.textContent = 'הוספת קטגוריה חדשה';
+                categoryId.value = '';
+            }
+            
+            // Show modal
+            categoryModal.style.display = 'flex';
+        }
+        
+        async function saveCategory(event) {
+            event.preventDefault();
+            
+            const categoryId = document.getElementById('category-id').value;
+            const categoryName = document.getElementById('category-name').value.trim();
+            const categoryDescription = document.getElementById('category-description').value.trim();
+            const nameError = document.getElementById('category-name-error');
+            
+            // Validate name
+            if (!categoryName) {
+                nameError.textContent = 'שם הקטגוריה הוא שדה חובה';
+                return;
+            } else {
+                nameError.textContent = '';
+            }
+            
+            try {
+                const categoryData = {
+                    name: categoryName,
+                    description: categoryDescription,
+                    updatedAt: serverTimestamp()
+                };
+                
+                if (categoryId) {
+                    // Update existing category
+                    await updateDoc(doc(db, 'categories', categoryId), categoryData);
+                } else {
+                    // Add new category
+                    categoryData.createdAt = serverTimestamp();
+                    await addDoc(collection(db, 'categories'), categoryData);
+                }
+                
+                // Close modal and reload categories
+                document.getElementById('category-modal').style.display = 'none';
+                await loadCategories();
+                
+            } catch (error) {
+                console.error('Error saving category:', error);
+                alert('שגיאה בשמירת הקטגוריה. אנא נסה שוב.');
+            }
+        }
+        
+        async function deleteCategory(id) {
+            if (confirm(`האם אתה בטוח שברצונך למחוק את הקטגוריה?`)) {
+                try {
+                    // Check if there are services using this category
+                    const servicesQuery = query(collection(db, 'services'), where('categoryId', '==', id));
+                    const servicesSnapshot = await getDocs(servicesQuery);
+                    
+                    if (!servicesSnapshot.empty) {
+                        const count = servicesSnapshot.size;
+                        if (!confirm(`לקטגוריה זו יש ${count} שירותים מקושרים. מחיקת הקטגוריה תסיר את הקישור מהשירותים. האם להמשיך?`)) {
+                            return;
+                        }
+                        
+                        // Update services to remove category reference
+                        for (const doc of servicesSnapshot.docs) {
+                            await updateDoc(doc.ref, { categoryId: null });
+                        }
+                    }
+                    
+                    // Delete category
+                    await deleteDoc(doc(db, 'categories', id));
+                    
+                    // Reload categories
+                    await loadCategories();
+                    
+                } catch (error) {
+                    console.error('Error deleting category:', error);
+                    alert('שגיאה במחיקת הקטגוריה. אנא נסה שוב.');
+                }
+            }
+        }
+        
+        function openInterestAreaModal(id = null) {
+            const modalTitle = document.getElementById('interest-area-modal-title');
+            const interestAreaForm = document.getElementById('interest-area-form');
+            const interestAreaId = document.getElementById('interest-area-id');
+            const interestAreaName = document.getElementById('interest-area-name');
+            const interestAreaDescription = document.getElementById('interest-area-description');
+            const interestAreaModal = document.getElementById('interest-area-modal');
+            
+            // Clear previous form data
+            interestAreaForm.reset();
+            document.getElementById('interest-area-name-error').textContent = '';
+            
+            if (id) {
+                // Edit existing interest area
+                modalTitle.textContent = 'עריכת תחום עניין';
+                
+                const area = allInterestAreas.find(a => a.id === id);
+                if (area) {
+                    interestAreaId.value = area.id;
+                    interestAreaName.value = area.name || '';
+                    interestAreaDescription.value = area.description || '';
+                }
+            } else {
+                // Add new interest area
+                modalTitle.textContent = 'הוספת תחום עניין חדש';
+                interestAreaId.value = '';
+            }
+            
+            // Show modal
+            interestAreaModal.style.display = 'flex';
+        }
+        
+        async function saveInterestArea(event) {
+            event.preventDefault();
+            
+            const interestAreaId = document.getElementById('interest-area-id').value;
+            const interestAreaName = document.getElementById('interest-area-name').value.trim();
+            const interestAreaDescription = document.getElementById('interest-area-description').value.trim();
+            const nameError = document.getElementById('interest-area-name-error');
+            
+            // Validate name
+            if (!interestAreaName) {
+                nameError.textContent = 'שם תחום העניין הוא שדה חובה';
+                return;
+            } else {
+                nameError.textContent = '';
+            }
+            
+            try {
+                const metadata = {
+                    lastUpdated: serverTimestamp()
+                };
+                
+                const areaData = {
+                    name: interestAreaName,
+                    description: interestAreaDescription,
+                    metadata: metadata
+                };
+                
+                if (interestAreaId) {
+                    // Update existing interest area
+                    await updateDoc(doc(db, 'interest-areas', interestAreaId), areaData);
+                } else {
+                    // Add new interest area
+                    await addDoc(collection(db, 'interest-areas'), areaData);
+                }
+                
+                // Close modal and reload interest areas
+                document.getElementById('interest-area-modal').style.display = 'none';
+                await loadInterestAreas();
+                
+            } catch (error) {
+                console.error('Error saving interest area:', error);
+                alert('שגיאה בשמירת תחום העניין. אנא נסה שוב.');
+            }
+        }
+        
+        async function deleteInterestArea(id) {
+            if (confirm(`האם אתה בטוח שברצונך למחוק את תחום העניין?`)) {
+                try {
+                    // Check if there are services associated with this interest area
+                    const serviceAreasQuery = query(collection(db, 'service-interest-areas'), where('interestAreaId', '==', id));
+                    const snapshot = await getDocs(serviceAreasQuery);
+                    
+                    if (!snapshot.empty) {
+                        const count = snapshot.size;
+                        if (!confirm(`לתחום עניין זה יש ${count} שירותים מקושרים. מחיקת תחום העניין תסיר את הקישור מהשירותים. האם להמשיך?`)) {
+                            return;
+                        }
+                        
+                        // Delete the mappings
+                        for (const doc of snapshot.docs) {
+                            await deleteDoc(doc.ref);
+                        }
+                    }
+                    
+                    // Delete interest area
+                    await deleteDoc(doc(db, 'interest-areas', id));
+                    
+                    // Reload interest areas
+                    await loadInterestAreas();
+                    
+                } catch (error) {
+                    console.error('Error deleting interest area:', error);
+                    alert('שגיאה במחיקת תחום העניין. אנא נסה שוב.');
+                }
+            }
+        }
+        
+        function openUserModal(id) {
+            const modalTitle = document.getElementById('user-modal-title');
+            const userForm = document.getElementById('user-form');
+            const userId = document.getElementById('user-id');
+            const userName = document.getElementById('user-name');
+            const userEmail = document.getElementById('user-email');
+            const userRole = document.getElementById('user-role');
+            const userStatus = document.getElementById('user-status');
+            const statusText = document.getElementById('status-text');
+            const userModal = document.getElementById('user-modal');
+            
+            // Clear previous form data
+            userForm.reset();
+            
+            // Find user
+            const user = allUsers.find(u => u.id === id);
+            if (user) {
+                userId.value = user.id;
+                userName.value = user.name || '';
+                userEmail.value = user.email || '';
+                userRole.value = user.role || 'user';
+                userStatus.checked = user.status === 'active';
+                statusText.textContent = user.status === 'active' ? 'פעיל' : 'מושהה';
+                
+                // Update status text when toggle changes
+                userStatus.onchange = function() {
+                    statusText.textContent = this.checked ? 'פעיל' : 'מושהה';
+                };
+                
+                // Show modal
+                userModal.style.display = 'flex';
+            }
+        }
+        
+        async function saveUser(event) {
+            event.preventDefault();
+            
+            const userId = document.getElementById('user-id').value;
+            const userName = document.getElementById('user-name').value.trim();
+            const userRole = document.getElementById('user-role').value;
+            const userStatus = document.getElementById('user-status').checked ? 'active' : 'pending';
+            
+            try {
+                const userData = {
+                    name: userName,
+                    role: userRole,
+                    status: userStatus,
+                    updatedAt: serverTimestamp()
+                };
+                
+                if (userId) {
+                    // Update existing user
+                    await updateDoc(doc(db, 'users', userId), userData);
+                    
+                    // Close modal and reload users
+                    document.getElementById('user-modal').style.display = 'none';
+                    await loadUsers();
+                }
+                
+            } catch (error) {
+                console.error('Error saving user:', error);
+                alert('שגיאה בשמירת המשתמש. אנא נסה שוב.');
+            }
+        }
+        
+        // Handle navigation
+        document.querySelectorAll('.nav-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons and sections
+                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.admin-section').forEach(section => section.classList.remove('active'));
+                
+                // Add active class to clicked button and corresponding section
+                button.classList.add('active');
+                const sectionId = `${button.dataset.section}-section`;
+                document.getElementById(sectionId).classList.add('active');
+                
+                // Clear search inputs
+                document.querySelectorAll('.search-input').forEach(input => {
+                    input.value = '';
+                });
+                
+                // Load data for the selected section if not already loaded
+                const section = button.dataset.section;
+                console.log(`מעבר ללשונית: ${section}`);
+                
+                if (section === 'services') {
+                    loadServices(); // loadServices כעת תמיד טוען קטגוריות קודם
+                } else if (section === 'categories') {
+                    loadCategories();
+                } else if (section === 'interest-areas') {
+                    loadInterestAreas();
+                } else if (section === 'users') {
+                    loadUsers();
+                }
+            });
+        });
+        
+        // Handle form buttons
+        addServiceButton.addEventListener('click', () => {
+            openServiceModal();
+        });
+        
+        addCategoryButton.addEventListener('click', () => {
+            openCategoryModal();
+        });
+        
+        addInterestAreaButton.addEventListener('click', () => {
+            openInterestAreaModal();
+        });
+        
+        // Edit functions
+        function editService(id) {
+            openServiceModal(id);
         }
         
         function editCategory(id) {
-            alert(`עריכת קטגוריה ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+            openCategoryModal(id);
         }
         
-        function deleteCategory(id) {
-            if (confirm(`האם אתה בטוח שברצונך למחוק את הקטגוריה?`)) {
-                alert(`מחיקת קטגוריה ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
-            }
+        function editInterestArea(id) {
+            openInterestAreaModal(id);
         }
         
         function editUser(id) {
-            alert(`עריכת משתמש ${id} - פונקציונליות זו תהיה זמינה בקרוב`);
+            openUserModal(id);
         }
         
+        // Setup modal close buttons
+        document.getElementById('close-service-modal').addEventListener('click', () => {
+            document.getElementById('service-modal').style.display = 'none';
+        });
+        
+        document.getElementById('cancel-service').addEventListener('click', () => {
+            document.getElementById('service-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-category-modal').addEventListener('click', () => {
+            document.getElementById('category-modal').style.display = 'none';
+        });
+        
+        document.getElementById('cancel-category').addEventListener('click', () => {
+            document.getElementById('category-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-interest-area-modal').addEventListener('click', () => {
+            document.getElementById('interest-area-modal').style.display = 'none';
+        });
+        
+        document.getElementById('cancel-interest-area').addEventListener('click', () => {
+            document.getElementById('interest-area-modal').style.display = 'none';
+        });
+        
+        document.getElementById('close-user-modal').addEventListener('click', () => {
+            document.getElementById('user-modal').style.display = 'none';
+        });
+        
+        document.getElementById('cancel-user').addEventListener('click', () => {
+            document.getElementById('user-modal').style.display = 'none';
+        });
+        
+        // Form submit handlers
+        document.getElementById('service-form').addEventListener('submit', saveService);
+        document.getElementById('category-form').addEventListener('submit', saveCategory);
+        document.getElementById('interest-area-form').addEventListener('submit', saveInterestArea);
+        document.getElementById('user-form').addEventListener('submit', saveUser);
+        
+        // Close modals when clicking outside
+        window.addEventListener('click', (event) => {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
+
         // Check if user is authenticated and has admin rights
         async function checkAdminStatus(user) {
             if (!user) {
@@ -443,13 +1819,41 @@
                 userInfo.textContent = `שלום ${user.displayName || userData.name || 'מנהל'}`;
                 showAdmin();
                 
-                // Load initial data
-                loadServices();
+                // Initialize search inputs
+                initializeSearchInputs();
+                
+                // טעינת קטגוריות קודם, ואז שירותים
+                console.log("טוען נתונים בפעם הראשונה...");
+                try {
+                    await loadCategories();
+                    await loadServices();
+                } catch (error) {
+                    console.error("שגיאה בטעינת נתונים ראשונית:", error);
+                }
                 
             } catch (error) {
                 console.error('Error checking admin status:', error);
                 showError('שגיאה בבדיקת הרשאות. אנא נסה שוב מאוחר יותר.');
             }
+        }
+        
+        function initializeSearchInputs() {
+            // Set up search functionality with debounce
+            servicesSearchInput.addEventListener('input', debounce(() => {
+                filterServices(servicesSearchInput.value);
+            }, 300));
+            
+            categoriesSearchInput.addEventListener('input', debounce(() => {
+                filterCategories(categoriesSearchInput.value);
+            }, 300));
+            
+            interestAreasSearchInput.addEventListener('input', debounce(() => {
+                filterInterestAreas(interestAreasSearchInput.value);
+            }, 300));
+            
+            usersSearchInput.addEventListener('input', debounce(() => {
+                filterUsers(usersSearchInput.value);
+            }, 300));
         }
         
         // Wait for auth state to initialize
@@ -461,39 +1865,6 @@
                 console.log('No user signed in');
                 window.location.href = '/login';
             }
-        });
-        
-        // Handle navigation
-        document.querySelectorAll('.nav-button').forEach(button => {
-            button.addEventListener('click', () => {
-                // Remove active class from all buttons and sections
-                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-                document.querySelectorAll('.admin-section').forEach(section => section.classList.remove('active'));
-                
-                // Add active class to clicked button and corresponding section
-                button.classList.add('active');
-                const sectionId = `${button.dataset.section}-section`;
-                document.getElementById(sectionId).classList.add('active');
-                
-                // Load data for the selected section if not already loaded
-                const section = button.dataset.section;
-                if (section === 'services') {
-                    loadServices();
-                } else if (section === 'categories') {
-                    loadCategories();
-                } else if (section === 'users') {
-                    loadUsers();
-                }
-            });
-        });
-        
-        // Handle form buttons
-        addServiceButton.addEventListener('click', () => {
-            alert('הוספת שירות חדש - פונקציונליות זו תהיה זמינה בקרוב');
-        });
-        
-        addCategoryButton.addEventListener('click', () => {
-            alert('הוספת קטגוריה חדשה - פונקציונליות זו תהיה זמינה בקרוב');
         });
         
         // Handle logout
@@ -508,5 +1879,4 @@
         });
     </script>
 </body>
-</html> 
 </html> 
