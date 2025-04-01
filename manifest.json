@@ -39,6 +39,36 @@
       "sizes": "138x138",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/android/mipmap-mdpi.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/android/mipmap-hdpi.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/android/mipmap-xhdpi.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/android/mipmap-xxhdpi.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/android/mipmap-xxxhdpi.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

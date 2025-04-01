@@ -21,6 +21,11 @@ const ASSETS_TO_CACHE = [
   '/icons/search.png',  
   '/icons/logo.png',
   '/icons/google-logo.png',
+  '/icons/android/mipmap-mdpi.png',
+  '/icons/android/mipmap-hdpi.png',
+  '/icons/android/mipmap-xhdpi.png',
+  '/icons/android/mipmap-xxhdpi.png',
+  '/icons/android/mipmap-xxxhdpi.png',
   'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
 ];
 
@@ -192,7 +197,7 @@ self.addEventListener('push', (event) => {
     
     const options = {
       body: data.body || 'יש עדכון חדש במידע!',
-      icon: '/icons/icon-192x192.png',
+      icon: '/icons/android/mipmap-xxxhdpi.png',
       dir: 'rtl', // Right-to-left for Hebrew
       lang: 'he'
     };
