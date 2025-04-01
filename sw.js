@@ -52,12 +52,21 @@ self.addEventListener('activate', (event) => {
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
             console.log(`Deleting old cache: ${cacheName}`);
-            return caches.delete(cacheName);
+            return caches.delete(cacheName).catch(error => {
+              console.error(`Failed to delete cache ${cacheName}:`, error);
+              // Continue execution even if deletion fails
+              return Promise.resolve();
+            });
           }
-        })
+          return Promise.resolve();
+        }).filter(Boolean)
       );
     }).then(() => {
       // Claim clients to ensure the new service worker takes control immediately
+      return self.clients.claim();
+    }).catch(error => {
+      console.error('Cache cleanup failed:', error);
+      // Continue with activation even if cache cleanup fails
       return self.clients.claim();
     })
   );
