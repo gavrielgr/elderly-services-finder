@@ -21,6 +21,7 @@ export const handler = async (event, context) => {
     const allowedOrigins = [
       'https://elderly-service-finder.netlify.app',
       'https://elderly-services-finder.netlify.app',
+      'https://plus.yadbeyad-care.co.il',
       'http://localhost:5173',
       'http://localhost:5174'
     ];
