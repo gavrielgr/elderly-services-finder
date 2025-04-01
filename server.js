@@ -166,6 +166,44 @@ app.get('/api/config', (req, res) => {
     }
 });
 
+// נקודת קצה לאתחול מאובטח של מערכת האימות
+app.get('/api/auth/init', (req, res) => {
+    try {
+        // בדיקת המקור של הבקשה כמו בנקודת הקצה הקודמת
+        const origin = req.headers.origin || req.headers.referer;
+        const allowedOrigins = [
+            'https://elderly-service-finder.firebaseapp.com',
+            'https://elderly-service-finder.web.app',
+            'http://localhost:3000',
+            'http://localhost:5000',
+            'http://localhost:5173'
+        ];
+        
+        if (origin && !allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+            console.warn(`Unauthorized auth init request from: ${origin}`);
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        
+        // יצירת טוקן אימות מיוחד בצד השרת
+        const authToken = auth.createCustomToken('server-auth')
+            .then(token => {
+                // החזרת טוקן האימות לקליינט
+                res.json({
+                    status: 'success',
+                    authToken: token,
+                    projectId: process.env.VITE_FIREBASE_PROJECT_ID
+                });
+            })
+            .catch(error => {
+                console.error('Error creating auth token:', error);
+                res.status(500).json({ error: 'Authentication token creation failed' });
+            });
+    } catch (error) {
+        console.error('Error in /api/auth/init:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

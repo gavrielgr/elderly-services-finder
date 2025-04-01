@@ -193,31 +193,45 @@
         
         // Initialize Firebase directly with config variables
         try {
-            console.log("Initializing Firebase directly");
+            console.log("Initializing Firebase authentication");
             
-            // הערה: קונפיגורציה זו תוחלף בזמן בנייה עם ערכים אמיתיים מ-.env
-            // המפתחות בקוד זה הם רק מחזיקי מקום שיוחלפו בתהליך הבנייה
-            const firebaseConfig = {
-                apiKey: "AIzaSyCWZoPfS7MUse-SEhMNQZ16-05AXXIb3nE",
-                authDomain: "elderly-service-finder.firebaseapp.com", 
-                projectId: "elderly-service-finder",
-                storageBucket: "elderly-service-finder.firebasestorage.app",
-                messagingSenderId: "254351747104", 
-                appId: "1:254351747104:web:e3d796425cd2eaf20af445"
-            };
-            
-            firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth();
-            const db = firebase.firestore();
-            console.log("Firebase initialized successfully");
-            
-            // Set up auth functionality
-            setupApp(auth, db);
+            // Use a secure endpoint to handle authentication instead of exposing keys
+            // Similar to how the main page handles authentication
+            fetch('/api/auth/init')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Authentication initialization failed');
+                    }
+                    return response.json();
+                })
+                .then(authData => {
+                    console.log("Auth initialization successful");
+                    
+                    // Sign in with custom token provided by the server
+                    return firebase.auth().signInWithCustomToken(authData.authToken)
+                        .then(userCredential => {
+                            console.log("Successfully authenticated with server token");
+                            // Set up auth functionality with the authenticated user
+                            setupApp(firebase.auth(), firebase.firestore());
+                        })
+                        .catch(error => {
+                            console.error("Error signing in with custom token:", error);
+                            throw error;
+                        });
+                })
+                .catch(error => {
+                    console.error("Error initializing authentication:", error);
+                    document.getElementById('checking-auth').innerHTML = `
+                        <p>שגיאה באתחול מערכת</p>
+                        <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
+                        <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
+                    `;
+                });
         } catch (error) {
-            console.error("Error initializing Firebase:", error);
+            console.error("Error in authentication setup:", error);
             document.getElementById('checking-auth').innerHTML = `
                 <p>שגיאה באתחול מערכת</p>
-                <div class="error-message">לא ניתן לאתחל את Firebase. נסה לרענן את הדף.</div>
+                <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
                 <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
             `;
         }
