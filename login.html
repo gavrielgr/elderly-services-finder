@@ -331,7 +331,7 @@
                 
             // Check if user is already signed in
             auth.onAuthStateChanged((user) => {
-                if (user) {
+                if (user && user.email) {
                     console.log("User already signed in:", user.email);
                     // Redirect to admin page
                     window.location.href = '/admin.html';
