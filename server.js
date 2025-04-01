@@ -1,9 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -13,31 +10,55 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://elderly-service-finder.firebaseapp.com',
+    'https://elderly-service-finder.web.app',
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'http://localhost:5173',
+    'http://localhost:5174'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 
 console.log('Server starting with configuration:');
 console.log('Project ID:', FIREBASE_PROJECT_ID);
+console.log('Environment:', process.env.NODE_ENV || 'development');
 
-// אתחול Firebase Admin
+// Firebase Admin initialization
+let auth;
+let db;
+let isFirebaseInitialized = false;
+
 try {
-    const adminApp = initializeApp({
-        credential: cert({
-            projectId: FIREBASE_PROJECT_ID,
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-        })
-    });
-    console.log('Firebase Admin SDK initialized successfully');
+    if (process.env.NODE_ENV === 'production') {
+        const { initializeApp, cert } = await import('firebase-admin/app');
+        const { getFirestore } = await import('firebase-admin/firestore');
+        const { getAuth } = await import('firebase-admin/auth');
+        
+        const adminApp = initializeApp({
+            credential: cert({
+                projectId: FIREBASE_PROJECT_ID,
+                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+            })
+        });
+        
+        db = getFirestore();
+        auth = getAuth();
+        isFirebaseInitialized = true;
+        console.log('Firebase Admin SDK initialized successfully');
+    } else {
+        console.log('Running in development mode - Firebase Admin SDK not initialized');
+    }
 } catch (error) {
     console.error('Error initializing Firebase Admin SDK:', error);
-    process.exit(1);
+    console.log('Continuing without Firebase Admin SDK');
 }
-
-const db = getFirestore();
-const auth = getAuth();
 
 // קאש בזיכרון
 let cache = {
@@ -70,6 +91,44 @@ app.get('/api/data', async (req, res) => {
 
         console.log('Cache miss or expired, fetching fresh data...');
         
+        // Check if we're in development mode (Firebase not initialized)
+        if (!isFirebaseInitialized || !db) {
+            console.log('Development mode detected, returning mock data');
+            
+            // Create mock data for development
+            const mockServices = [
+                { id: 'service1', name: 'שירות לדוגמה 1', description: 'תיאור שירות לדוגמה 1', categoryId: 'cat1' },
+                { id: 'service2', name: 'שירות לדוגמה 2', description: 'תיאור שירות לדוגמה 2', categoryId: 'cat2' },
+                { id: 'service3', name: 'שירות לדוגמה 3', description: 'תיאור שירות לדוגמה 3', categoryId: 'cat1' }
+            ];
+            
+            const mockCategories = [
+                { id: 'cat1', name: 'קטגוריה 1', description: 'תיאור קטגוריה 1' },
+                { id: 'cat2', name: 'קטגוריה 2', description: 'תיאור קטגוריה 2' }
+            ];
+            
+            const mockInterestAreas = [
+                { id: 'area1', name: 'תחום עניין 1', description: 'תיאור תחום עניין 1' },
+                { id: 'area2', name: 'תחום עניין 2', description: 'תיאור תחום עניין 2' }
+            ];
+            
+            // Update the cache with mock data
+            cache = {
+                services: mockServices,
+                categories: mockCategories,
+                interestAreas: mockInterestAreas,
+                lastFetch: Date.now()
+            };
+            
+            return res.json({
+                services: mockServices,
+                categories: mockCategories,
+                interestAreas: mockInterestAreas,
+                mockData: true
+            });
+        }
+        
+        // Production mode with Firebase initialized
         console.log('Fetching services...');
         const servicesSnapshot = await db.collection('services').get();
         const services = servicesSnapshot.docs.map(doc => ({
@@ -138,7 +197,8 @@ app.get('/api/config', (req, res) => {
             'https://elderly-service-finder.web.app',
             'http://localhost:3000',
             'http://localhost:5000',
-            'http://localhost:5173'
+            'http://localhost:5173',
+            'http://localhost:5174'
         ];
         
         // אם המקור אינו ברשימת המקורות המורשים, נחזיר שגיאה
@@ -167,7 +227,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // נקודת קצה לאתחול מאובטח של מערכת האימות
-app.get('/api/auth/init', (req, res) => {
+app.get('/api/auth/init', async (req, res) => {
     try {
         // בדיקת המקור של הבקשה כמו בנקודת הקצה הקודמת
         const origin = req.headers.origin || req.headers.referer;
@@ -176,7 +236,8 @@ app.get('/api/auth/init', (req, res) => {
             'https://elderly-service-finder.web.app',
             'http://localhost:3000',
             'http://localhost:5000',
-            'http://localhost:5173'
+            'http://localhost:5173',
+            'http://localhost:5174'
         ];
         
         if (origin && !allowedOrigins.some(allowed => origin.startsWith(allowed))) {
@@ -184,27 +245,58 @@ app.get('/api/auth/init', (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
         
-        // יצירת טוקן אימות מיוחד בצד השרת
-        const authToken = auth.createCustomToken('server-auth')
-            .then(token => {
+        if (isFirebaseInitialized && auth) {
+            try {
+                // יצירת טוקן אימות מיוחד בצד השרת
+                const token = await auth.createCustomToken('server-auth');
+                
                 // החזרת טוקן האימות לקליינט
                 res.json({
                     status: 'success',
                     authToken: token,
                     projectId: process.env.VITE_FIREBASE_PROJECT_ID
                 });
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error creating auth token:', error);
                 res.status(500).json({ error: 'Authentication token creation failed' });
+            }
+        } else {
+            // For development mode, send a mock token
+            console.log('Sending mock auth token for development mode');
+            res.json({
+                status: 'success',
+                authToken: 'dev-mock-token-12345',
+                projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'elderly-service-finder',
+                developmentMode: true
             });
+        }
     } catch (error) {
         console.error('Error in /api/auth/init:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-const PORT = process.env.PORT || 3000;
+// Create a static file middleware for development only
+if (process.env.NODE_ENV !== 'production') {
+    // For development, serve static files
+    app.use(express.static(__dirname));
+    
+    // Fallback route for all other requests in development
+    app.get('*', (req, res) => {
+        // Only serve HTML/static files for GET requests
+        if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+            if (req.path === '/login') {
+                res.sendFile(__dirname + '/login.html');
+            } else {
+                res.sendFile(__dirname + '/index.html');
+            }
+        } else {
+            res.status(404).json({ error: 'Not found' });
+        }
+    });
+}
+
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Access the API at http://localhost:${PORT}/api/data`);

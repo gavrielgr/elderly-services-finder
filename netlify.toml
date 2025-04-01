@@ -32,6 +32,24 @@
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[redirects]]
+  from = "/api/auth/init"
+  to = "/.netlify/functions/auth-init"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/config"
+  to = "/.netlify/functions/config"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/data"
+  to = "/.netlify/functions/data"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/login"
   to = "/login.html"
   status = 200

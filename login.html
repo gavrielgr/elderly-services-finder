@@ -167,6 +167,13 @@
     <script>
         console.log("Script started - initial loading");
 
+        // DOM elements
+        const loginBtn = document.getElementById('login-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const errorBox = document.getElementById('error-box');
+        const loginControls = document.getElementById('login-controls');
+        const checkingAuth = document.getElementById('checking-auth');
+
         // Check if Firebase SDK loaded correctly
         if (typeof firebase === 'undefined') {
             console.error("Firebase SDK not loaded - scripts might not have loaded properly");
@@ -191,42 +198,96 @@
             `;
         }, 10000);
         
-        // Initialize Firebase directly with config variables
+        // Initialize Firebase
         try {
             console.log("Initializing Firebase authentication");
             
-            // Use a secure endpoint to handle authentication instead of exposing keys
-            // Similar to how the main page handles authentication
-            fetch('/api/auth/init')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Authentication initialization failed');
-                    }
-                    return response.json();
-                })
-                .then(authData => {
-                    console.log("Auth initialization successful");
-                    
-                    // Sign in with custom token provided by the server
-                    return firebase.auth().signInWithCustomToken(authData.authToken)
-                        .then(userCredential => {
-                            console.log("Successfully authenticated with server token");
-                            // Set up auth functionality with the authenticated user
-                            setupApp(firebase.auth(), firebase.firestore());
-                        })
-                        .catch(error => {
-                            console.error("Error signing in with custom token:", error);
-                            throw error;
+            // Check if we're in development mode
+            const isDevelopment = window.location.hostname === 'localhost' || 
+                                 window.location.hostname === '127.0.0.1';
+            
+            if (isDevelopment) {
+                console.log("Development mode detected, using simplified flow");
+                
+                // Get Firebase config from server but simplified flow
+                fetch('/api/config')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch Firebase configuration');
+                        }
+                        return response.json();
+                    })
+                    .then(firebaseConfig => {
+                        // Initialize Firebase with config from server
+                        firebase.initializeApp(firebaseConfig);
+                        console.log("Firebase initialized with server config (dev mode)");
+                        
+                        // Skip firebase auth and just show login controls
+                        clearTimeout(authCheckTimeout);
+                        checkingAuth.classList.add('hidden');
+                        loginControls.classList.remove('hidden');
+                        
+                        // Set up simple login button for development
+                        loginBtn.addEventListener('click', () => {
+                            console.log("Login clicked in development mode");
+                            window.location.href = '/admin';
                         });
-                })
-                .catch(error => {
-                    console.error("Error initializing authentication:", error);
-                    document.getElementById('checking-auth').innerHTML = `
-                        <p>שגיאה באתחול מערכת</p>
-                        <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
-                        <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
-                    `;
-                });
+                    })
+                    .catch(error => {
+                        console.error("Error in development setup:", error);
+                        document.getElementById('checking-auth').innerHTML = `
+                            <p>שגיאה באתחול מערכת</p>
+                            <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
+                            <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
+                        `;
+                    });
+            } else {
+                // Production flow: get config, then auth token, then sign in
+                fetch('/api/config')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch Firebase configuration');
+                        }
+                        return response.json();
+                    })
+                    .then(firebaseConfig => {
+                        // Initialize Firebase with config from server
+                        firebase.initializeApp(firebaseConfig);
+                        console.log("Firebase initialized with server config");
+                        
+                        // Then initialize authentication
+                        return fetch('/api/auth/init');
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Authentication initialization failed: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(authData => {
+                        console.log("Auth initialization successful");
+                        
+                        // Sign in with custom token provided by the server
+                        return firebase.auth().signInWithCustomToken(authData.authToken)
+                            .then(userCredential => {
+                                console.log("Successfully authenticated with server token");
+                                // Set up auth functionality with the authenticated user
+                                setupApp(firebase.auth(), firebase.firestore());
+                            })
+                            .catch(error => {
+                                console.error("Error signing in with custom token:", error);
+                                throw error;
+                            });
+                    })
+                    .catch(error => {
+                        console.error("Error initializing authentication:", error);
+                        document.getElementById('checking-auth').innerHTML = `
+                            <p>שגיאה באתחול מערכת</p>
+                            <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
+                            <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
+                        `;
+                    });
+            }
         } catch (error) {
             console.error("Error in authentication setup:", error);
             document.getElementById('checking-auth').innerHTML = `
@@ -235,13 +296,6 @@
                 <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
             `;
         }
-        
-        // DOM elements
-        const loginBtn = document.getElementById('login-btn');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const errorBox = document.getElementById('error-box');
-        const loginControls = document.getElementById('login-controls');
-        const checkingAuth = document.getElementById('checking-auth');
         
         // Functions
         function showLoading() {
@@ -261,63 +315,54 @@
             hideLoading();
         }
         
+        function hideError() {
+            errorBox.classList.add('hidden');
+        }
+        
         function showLoginControls() {
             checkingAuth.classList.add('hidden');
             loginControls.classList.remove('hidden');
         }
         
         // Main app setup function
-        function setupApp(auth, db) {
-            console.log("Setting up app with auth and db");
-            
-            // Check if already authenticated
-            auth.onAuthStateChanged(async (user) => {
-                // Clear the timeout since we got a response
-                clearTimeout(authCheckTimeout);
+        function setupApp(auth, firestore) {
+            // Clear the timeout since auth is complete
+            clearTimeout(authCheckTimeout);
                 
+            // Check if user is already signed in
+            auth.onAuthStateChanged((user) => {
                 if (user) {
-                    console.log('User is already signed in, checking admin status');
-                    try {
-                        const userDoc = await db.collection('users').doc(user.uid).get();
-                        
-                        if (userDoc.exists && 
-                            userDoc.data().role === 'admin' && 
-                            userDoc.data().status === 'active') {
-                            
-                            // User is already an admin, redirect
-                            console.log('User is an admin, redirecting to admin page');
-                            window.location.href = '/admin';
-                            return;
-                        }
-                        
-                        // Not an admin, show login
-                        console.log('User exists but is not an admin, showing login');
-                        showLoginControls();
-                        
-                    } catch (error) {
-                        console.error('Error checking admin status:', error);
-                        showLoginControls();
-                    }
-                } else {
-                    // No user, show login
-                    console.log('No user signed in, showing login form');
-                    showLoginControls();
+                    console.log("User already signed in:", user.email);
+                    // Redirect to admin page
+                    window.location.href = '/admin.html';
+                    return;
                 }
+                
+                // Show login controls if no user is signed in
+                checkingAuth.classList.add('hidden');
+                loginControls.classList.remove('hidden');
             });
             
-            // Set up login button
-            loginBtn.addEventListener('click', async () => {
-                try {
-                    showLoading();
-                    
-                    // Sign in with Google
-                    const provider = new firebase.auth.GoogleAuthProvider();
-                    await auth.signInWithPopup(provider);
-                    
-                } catch (error) {
-                    console.error('Google sign-in error:', error);
-                    showError('שגיאה בהתחברות: ' + (error.message || 'בעיה לא ידועה'));
-                }
+            // Set up Google auth provider for the login button
+            loginBtn.addEventListener('click', () => {
+                showLoading();
+                hideError();
+                
+                const provider = new firebase.auth.GoogleAuthProvider();
+                
+                auth.signInWithPopup(provider)
+                    .then((result) => {
+                        const user = result.user;
+                        console.log("Google Sign-in successful:", user.email);
+                        
+                        // Add admin check here if needed
+                        window.location.href = '/admin.html';
+                    })
+                    .catch((error) => {
+                        console.error("Google Sign-in error:", error);
+                        showError("שגיאה בהתחברות: " + error.message);
+                        hideLoading();
+                    });
             });
         }
     </script>

@@ -857,7 +857,11 @@
             try {
                 servicesListContainer.innerHTML = '<div class="spinner"></div>';
                 
-                // תמיד לטעון קטגוריות קודם כדי לוודא שהן זמינות להצגה
+                // Check if we're in development mode
+                const isDevelopment = window.location.hostname === 'localhost' || 
+                                     window.location.hostname === '127.0.0.1';
+                
+                // Always load categories first to ensure they are available
                 console.log("טוען קטגוריות לפני שירותים...");
                 if (allCategories.length === 0) {
                     await loadCategories();
@@ -876,6 +880,27 @@
                     return;
                 }
                 
+                if (isDevelopment) {
+                    // Use API endpoint in development mode
+                    console.log('Development mode: Loading services from API');
+                    const response = await fetch('/api/data');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch data from API');
+                    }
+                    
+                    const data = await response.json();
+                    allServices = data.services || [];
+                    
+                    // Save to cache
+                    saveToCache('services', allServices);
+                    
+                    console.log(`שירותים שנטענו מהשרת: ${allServices.length}`);
+                    renderServices(allServices);
+                    servicesResultsInfo.textContent = `${allServices.length} שירותים`;
+                    return;
+                }
+
+                // Production mode: use Firestore directly
                 const servicesQuery = query(collection(db, 'services'), orderBy('name'));
                 const querySnapshot = await getDocs(servicesQuery);
                 
@@ -1022,11 +1047,11 @@
         
         async function loadCategories() {
             try {
-                // אם כבר יש קטגוריות טעונות, אין צורך לטעון שוב
-                if (allCategories.length > 0) {
-                    console.log("קטגוריות כבר טעונות:", allCategories.length);
-                    return allCategories;
-                }
+                categoriesListContainer.innerHTML = '<div class="spinner"></div>';
+                
+                // Check if we're in development mode
+                const isDevelopment = window.location.hostname === 'localhost' || 
+                                     window.location.hostname === '127.0.0.1';
                 
                 // Check cache first
                 const cachedCategories = getFromCache('categories');
@@ -1035,21 +1060,38 @@
                     allCategories = cachedCategories;
                     renderCategories(allCategories);
                     categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
-                    return allCategories;
+                    return;
                 }
                 
-                console.log("טוען קטגוריות מ-Firestore...");
-                categoriesListContainer.innerHTML = '<div class="spinner"></div>';
-                
+                if (isDevelopment) {
+                    // Use API endpoint in development mode
+                    console.log('Development mode: Loading categories from API');
+                    const response = await fetch('/api/data');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch data from API');
+                    }
+                    
+                    const data = await response.json();
+                    allCategories = data.categories || [];
+                    
+                    // Save to cache
+                    saveToCache('categories', allCategories);
+                    
+                    console.log(`קטגוריות שנטענו מהשרת: ${allCategories.length}`);
+                    renderCategories(allCategories);
+                    categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
+                    return;
+                }
+
+                // Production mode: use Firestore directly
                 const categoriesQuery = query(collection(db, 'categories'), orderBy('name'));
                 const querySnapshot = await getDocs(categoriesQuery);
                 
                 if (querySnapshot.empty) {
-                    console.log("לא נמצאו קטגוריות");
                     categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה.</div>';
                     categoriesResultsInfo.textContent = '0 קטגוריות';
                     allCategories = [];
-                    return allCategories;
+                    return;
                 }
                 
                 allCategories = querySnapshot.docs.map(doc => ({
@@ -1057,7 +1099,7 @@
                     ...doc.data()
                 }));
                 
-                console.log(`נטענו ${allCategories.length} קטגוריות:`);
+                console.log(`קטגוריות שנטענו: ${allCategories.length}`);
                 
                 // Save to cache
                 saveToCache('categories', allCategories);
@@ -1065,13 +1107,10 @@
                 renderCategories(allCategories);
                 categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
                 
-                return allCategories;
-                
             } catch (error) {
                 console.error('Error loading categories:', error);
                 categoriesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת הקטגוריות. אנא נסה שוב.</div>';
                 categoriesResultsInfo.textContent = '';
-                return [];
             }
         }
         
@@ -1114,8 +1153,12 @@
             try {
                 interestAreasListContainer.innerHTML = '<div class="spinner"></div>';
                 
+                // Check if we're in development mode
+                const isDevelopment = window.location.hostname === 'localhost' || 
+                                     window.location.hostname === '127.0.0.1';
+                
                 // Check cache first
-                const cachedInterestAreas = getFromCache('interest-areas');
+                const cachedInterestAreas = getFromCache('interestAreas');
                 if (cachedInterestAreas) {
                     console.log('Using cached interest areas data');
                     allInterestAreas = cachedInterestAreas;
@@ -1124,8 +1167,42 @@
                     return;
                 }
                 
-                // שלב 1: טעינת כל תחומי העניין
-                const interestAreasQuery = query(collection(db, 'interest-areas'), orderBy('name'));
+                if (isDevelopment) {
+                    console.log('Development mode: Fetching interest areas from API');
+                    
+                    // Fetch from API
+                    try {
+                        const response = await fetch('/api/data');
+                        if (!response.ok) {
+                            throw new Error(`API responded with status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        allInterestAreas = data.interestAreas || [];
+                        
+                        // Add a random services count for display purposes
+                        allInterestAreas = allInterestAreas.map(area => ({
+                            ...area,
+                            servicesCount: Math.floor(Math.random() * 15) + 1
+                        }));
+                        
+                        // Save to cache
+                        saveToCache('interestAreas', allInterestAreas);
+                        
+                        // Render the data
+                        renderInterestAreas(allInterestAreas);
+                        interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
+                        return;
+                    } catch (error) {
+                        console.error('Error fetching from API:', error);
+                        interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי עניין. אנא נסה שוב.</div>';
+                        interestAreasResultsInfo.textContent = '';
+                        return;
+                    }
+                }
+                
+                // Production mode - fetch from Firestore
+                const interestAreasQuery = query(collection(db, 'interestAreas'), orderBy('order'));
                 const interestAreasSnapshot = await getDocs(interestAreasQuery);
                 
                 if (interestAreasSnapshot.empty) {
@@ -1135,33 +1212,34 @@
                     return;
                 }
                 
-                // שלב 2: טעינת כל הקשרים בין שירותים לתחומי עניין לחישוב ספירה
-                const serviceAreasSnapshot = await getDocs(collection(db, 'service-interest-areas'));
+                allInterestAreas = [];
                 
-                // שלב 3: יצירת מפה לספירת שירותים לכל תחום עניין
-                const areaServicesCount = {};
-                serviceAreasSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.interestAreaId) {
-                        areaServicesCount[data.interestAreaId] = (areaServicesCount[data.interestAreaId] || 0) + 1;
-                    }
-                });
-                
-                allInterestAreas = interestAreasSnapshot.docs.map(doc => {
-                    const area = { id: doc.id, ...doc.data() };
-                    const servicesCount = areaServicesCount[area.id] || 0;
-                    return { ...area, servicesCount };
-                });
+                for (const doc of interestAreasSnapshot.docs) {
+                    const interestArea = {
+                        id: doc.id,
+                        ...doc.data()
+                    };
+                    
+                    // Get count of services associated with this interest area
+                    const servicesQuery = query(
+                        collection(db, 'services'),
+                        where('interestAreaId', '==', doc.id)
+                    );
+                    const servicesSnapshot = await getDocs(servicesQuery);
+                    interestArea.servicesCount = servicesSnapshot.size;
+                    
+                    allInterestAreas.push(interestArea);
+                }
                 
                 // Save to cache
-                saveToCache('interest-areas', allInterestAreas);
+                saveToCache('interestAreas', allInterestAreas);
                 
                 renderInterestAreas(allInterestAreas);
                 interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
                 
             } catch (error) {
                 console.error('Error loading interest areas:', error);
-                interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי העניין. אנא נסה שוב.</div>';
+                interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי עניין. אנא נסה שוב.</div>';
                 interestAreasResultsInfo.textContent = '';
             }
         }
@@ -1206,11 +1284,54 @@
             try {
                 usersListContainer.innerHTML = '<div class="spinner"></div>';
                 
+                // Check if we're in development mode
+                const isDevelopment = window.location.hostname === 'localhost' || 
+                                     window.location.hostname === '127.0.0.1';
+                
                 // Check cache first
                 const cachedUsers = getFromCache('users');
                 if (cachedUsers) {
                     console.log('Using cached users data');
                     allUsers = cachedUsers;
+                    renderUsers(allUsers);
+                    usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
+                    return;
+                }
+                
+                if (isDevelopment) {
+                    // Create mock users for development mode
+                    console.log('Development mode: Creating mock users');
+                    
+                    allUsers = [
+                        { 
+                            id: 'user1', 
+                            name: 'משתמש לדוגמה 1', 
+                            email: 'admin@example.com', 
+                            role: 'admin', 
+                            status: 'active', 
+                            lastLogin: new Date() 
+                        },
+                        { 
+                            id: 'user2', 
+                            name: 'משתמש לדוגמה 2', 
+                            email: 'user2@example.com', 
+                            role: 'editor', 
+                            status: 'active', 
+                            lastLogin: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) // 2 days ago
+                        },
+                        { 
+                            id: 'user3', 
+                            name: 'משתמש לדוגמה 3', 
+                            email: 'user3@example.com', 
+                            role: 'admin', 
+                            status: 'inactive', 
+                            lastLogin: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) // 10 days ago
+                        }
+                    ];
+                    
+                    // Save to cache
+                    saveToCache('users', allUsers);
+                    
                     renderUsers(allUsers);
                     usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
                     return;
@@ -2183,8 +2304,44 @@
             }, 300));
         }
         
+        // Functions for development mode
+        function displayUserInfo(user) {
+            userInfo.textContent = `שלום ${user.displayName || 'מנהל'}`;
+        }
+        
+        function showAdminInterface() {
+            // This is similar to showAdmin but specifically for development mode
+            hideLoading();
+            errorContainer.classList.add('hidden');
+            adminContainer.style.display = 'block';
+        }
+        
         // Wait for auth state to initialize
         onAuthStateChanged(auth, async (user) => {
+            // Check if we're in development mode first
+            const isDevelopment = window.location.hostname === 'localhost' || 
+                                  window.location.hostname === '127.0.0.1';
+            
+            if (isDevelopment) {
+                console.log('Development mode detected in admin page');
+                hideLoading();
+                displayUserInfo({
+                    displayName: 'Development User',
+                    email: 'dev@example.com'
+                });
+                showAdminInterface();
+                
+                // Load initial data
+                try {
+                    await loadCategories();
+                    await loadServices();
+                } catch (error) {
+                    console.error("שגיאה בטעינת נתונים בפיתוח:", error);
+                }
+                return;
+            }
+            
+            // Normal production flow
             if (user) {
                 console.log('User is signed in:', user.uid);
                 await checkAdminStatus(user);

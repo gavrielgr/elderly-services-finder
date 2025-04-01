@@ -4,8 +4,11 @@
   "version": "1.99.94",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"node server.js\" \"vite\"",
+    "server": "node server.js",
+    "client": "vite",
     "build": "vite build && node post-build.js",
+    "build:netlify": "vite build && node post-build.js",
     "preview": "vite preview",
     "bump": "node build.js --bump",
     "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
     "vite": "^5.0.8"
   }
 }
