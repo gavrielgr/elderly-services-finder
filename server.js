@@ -128,6 +128,44 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
+// נקודת קצה מאובטחת לקונפיגורציית Firebase
+app.get('/api/config', (req, res) => {
+    try {
+        // בדיקת המקור של הבקשה
+        const origin = req.headers.origin || req.headers.referer;
+        const allowedOrigins = [
+            'https://elderly-service-finder.firebaseapp.com',
+            'https://elderly-service-finder.web.app',
+            'http://localhost:3000',
+            'http://localhost:5000',
+            'http://localhost:5173'
+        ];
+        
+        // אם המקור אינו ברשימת המקורות המורשים, נחזיר שגיאה
+        if (origin && !allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+            console.warn(`Unauthorized config request from: ${origin}`);
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        
+        // שליחת רק המידע הנדרש לקליינט בצורה מאובטחת
+        // הערה: חלק מהמידע עדיין יהיה נגיש בצד הקליינט, אבל זה הכרחי לפעולה תקינה
+        // ורצוי להגדיר כללי אבטחה מתאימים ב-Firebase
+        const clientConfig = {
+            apiKey: process.env.VITE_FIREBASE_API_KEY,
+            authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.VITE_FIREBASE_PROJECT_ID,
+            storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.VITE_FIREBASE_APP_ID
+        };
+        
+        res.json(clientConfig);
+    } catch (error) {
+        console.error('Error in /api/config:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
