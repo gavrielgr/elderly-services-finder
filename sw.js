@@ -1,7 +1,7 @@
 // Service Worker for Elderly Services Finder
 
 // This version is injected during build
-const CACHE_VERSION = '1.99.94'; // Updated version
+const CACHE_VERSION = '1.99.95'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 
 // Function to normalize URL
@@ -26,6 +26,8 @@ const ASSETS_TO_CACHE = [
   '/icons/android/mipmap-xhdpi.png',
   '/icons/android/mipmap-xxhdpi.png',
   '/icons/android/mipmap-xxxhdpi.png',
+  '/icons/android-512x512.png',
+  '/icons/apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/fuse.js@6.6.2/dist/fuse.esm.js'
 ];
 
