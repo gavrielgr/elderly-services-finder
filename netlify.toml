@@ -11,7 +11,18 @@
     Service-Worker-Allowed = "/"
 
 [[headers]]
-  for = "/js/config/*.js"
+  for = "/js/**/*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+
+[[headers]]
+  for = "/js/config/firebase.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/assets/*.js"
   [headers.values]
     Content-Type = "application/javascript"
 
