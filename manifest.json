@@ -36,7 +36,7 @@
     },
     {
       "src": "/icons/logo.png",
-      "sizes": "192x192",
+      "sizes": "138x138",
       "type": "image/png",
       "purpose": "any maskable"
     }
