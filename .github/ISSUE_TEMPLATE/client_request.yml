@@ -1,0 +1,53 @@
+name: בקשת לקוח
+description: טופס לפניות ובקשות חדשות
+title: "[בקשת לקוח]: "
+labels: ["📥 חדש"]
+body:
+  - type: input
+    id: client-name
+    attributes:
+      label: שם הלקוח
+      description: נא להזין את שמך או שם החברה
+      placeholder: ישראל ישראלי
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: סוג הבקשה
+      description: מהו סוג הבקשה?
+      options:
+        - באג
+        - פיתוח
+        - דאטה
+    validations:
+      required: true
+      
+  - type: dropdown
+    id: priority
+    attributes:
+      label: רמת דחיפות
+      description: מהי רמת הדחיפות של הבקשה?
+      options:
+        - גבוהה
+        - בינונית
+        - נמוכה
+    validations:
+      required: true
+      
+  - type: textarea
+    id: description
+    attributes:
+      label: תיאור הבקשה
+      description: נא לפרט את הבקשה
+      placeholder: פרט כאן...
+    validations:
+      required: true
+      
+  - type: textarea
+    id: attachments
+    attributes:
+      label: קבצים מצורפים
+      description: ניתן לצרף תמונות על ידי גרירתן לאזור זה
+      placeholder: גרור קבצים לכאן...
