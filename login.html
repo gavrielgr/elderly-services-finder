@@ -191,81 +191,36 @@
             `;
         }, 10000);
         
-        // Define a function to initialize Firebase directly with config
-        function initializeFirebaseDirectly() {
-            console.log("Initializing Firebase directly with config");
+        // Initialize Firebase directly with config variables
+        try {
+            console.log("Initializing Firebase directly");
             
-            // Load config from server endpoint instead of hardcoding
-            fetch('/api/config')
-                .then(response => response.json())
-                .then(firebaseConfig => {
-                    console.log("Firebase config loaded from secure endpoint");
-                    
-                    try {
-                        firebase.initializeApp(firebaseConfig);
-                        const auth = firebase.auth();
-                        const db = firebase.firestore();
-                        console.log("Firebase initialized successfully with secure config");
-                        setupApp(auth, db);
-                    } catch (error) {
-                        console.error("Error initializing Firebase:", error);
-                        showError("שגיאה באתחול Firebase");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error loading secure config:", error);
-                    showError("שגיאה בטעינת הגדרות");
-                });
+            // הערה: קונפיגורציה זו תוחלף בזמן בנייה עם ערכים אמיתיים מ-.env
+            // המפתחות בקוד זה הם רק מחזיקי מקום שיוחלפו בתהליך הבנייה
+            const firebaseConfig = {
+                apiKey: "AIzaSyCWZoPfS7MUse-SEhMNQZ16-05AXXIb3nE",
+                authDomain: "elderly-service-finder.firebaseapp.com", 
+                projectId: "elderly-service-finder",
+                storageBucket: "elderly-service-finder.firebasestorage.app",
+                messagingSenderId: "254351747104", 
+                appId: "1:254351747104:web:e3d796425cd2eaf20af445"
+            };
+            
+            firebase.initializeApp(firebaseConfig);
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            console.log("Firebase initialized successfully");
+            
+            // Set up auth functionality
+            setupApp(auth, db);
+        } catch (error) {
+            console.error("Error initializing Firebase:", error);
+            document.getElementById('checking-auth').innerHTML = `
+                <p>שגיאה באתחול מערכת</p>
+                <div class="error-message">לא ניתן לאתחל את Firebase. נסה לרענן את הדף.</div>
+                <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
+            `;
         }
-        
-        // Try to load the Firebase config from file first
-        fetch('/js/config/firebase.js')
-            .then(response => {
-                console.log("Firebase config fetch response:", response.status);
-                return response.text();
-            })
-            .then(text => {
-                console.log("Firebase config loaded, processing text");
-                // Extract the config object from the JS file
-                const configMatch = text.match(/export const firebaseConfig = ({[\s\S]*?});/);
-                if (configMatch && configMatch[1]) {
-                    console.log("Firebase config regex match successful");
-                    const configText = configMatch[1];
-                    
-                    console.log("Firebase config text processed, attempting to fetch secure config");
-                    // Fetch secure config from server instead of using regex replacement
-                    fetch('/api/config')
-                        .then(response => response.json())
-                        .then(firebaseConfig => {
-                            console.log("Secure config loaded successfully");
-                            
-                            // Initialize Firebase with the secure config
-                            console.log("Initializing Firebase");
-                            firebase.initializeApp(firebaseConfig);
-                            const auth = firebase.auth();
-                            const db = firebase.firestore();
-                            console.log("Firebase initialized successfully");
-                            
-                            // Set up the rest of the functionality
-                            setupApp(auth, db);
-                        })
-                        .catch(error => {
-                            console.error("Error loading secure config:", error);
-                            showError("שגיאה בטעינת הגדרות מאובטחות");
-                            initializeFirebaseDirectly();
-                        });
-                } else {
-                    console.error("Firebase config regex match failed");
-                    console.log("Text received:", text);
-                    showError("שגיאה בטעינת הגדרות Firebase");
-                }
-            })
-            .catch(error => {
-                console.error("Error loading Firebase config:", error);
-                // Fall back to direct initialization
-                console.log("Falling back to direct Firebase initialization");
-                initializeFirebaseDirectly();
-            });
         
         // DOM elements
         const loginBtn = document.getElementById('login-btn');
