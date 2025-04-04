@@ -6,6 +6,14 @@
     <title>ניהול - שירותי+</title>
     <link rel="stylesheet" href="/styles/main.css">
     <link rel="stylesheet" href="/styles/admin.css">
+    
+    <!-- Add scripts to load Admin modules -->
+    <script type="module" src="/js/config/app-config.js"></script>
+    <script type="module" src="/js/config/firebase.js"></script>
+    <script type="module" src="/js/admin/AdminAuth.js"></script>
+    <script type="module" src="/js/admin/RatingsAdmin.js"></script>
+    <script type="module" src="/js/admin/admin.js"></script>
+    
     <style>
         /* Base styles */
         body, html {
@@ -685,11 +693,6 @@
         </div>
     </div>
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    
     <script>
         // Loading and error UI elements
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -713,27 +716,35 @@
             adminContainer.style.display = 'block';
         }
         
+        function showMessage(message, type = 'info') {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', `message-${type}`);
+            messageElement.textContent = message;
+            document.body.appendChild(messageElement);
+            
+            setTimeout(() => {
+                messageElement.classList.add('showing');
+                setTimeout(() => {
+                    messageElement.classList.remove('showing');
+                    setTimeout(() => {
+                        document.body.removeChild(messageElement);
+                    }, 300);
+                }, 3000);
+            }, 100);
+        }
+        
         // Initialize Firebase with config from server
         async function initializeFirebase() {
             try {
-                const isDevelopment = window.location.hostname === 'localhost' || 
-                                     window.location.hostname === '127.0.0.1';
+                // Import initializeFirebase function 
+                const module = await import('/js/config/firebase.js');
+                const { app, db, auth } = await module.initializeFirebase();
                 
-                // Fetch Firebase config from server
-                const response = await fetch('/api/config');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch Firebase configuration');
-                }
-                
-                const firebaseConfig = await response.json();
-                firebase.initializeApp(firebaseConfig);
-                
-                console.log('Firebase initialized with server config');
-                return true;
+                return { app, db, auth };
             } catch (error) {
                 console.error('Firebase initialization error:', error);
-                showError('שגיאה באתחול מערכת. נא לנסות שוב.');
-                return false;
+                showError('שגיאה באתחול מערכת. נא לנסות שוב מאוחר יותר או לוודא שהשרת פועל.');
+                return null;
             }
         }
         
@@ -741,33 +752,23 @@
         async function init() {
             try {
                 // Initialize Firebase first
-                const initialized = await initializeFirebase();
-                if (!initialized) return;
+                const firebase = await initializeFirebase();
+                if (!firebase) return;
+                
+                const { auth, db } = firebase;
                 
                 // Set up auth state listener
-                firebase.auth().onAuthStateChanged(async (user) => {
-                    // Check if we're in development mode
-                    const isDevelopment = window.location.hostname === 'localhost' || 
-                                         window.location.hostname === '127.0.0.1';
-                    
-                    if (isDevelopment) {
-                        console.log('Development mode detected in admin page');
-                        hideLoading();
-                        document.getElementById('user-info').textContent = 'מצב פיתוח - משתמש בדיוני';
-                        showAdmin();
-                        return;
-                    }
-                    
+                auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         console.log('User is signed in:', user.uid);
                         
                         // Check if user is admin
-                        const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+                        const userDoc = await db.collection('users').doc(user.uid).get();
                         
                         if (!userDoc.exists) {
                             console.log('User document does not exist');
                             showError('חשבון משתמש לא קיים במערכת. אנא פנה למנהל המערכת.');
-                            await firebase.auth().signOut();
+                            await auth.signOut();
                             return;
                         }
                         
@@ -775,14 +776,14 @@
                         if (userData.role !== 'admin') {
                             console.log('User is not an admin');
                             showError('אין לך הרשאות מנהל במערכת. אנא פנה למנהל המערכת.');
-                            await firebase.auth().signOut();
+                            await auth.signOut();
                             return;
                         }
                         
                         if (userData.status !== 'active') {
                             console.log('User is not active');
                             showError('חשבון המנהל שלך אינו פעיל. אנא פנה למנהל המערכת.');
-                            await firebase.auth().signOut();
+                            await auth.signOut();
                             return;
                         }
                         
@@ -791,1260 +792,280 @@
                         showAdmin();
                         
                         // Set up admin UI and load data
-                        setupAdminUI();
+                        loadServices();
+                        loadCategories();
+                        loadInterestAreas();
+                        loadUsers();
                     } else {
-                        console.log('No user signed in');
-                        window.location.href = '/login';
-                    }
-                });
-                
-                // Set up logout button
-                document.getElementById('logout-button').addEventListener('click', async () => {
-                    try {
-                        await firebase.auth().signOut();
-                        window.location.href = '/login';
-                    } catch (error) {
-                        console.error('Logout error:', error);
-                        alert('שגיאה בהתנתקות. אנא נסה שוב.');
+                        // User is not signed in, redirect to login
+                        window.location.href = '/login.html?redirect=admin.html';
                     }
                 });
                 
             } catch (error) {
                 console.error('Initialization error:', error);
-                showError('שגיאה באתחול המערכת. נא לרענן את הדף.');
+                showError('שגיאה באתחול מערכת. נא לנסות שוב מאוחר יותר.');
             }
         }
         
-        // Function to set up the admin UI
-        function setupAdminUI() {
-            // DOM elements for data storage
-            let allServices = [];
-            let allCategories = [];
-            let allInterestAreas = [];
-            let allUsers = [];
-            
-            // Cache constants
-            const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
-            const ADMIN_CACHE_PREFIX = 'admin_cache_';
-            
-            // References to UI elements
-            const servicesListContainer = document.getElementById('services-list');
-            const categoriesListContainer = document.getElementById('categories-list');
-            const interestAreasListContainer = document.getElementById('interest-areas-list');
-            const usersListContainer = document.getElementById('users-list');
-            
-            const servicesResultsInfo = document.getElementById('services-results-info');
-            const categoriesResultsInfo = document.getElementById('categories-results-info');
-            const interestAreasResultsInfo = document.getElementById('interest-areas-results-info');
-            const usersResultsInfo = document.getElementById('users-results-info');
-            
-            const addServiceButton = document.getElementById('add-service');
-            const addCategoryButton = document.getElementById('add-category');
-            const addInterestAreaButton = document.getElementById('add-interest-area');
-            
-            // Cache functions
-            function saveToCache(key, data) {
-                try {
-                    const cacheItem = {
-                        data: data,
-                        timestamp: Date.now()
-                    };
-                    localStorage.setItem(ADMIN_CACHE_PREFIX + key, JSON.stringify(cacheItem));
-                } catch (error) {
-                    console.error('Error saving to cache:', error);
-                }
-            }
-            
-            function getFromCache(key) {
-                try {
-                    const cacheItemJson = localStorage.getItem(ADMIN_CACHE_PREFIX + key);
-                    if (!cacheItemJson) return null;
-                    
-                    const cacheItem = JSON.parse(cacheItemJson);
-                    if (!cacheItem || !cacheItem.timestamp) return null;
-                    
-                    if (Date.now() - cacheItem.timestamp > CACHE_EXPIRY) {
-                        localStorage.removeItem(ADMIN_CACHE_PREFIX + key);
-                        return null;
-                    }
-                    
-                    return cacheItem.data;
-                } catch (error) {
-                    console.error('Error retrieving from cache:', error);
-                    return null;
-                }
-            }
-            
-            function clearCache() {
-                try {
-                    Object.keys(localStorage).forEach(key => {
-                        if (key.startsWith(ADMIN_CACHE_PREFIX)) {
-                            localStorage.removeItem(key);
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error clearing cache:', error);
-                }
-            }
-            
-            // Helper functions
-            function formatDate(timestamp) {
-                if (!timestamp) return 'לא ידוע';
-                
-                try {
-                    let date;
-                    if (timestamp.toDate) {
-                        // Firestore Timestamp
-                        date = timestamp.toDate();
-                    } else if (typeof timestamp === 'string') {
-                        // ISO String or other date string
-                        date = new Date(timestamp);
-                        // Check if valid date
-                        if (isNaN(date.getTime())) {
-                            return 'תאריך לא תקין';
-                        }
-                    } else if (timestamp instanceof Date) {
-                        // JavaScript Date object
-                        date = timestamp;
-                    } else {
-                        // Unknown format
-                        return 'תאריך לא תקין';
-                    }
-                    
-                    return new Intl.DateTimeFormat('he-IL', {
-                        year: 'numeric',
-                        month: 'numeric',
-                        day: 'numeric',
-                        hour: 'numeric',
-                        minute: 'numeric'
-                    }).format(date);
-                } catch (error) {
-                    console.error('Error formatting date:', error, timestamp);
-                    return 'תאריך לא תקין';
-                }
-            }
-            
-            function showMessage(message, type) {
-                const messageElement = document.createElement('div');
-                messageElement.className = `admin-message ${type}`;
-                messageElement.textContent = message;
-                document.body.appendChild(messageElement);
-                
-                setTimeout(() => {
-                    messageElement.classList.add('show');
-                }, 10);
-                
-                setTimeout(() => {
-                    messageElement.classList.remove('show');
-                    setTimeout(() => {
-                        document.body.removeChild(messageElement);
-                    }, 300);
-                }, 3000);
-            }
-            
-            // Data loading functions
-            async function loadServices() {
-                try {
-                    servicesListContainer.innerHTML = '<div class="spinner"></div>';
-                    
-                    const db = firebase.firestore();
-                    
-                    // Check cache first
-                    const cachedServices = getFromCache('services');
-                    if (cachedServices) {
-                        console.log('Using cached services data');
-                        allServices = cachedServices;
-                        renderServices(allServices);
-                        servicesResultsInfo.textContent = `${allServices.length} שירותים`;
-                        return;
-                    }
-                    
-                    // Load from Firestore
-                    const querySnapshot = await db.collection('services').orderBy('name').get();
-                    
-                    if (querySnapshot.empty) {
-                        servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
-                        servicesResultsInfo.textContent = '0 שירותים';
-                        allServices = [];
-                        return;
-                    }
-                    
-                    allServices = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    
-                    console.log(`שירותים שנטענו: ${allServices.length}`);
-                    
-                    // Save to cache
-                    saveToCache('services', allServices);
-                    
-                    renderServices(allServices);
-                    servicesResultsInfo.textContent = `${allServices.length} שירותים`;
-                    
-                } catch (error) {
-                    console.error('Error loading services:', error);
-                    servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים. אנא נסה שוב.</div>';
-                    servicesResultsInfo.textContent = '';
-                }
-            }
-            
-            function renderServices(services) {
-                if (!services || services.length === 0) {
-                    servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
-                    return;
-                }
-                
-                let html = '';
-                services.forEach((service) => {
-                    try {
-                        let categoryName = 'לא מוגדר';
-                        
-                        if (service.categoryId && allCategories && allCategories.length > 0) {
-                            const category = allCategories.find(c => c.id === service.categoryId);
-                            if (category) {
-                                categoryName = category.name;
-                            }
-                        }
-                        
-                        html += `
-                            <div class="item-card" data-id="${service.id}">
-                                <div class="item-actions">
-                                    <button class="action-button edit-button" data-id="${service.id}" title="ערוך">✏️</button>
-                                    <button class="action-button delete-button" data-id="${service.id}" title="מחק">🗑️</button>
-                                </div>
-                                <div class="item-title">${service.name || 'ללא שם'}</div>
-                                <div class="item-details">
-                                    <div>${service.description || 'אין תיאור'}</div>
-                                    <div>קטגוריה: ${categoryName}</div>
-                                    <div>עודכן: ${formatDate(service.updatedAt)}</div>
-                                </div>
-                            </div>
-                        `;
-                    } catch (error) {
-                        console.error('Error rendering service:', error, service);
-                        html += `
-                            <div class="item-card" data-id="${service.id}">
-                                <div class="item-title">${service.name || 'שירות #' + service.id}</div>
-                                <div class="item-details">
-                                    <div class="error-message">שגיאה בהצגת השירות</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                });
-                
-                servicesListContainer.innerHTML = html;
-            }
-            
-            async function loadCategories() {
-                try {
-                    categoriesListContainer.innerHTML = '<div class="spinner"></div>';
-                    
-                    const db = firebase.firestore();
-                    
-                    // Check cache first
-                    const cachedCategories = getFromCache('categories');
-                    if (cachedCategories) {
-                        console.log('Using cached categories data');
-                        allCategories = cachedCategories;
-                        renderCategories(allCategories);
-                        categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
-                        return;
-                    }
-                    
-                    // Load from Firestore
-                    const querySnapshot = await db.collection('categories').orderBy('name').get();
-                    
-                    if (querySnapshot.empty) {
-                        categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה.</div>';
-                        categoriesResultsInfo.textContent = '0 קטגוריות';
-                        allCategories = [];
-                        return;
-                    }
-                    
-                    allCategories = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    
-                    console.log(`קטגוריות שנטענו: ${allCategories.length}`);
-                    
-                    // Save to cache
-                    saveToCache('categories', allCategories);
-                    
-                    renderCategories(allCategories);
-                    categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
-                    
-                } catch (error) {
-                    console.error('Error loading categories:', error);
-                    categoriesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת הקטגוריות. אנא נסה שוב.</div>';
-                    categoriesResultsInfo.textContent = '';
-                }
-            }
-            
-            function renderCategories(categories) {
-                if (!categories || categories.length === 0) {
-                    categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
-                    return;
-                }
-                
-                let html = '';
-                categories.forEach((category) => {
-                    html += `
-                        <div class="item-card" data-id="${category.id}">
-                            <div class="item-actions">
-                                <button class="action-button edit-button" data-id="${category.id}" title="ערוך">✏️</button>
-                                <button class="action-button delete-button" data-id="${category.id}" title="מחק">🗑️</button>
-                            </div>
-                            <div class="item-title">${category.name}</div>
-                            <div class="item-details">
-                                <div>${category.description || 'אין תיאור'}</div>
-                                <div>עודכן: ${formatDate(category.updatedAt)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                categoriesListContainer.innerHTML = html;
-            }
-            
-            async function loadInterestAreas() {
-                try {
-                    interestAreasListContainer.innerHTML = '<div class="spinner"></div>';
-                    
-                    const db = firebase.firestore();
-                    
-                    // Check cache first
-                    const cachedInterestAreas = getFromCache('interestAreas');
-                    if (cachedInterestAreas) {
-                        console.log('Using cached interest areas data');
-                        allInterestAreas = cachedInterestAreas;
-                        renderInterestAreas(allInterestAreas);
-                        interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
-                        return;
-                    }
-                    
-                    // Load from Firestore
-                    const querySnapshot = await db.collection('interest-areas').orderBy('name').get();
-                    
-                    if (querySnapshot.empty) {
-                        interestAreasListContainer.innerHTML = '<div class="empty-message">אין תחומי עניין ברשימה.</div>';
-                        interestAreasResultsInfo.textContent = '0 תחומי עניין';
-                        allInterestAreas = [];
-                        return;
-                    }
-                    
-                    allInterestAreas = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    
-                    console.log(`תחומי עניין שנטענו: ${allInterestAreas.length}`);
-                    
-                    // Save to cache
-                    saveToCache('interestAreas', allInterestAreas);
-                    
-                    renderInterestAreas(allInterestAreas);
-                    interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
-                    
-                } catch (error) {
-                    console.error('Error loading interest areas:', error);
-                    interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי העניין. אנא נסה שוב.</div>';
-                    interestAreasResultsInfo.textContent = '';
-                }
-            }
-            
-            function renderInterestAreas(interestAreas) {
-                if (!interestAreas || interestAreas.length === 0) {
-                    interestAreasListContainer.innerHTML = '<div class="empty-message">אין תחומי עניין ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
-                    return;
-                }
-                
-                let html = '';
-                interestAreas.forEach((interestArea) => {
-                    html += `
-                        <div class="item-card" data-id="${interestArea.id}">
-                            <div class="item-actions">
-                                <button class="action-button edit-button" data-id="${interestArea.id}" title="ערוך">✏️</button>
-                                <button class="action-button delete-button" data-id="${interestArea.id}" title="מחק">🗑️</button>
-                            </div>
-                            <div class="item-title">${interestArea.name}</div>
-                            <div class="item-details">
-                                <div>${interestArea.description || 'אין תיאור'}</div>
-                                <div>עודכן: ${formatDate(interestArea.updatedAt)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                interestAreasListContainer.innerHTML = html;
-            }
-            
-            async function loadUsers() {
-                try {
-                    usersListContainer.innerHTML = '<div class="spinner"></div>';
-                    
-                    const db = firebase.firestore();
-                    
-                    // Check cache first
-                    const cachedUsers = getFromCache('users');
-                    if (cachedUsers) {
-                        console.log('Using cached users data');
-                        allUsers = cachedUsers;
-                        renderUsers(allUsers);
-                        usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
-                        return;
-                    }
-                    
-                    // Load from Firestore
-                    const querySnapshot = await db.collection('users').orderBy('email').get();
-                    
-                    if (querySnapshot.empty) {
-                        usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה.</div>';
-                        usersResultsInfo.textContent = '0 משתמשים';
-                        allUsers = [];
-                        return;
-                    }
-                    
-                    allUsers = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    
-                    console.log(`משתמשים שנטענו: ${allUsers.length}`);
-                    
-                    // Save to cache
-                    saveToCache('users', allUsers);
-                    
-                    renderUsers(allUsers);
-                    usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
-                    
-                } catch (error) {
-                    console.error('Error loading users:', error);
-                    usersListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת המשתמשים. אנא נסה שוב.</div>';
-                    usersResultsInfo.textContent = '';
-                }
-            }
-            
-            function renderUsers(users) {
-                if (!users || users.length === 0) {
-                    usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה או לא נמצאו תוצאות לחיפוש שלך.</div>';
-                    return;
-                }
-                
-                let html = '';
-                users.forEach((user) => {
-                    const statusClass = user.status === 'active' ? 'text-success' : 'text-danger';
-                    const statusText = user.status === 'active' ? 'פעיל' : 'מושבת';
-                    
-                    html += `
-                        <div class="item-card" data-id="${user.id}">
-                            <div class="item-actions">
-                                <button class="action-button edit-button" data-id="${user.id}" title="ערוך">✏️</button>
-                            </div>
-                            <div class="item-title">${user.name || user.email || 'ללא שם'}</div>
-                            <div class="item-details">
-                                <div>אימייל: ${user.email}</div>
-                                <div>תפקיד: ${user.role === 'admin' ? 'מנהל' : 'משתמש'}</div>
-                                <div>סטטוס: <span class="${statusClass}">${statusText}</span></div>
-                                <div>הצטרף: ${formatDate(user.createdAt)}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                usersListContainer.innerHTML = html;
-            }
-            
-            // Function to load interest areas for a service
-            async function loadInterestAreasForService(serviceId) {
-                try {
-                    const serviceInterestAreasContainer = document.getElementById('service-interest-areas-container');
-                    serviceInterestAreasContainer.innerHTML = '<div class="spinner"></div>';
-                    
-                    const db = firebase.firestore();
-                    
-                    // Ensure interest areas are loaded first
-                    if (allInterestAreas.length === 0) {
-                        await loadInterestAreas();
-                    }
-                    
-                    // Get all interest areas
-                    const allInterestAreasWithState = allInterestAreas.map(area => ({
-                        ...area,
-                        selected: false
-                    }));
-                    
-                    if (serviceId) {
-                        // Get service-specific interest areas
-                        const snapshot = await db.collection('service-interest-areas')
-                            .where('serviceId', '==', serviceId)
-                            .get();
-                        
-                        if (!snapshot.empty) {
-                            const serviceInterestAreas = snapshot.docs.map(doc => doc.data());
-                            
-                            // Mark selected interest areas
-                            serviceInterestAreas.forEach(serviceArea => {
-                                const matchingArea = allInterestAreasWithState.find(area => area.id === serviceArea.interestAreaId);
-                                if (matchingArea) {
-                                    matchingArea.selected = true;
-                                }
-                            });
-                        }
-                    }
-                    
-                    // Render checkboxes for all interest areas
-                    let html = '';
-                    
-                    if (allInterestAreasWithState.length === 0) {
-                        html = '<div>אין תחומי עניין זמינים.</div>';
-                    } else {
-                        html = '<div class="interest-areas-list">';
-                        allInterestAreasWithState.forEach(area => {
-                            html += `
-                                <div class="interest-area-item">
-                                    <label class="checkbox-container">
-                                        <input type="checkbox" 
-                                            name="interest-area" 
-                                            value="${area.id}" 
-                                            ${area.selected ? 'checked' : ''}>
-                                        <span class="checkmark"></span>
-                                        ${area.name}
-                                    </label>
-                                </div>
-                            `;
-                        });
-                        html += '</div>';
-                    }
-                    
-                    serviceInterestAreasContainer.innerHTML = html;
-                    
-                } catch (error) {
-                    console.error('Error loading interest areas for service:', error);
-                    document.getElementById('service-interest-areas-container').innerHTML = 
-                        '<div class="error-message">שגיאה בטעינת תחומי העניין. אנא נסה שוב.</div>';
-                }
-            }
-            
-            // Set up search functionality
-            document.getElementById('services-search').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.trim().toLowerCase();
-                if (searchTerm === '') {
-                    renderServices(allServices);
-                    servicesResultsInfo.textContent = `${allServices.length} שירותים`;
-                } else {
-                    const filteredServices = allServices.filter(service => 
-                        service.name?.toLowerCase().includes(searchTerm) || 
-                        service.description?.toLowerCase().includes(searchTerm)
-                    );
-                    renderServices(filteredServices);
-                    servicesResultsInfo.textContent = `${filteredServices.length} שירותים מתוך ${allServices.length}`;
-                }
-            });
-            
-            document.getElementById('categories-search').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.trim().toLowerCase();
-                if (searchTerm === '') {
-                    renderCategories(allCategories);
-                    categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
-                } else {
-                    const filteredCategories = allCategories.filter(category => 
-                        category.name?.toLowerCase().includes(searchTerm) || 
-                        category.description?.toLowerCase().includes(searchTerm)
-                    );
-                    renderCategories(filteredCategories);
-                    categoriesResultsInfo.textContent = `${filteredCategories.length} קטגוריות מתוך ${allCategories.length}`;
-                }
-            });
-            
-            document.getElementById('interest-areas-search').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.trim().toLowerCase();
-                if (searchTerm === '') {
-                    renderInterestAreas(allInterestAreas);
-                    interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
-                } else {
-                    const filteredInterestAreas = allInterestAreas.filter(area => 
-                        area.name?.toLowerCase().includes(searchTerm) || 
-                        area.description?.toLowerCase().includes(searchTerm)
-                    );
-                    renderInterestAreas(filteredInterestAreas);
-                    interestAreasResultsInfo.textContent = `${filteredInterestAreas.length} תחומי עניין מתוך ${allInterestAreas.length}`;
-                }
-            });
-            
-            document.getElementById('users-search').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.trim().toLowerCase();
-                if (searchTerm === '') {
-                    renderUsers(allUsers);
-                    usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
-                } else {
-                    const filteredUsers = allUsers.filter(user => 
-                        user.name?.toLowerCase().includes(searchTerm) || 
-                        user.email?.toLowerCase().includes(searchTerm)
-                    );
-                    renderUsers(filteredUsers);
-                    usersResultsInfo.textContent = `${filteredUsers.length} משתמשים מתוך ${allUsers.length}`;
-                }
-            });
-            
-            // Set up nav button click handling
-            document.querySelectorAll('.nav-button').forEach(button => {
-                button.addEventListener('click', function() {
-                    // Remove active class from all buttons
-                    document.querySelectorAll('.nav-button').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-                    
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    
-                    // Hide all sections
-                    document.querySelectorAll('.admin-section').forEach(section => {
-                        section.classList.remove('active');
-                    });
-                    
-                    // Show corresponding section
-                    const targetSection = this.dataset.section;
-                    document.getElementById(targetSection).classList.add('active');
-                    
-                    // Load data for the section if needed
-                    if (targetSection === 'services-section' && allServices.length === 0) {
-                        loadServices();
-                    } else if (targetSection === 'categories-section' && allCategories.length === 0) {
-                        loadCategories();
-                    } else if (targetSection === 'interest-areas-section' && allInterestAreas.length === 0) {
-                        loadInterestAreas();
-                    } else if (targetSection === 'users-section' && allUsers.length === 0) {
-                        loadUsers();
-                    }
-                });
-            });
-            
-            // Set up refresh button
-            document.getElementById('refresh-data-button').addEventListener('click', async () => {
-                try {
-                    loadingOverlay.style.display = 'flex';
-                    // Clear all cache
-                    clearCache();
-                    console.log('מרענן את כל הנתונים...');
-                    
-                    // Clear all arrays
-                    allServices = [];
-                    allCategories = [];
-                    allInterestAreas = [];
-                    allUsers = [];
-                    
-                    // Reload data in order of dependency
-                    await loadCategories();
-                    await loadInterestAreas();
-                    await loadServices();
-                    await loadUsers();
-                    
-                    loadingOverlay.style.display = 'none';
-                    showMessage('הנתונים רועננו בהצלחה', 'success');
-                } catch (error) {
-                    console.error('שגיאה בריענון הנתונים:', error);
-                    loadingOverlay.style.display = 'none';
-                    showMessage('שגיאה בריענון הנתונים', 'error');
-                }
-            });
-            
-            // Initial data loading
-            loadCategories().then(() => {
-                loadInterestAreas().then(() => {
-                    loadServices().then(() => {
-                        loadUsers();
-                    });
-                });
-            });
-
-            // Service Modal Events
-            document.getElementById('add-service').addEventListener('click', function() {
-                document.getElementById('service-modal-title').textContent = 'הוספת שירות חדש';
-                document.getElementById('service-id').value = '';
-                document.getElementById('service-name').value = '';
-                document.getElementById('service-description').value = '';
-                document.getElementById('service-category').value = '';
-                
-                // Load categories into dropdown
-                const categorySelect = document.getElementById('service-category');
-                categorySelect.innerHTML = '<option value="">בחר קטגוריה</option>';
-                
-                allCategories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category.id;
-                    option.textContent = category.name;
-                    categorySelect.appendChild(option);
-                });
-                
-                // Load interest areas (all unchecked)
-                loadInterestAreasForService(null);
-                
-                // Show modal
-                document.getElementById('service-modal').style.display = 'flex';
-            });
-            
-            document.getElementById('close-service-modal').addEventListener('click', function() {
-                document.getElementById('service-modal').style.display = 'none';
-            });
-            
-            document.getElementById('cancel-service').addEventListener('click', function() {
-                document.getElementById('service-modal').style.display = 'none';
-            });
-            
-            document.getElementById('service-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const serviceId = document.getElementById('service-id').value;
-                const name = document.getElementById('service-name').value.trim();
-                const description = document.getElementById('service-description').value.trim();
-                const categoryId = document.getElementById('service-category').value;
-                
-                if (!name) {
-                    document.getElementById('service-name-error').textContent = 'שדה חובה';
-                    return;
-                }
-                
-                try {
-                    loadingOverlay.style.display = 'flex';
-                    
-                    const db = firebase.firestore();
-                    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-                    
-                    // Get selected interest areas
-                    const selectedInterestAreaIds = Array.from(
-                        document.querySelectorAll('#service-interest-areas-container input[name="interest-area"]:checked')
-                    ).map(checkbox => checkbox.value);
-                    
-                    if (serviceId) {
-                        // Update existing service
-                        await db.collection('services').doc(serviceId).update({
-                            name,
-                            description,
-                            categoryId,
-                            updatedAt: timestamp
-                        });
-                        
-                        // Update service interest areas
-                        // First delete all existing associations
-                        const existingAssociations = await db.collection('service-interest-areas')
-                            .where('serviceId', '==', serviceId)
-                            .get();
-                        
-                        const batch = db.batch();
-                        
-                        existingAssociations.docs.forEach(doc => {
-                            batch.delete(doc.ref);
-                        });
-                        
-                        // Then add new ones
-                        selectedInterestAreaIds.forEach(interestAreaId => {
-                            const newAssocRef = db.collection('service-interest-areas').doc();
-                            batch.set(newAssocRef, {
-                                serviceId,
-                                interestAreaId,
-                                createdAt: timestamp
-                            });
-                        });
-                        
-                        await batch.commit();
-                        
-                        showMessage('השירות עודכן בהצלחה', 'success');
-                    } else {
-                        // Create new service
-                        const serviceRef = db.collection('services').doc();
-                        const newServiceId = serviceRef.id;
-                        
-                        await serviceRef.set({
-                            name,
-                            description,
-                            categoryId,
-                            createdAt: timestamp,
-                            updatedAt: timestamp
-                        });
-                        
-                        // Create service interest areas
-                        const batch = db.batch();
-                        
-                        selectedInterestAreaIds.forEach(interestAreaId => {
-                            const newAssocRef = db.collection('service-interest-areas').doc();
-                            batch.set(newAssocRef, {
-                                serviceId: newServiceId,
-                                interestAreaId,
-                                createdAt: timestamp
-                            });
-                        });
-                        
-                        await batch.commit();
-                        
-                        showMessage('השירות נוצר בהצלחה', 'success');
-                    }
-                    
-                    // Refresh services list
-                    allServices = [];
-                    await loadServices();
-                    
-                    // Close modal
-                    document.getElementById('service-modal').style.display = 'none';
-                    loadingOverlay.style.display = 'none';
-                    
-                } catch (error) {
-                    console.error('Error saving service:', error);
-                    loadingOverlay.style.display = 'none';
-                    showMessage('שגיאה בשמירת השירות', 'error');
-                }
-            });
-            
-            // Handle service edit buttons (delegated event)
-            document.getElementById('services-list').addEventListener('click', async function(e) {
-                if (e.target.classList.contains('edit-button')) {
-                    const serviceId = e.target.dataset.id;
-                    const service = allServices.find(s => s.id === serviceId);
-                    
-                    if (!service) {
-                        console.error('Service not found:', serviceId);
-                        return;
-                    }
-                    
-                    // Fill form
-                    document.getElementById('service-modal-title').textContent = 'עריכת שירות';
-                    document.getElementById('service-id').value = service.id;
-                    document.getElementById('service-name').value = service.name || '';
-                    document.getElementById('service-description').value = service.description || '';
-                    document.getElementById('service-category').value = service.categoryId || '';
-                    
-                    // Load categories into dropdown
-                    const categorySelect = document.getElementById('service-category');
-                    categorySelect.innerHTML = '<option value="">בחר קטגוריה</option>';
-                    
-                    allCategories.forEach(category => {
-                        const option = document.createElement('option');
-                        option.value = category.id;
-                        option.textContent = category.name;
-                        categorySelect.appendChild(option);
-                    });
-                    
-                    // Select the right category
-                    categorySelect.value = service.categoryId || '';
-                    
-                    // Load interest areas with correct selections
-                    await loadInterestAreasForService(service.id);
-                    
-                    // Show modal
-                    document.getElementById('service-modal').style.display = 'flex';
-                }
-                
-                if (e.target.classList.contains('delete-button')) {
-                    const serviceId = e.target.dataset.id;
-                    const service = allServices.find(s => s.id === serviceId);
-                    
-                    if (!service) {
-                        console.error('Service not found:', serviceId);
-                        return;
-                    }
-                    
-                    if (confirm(`האם אתה בטוח שברצונך למחוק את השירות "${service.name}"?`)) {
-                        try {
-                            loadingOverlay.style.display = 'flex';
-                            
-                            const db = firebase.firestore();
-                            
-                            // Delete service interest areas first
-                            const existingAssociations = await db.collection('service-interest-areas')
-                                .where('serviceId', '==', serviceId)
-                                .get();
-                            
-                            const batch = db.batch();
-                            
-                            existingAssociations.docs.forEach(doc => {
-                                batch.delete(doc.ref);
-                            });
-                            
-                            // Delete service
-                            batch.delete(db.collection('services').doc(serviceId));
-                            
-                            await batch.commit();
-                            
-                            // Refresh services list
-                            allServices = [];
-                            await loadServices();
-                            
-                            loadingOverlay.style.display = 'none';
-                            showMessage('השירות נמחק בהצלחה', 'success');
-                            
-                        } catch (error) {
-                            console.error('Error deleting service:', error);
-                            loadingOverlay.style.display = 'none';
-                            showMessage('שגיאה במחיקת השירות', 'error');
-                        }
-                    }
-                }
-            });
-            
-            // Category Modal Events
-            document.getElementById('add-category').addEventListener('click', function() {
-                document.getElementById('category-modal-title').textContent = 'הוספת קטגוריה חדשה';
-                document.getElementById('category-id').value = '';
-                document.getElementById('category-name').value = '';
-                document.getElementById('category-description').value = '';
-                
-                // Show modal
-                document.getElementById('category-modal').style.display = 'flex';
-            });
-            
-            document.getElementById('close-category-modal').addEventListener('click', function() {
-                document.getElementById('category-modal').style.display = 'none';
-            });
-            
-            document.getElementById('cancel-category').addEventListener('click', function() {
-                document.getElementById('category-modal').style.display = 'none';
-            });
-            
-            document.getElementById('category-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const categoryId = document.getElementById('category-id').value;
-                const name = document.getElementById('category-name').value.trim();
-                const description = document.getElementById('category-description').value.trim();
-                
-                if (!name) {
-                    document.getElementById('category-name-error').textContent = 'שדה חובה';
-                    return;
-                }
-                
-                try {
-                    loadingOverlay.style.display = 'flex';
-                    
-                    const db = firebase.firestore();
-                    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-                    
-                    if (categoryId) {
-                        // Update existing category
-                        await db.collection('categories').doc(categoryId).update({
-                            name,
-                            description,
-                            updatedAt: timestamp
-                        });
-                        
-                        showMessage('הקטגוריה עודכנה בהצלחה', 'success');
-                    } else {
-                        // Create new category
-                        await db.collection('categories').doc().set({
-                            name,
-                            description,
-                            createdAt: timestamp,
-                            updatedAt: timestamp
-                        });
-                        
-                        showMessage('הקטגוריה נוצרה בהצלחה', 'success');
-                    }
-                    
-                    // Refresh categories list
-                    allCategories = [];
-                    await loadCategories();
-                    
-                    // Close modal
-                    document.getElementById('category-modal').style.display = 'none';
-                    loadingOverlay.style.display = 'none';
-                    
-                } catch (error) {
-                    console.error('Error saving category:', error);
-                    loadingOverlay.style.display = 'none';
-                    showMessage('שגיאה בשמירת הקטגוריה', 'error');
-                }
-            });
-            
-            // Handle category edit buttons (delegated event)
-            document.getElementById('categories-list').addEventListener('click', async function(e) {
-                if (e.target.classList.contains('edit-button')) {
-                    const categoryId = e.target.dataset.id;
-                    const category = allCategories.find(c => c.id === categoryId);
-                    
-                    if (!category) {
-                        console.error('Category not found:', categoryId);
-                        return;
-                    }
-                    
-                    // Fill form
-                    document.getElementById('category-modal-title').textContent = 'עריכת קטגוריה';
-                    document.getElementById('category-id').value = category.id;
-                    document.getElementById('category-name').value = category.name || '';
-                    document.getElementById('category-description').value = category.description || '';
-                    
-                    // Show modal
-                    document.getElementById('category-modal').style.display = 'flex';
-                }
-                
-                if (e.target.classList.contains('delete-button')) {
-                    const categoryId = e.target.dataset.id;
-                    const category = allCategories.find(c => c.id === categoryId);
-                    
-                    if (!category) {
-                        console.error('Category not found:', categoryId);
-                        return;
-                    }
-                    
-                    if (confirm(`האם אתה בטוח שברצונך למחוק את הקטגוריה "${category.name}"?`)) {
-                        try {
-                            loadingOverlay.style.display = 'flex';
-                            
-                            // Check if category is used by any services
-                            const db = firebase.firestore();
-                            const servicesUsingCategory = await db.collection('services')
-                                .where('categoryId', '==', categoryId)
-                                .limit(1)
-                                .get();
-                            
-                            if (!servicesUsingCategory.empty) {
-                                loadingOverlay.style.display = 'none';
-                                alert('לא ניתן למחוק קטגוריה שמשויכת לשירותים. אנא הסר את השיוך משירותים תחילה.');
-                                return;
-                            }
-                            
-                            // Delete category
-                            await db.collection('categories').doc(categoryId).delete();
-                            
-                            // Refresh categories list
-                            allCategories = [];
-                            await loadCategories();
-                            
-                            loadingOverlay.style.display = 'none';
-                            showMessage('הקטגוריה נמחקה בהצלחה', 'success');
-                            
-                        } catch (error) {
-                            console.error('Error deleting category:', error);
-                            loadingOverlay.style.display = 'none';
-                            showMessage('שגיאה במחיקת הקטגוריה', 'error');
-                        }
-                    }
-                }
-            });
-            
-            // Interest Area Modal Events
-            document.getElementById('add-interest-area').addEventListener('click', function() {
-                document.getElementById('interest-area-modal-title').textContent = 'הוספת תחום עניין חדש';
-                document.getElementById('interest-area-id').value = '';
-                document.getElementById('interest-area-name').value = '';
-                document.getElementById('interest-area-description').value = '';
-                
-                // Show modal
-                document.getElementById('interest-area-modal').style.display = 'flex';
-            });
-            
-            document.getElementById('close-interest-area-modal').addEventListener('click', function() {
-                document.getElementById('interest-area-modal').style.display = 'none';
-            });
-            
-            document.getElementById('cancel-interest-area').addEventListener('click', function() {
-                document.getElementById('interest-area-modal').style.display = 'none';
-            });
-            
-            document.getElementById('interest-area-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const interestAreaId = document.getElementById('interest-area-id').value;
-                const name = document.getElementById('interest-area-name').value.trim();
-                const description = document.getElementById('interest-area-description').value.trim();
-                
-                if (!name) {
-                    document.getElementById('interest-area-name-error').textContent = 'שדה חובה';
-                    return;
-                }
-                
-                try {
-                    loadingOverlay.style.display = 'flex';
-                    
-                    const db = firebase.firestore();
-                    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-                    
-                    if (interestAreaId) {
-                        // Update existing interest area
-                        await db.collection('interest-areas').doc(interestAreaId).update({
-                            name,
-                            description,
-                            updatedAt: timestamp
-                        });
-                        
-                        showMessage('תחום העניין עודכן בהצלחה', 'success');
-                    } else {
-                        // Create new interest area
-                        await db.collection('interest-areas').doc().set({
-                            name,
-                            description,
-                            createdAt: timestamp,
-                            updatedAt: timestamp
-                        });
-                        
-                        showMessage('תחום העניין נוצר בהצלחה', 'success');
-                    }
-                    
-                    // Refresh interest areas list
-                    allInterestAreas = [];
-                    await loadInterestAreas();
-                    
-                    // Close modal
-                    document.getElementById('interest-area-modal').style.display = 'none';
-                    loadingOverlay.style.display = 'none';
-                    
-                } catch (error) {
-                    console.error('Error saving interest area:', error);
-                    loadingOverlay.style.display = 'none';
-                    showMessage('שגיאה בשמירת תחום העניין', 'error');
-                }
-            });
-            
-            // Handle interest area edit buttons (delegated event)
-            document.getElementById('interest-areas-list').addEventListener('click', async function(e) {
-                if (e.target.classList.contains('edit-button')) {
-                    const interestAreaId = e.target.dataset.id;
-                    const interestArea = allInterestAreas.find(a => a.id === interestAreaId);
-                    
-                    if (!interestArea) {
-                        console.error('Interest area not found:', interestAreaId);
-                        return;
-                    }
-                    
-                    // Fill form
-                    document.getElementById('interest-area-modal-title').textContent = 'עריכת תחום עניין';
-                    document.getElementById('interest-area-id').value = interestArea.id;
-                    document.getElementById('interest-area-name').value = interestArea.name || '';
-                    document.getElementById('interest-area-description').value = interestArea.description || '';
-                    
-                    // Show modal
-                    document.getElementById('interest-area-modal').style.display = 'flex';
-                }
-                
-                if (e.target.classList.contains('delete-button')) {
-                    const interestAreaId = e.target.dataset.id;
-                    const interestArea = allInterestAreas.find(a => a.id === interestAreaId);
-                    
-                    if (!interestArea) {
-                        console.error('Interest area not found:', interestAreaId);
-                        return;
-                    }
-                    
-                    if (confirm(`האם אתה בטוח שברצונך למחוק את תחום העניין "${interestArea.name}"?`)) {
-                        try {
-                            loadingOverlay.style.display = 'flex';
-                            
-                            // Check if interest area is used by any services
-                            const db = firebase.firestore();
-                            const servicesUsingInterestArea = await db.collection('service-interest-areas')
-                                .where('interestAreaId', '==', interestAreaId)
-                                .limit(1)
-                                .get();
-                            
-                            if (!servicesUsingInterestArea.empty) {
-                                loadingOverlay.style.display = 'none';
-                                alert('לא ניתן למחוק תחום עניין שמשויך לשירותים. אנא הסר את השיוך משירותים תחילה.');
-                                return;
-                            }
-                            
-                            // Delete interest area
-                            await db.collection('interest-areas').doc(interestAreaId).delete();
-                            
-                            // Refresh interest areas list
-                            allInterestAreas = [];
-                            await loadInterestAreas();
-                            
-                            loadingOverlay.style.display = 'none';
-                            showMessage('תחום העניין נמחק בהצלחה', 'success');
-                            
-                        } catch (error) {
-                            console.error('Error deleting interest area:', error);
-                            loadingOverlay.style.display = 'none';
-                            showMessage('שגיאה במחיקת תחום העניין', 'error');
-                        }
-                    }
-                }
-            });
-            
-            // User Modal Events
-            document.getElementById('users-list').addEventListener('click', async function(e) {
-                if (e.target.classList.contains('edit-button')) {
-                    const userId = e.target.dataset.id;
-                    const user = allUsers.find(u => u.id === userId);
-                    
-                    if (!user) {
-                        console.error('User not found:', userId);
-                        return;
-                    }
-                    
-                    // Fill form
-                    document.getElementById('user-modal-title').textContent = 'עריכת משתמש';
-                    document.getElementById('user-id').value = user.id;
-                    document.getElementById('user-name').value = user.name || '';
-                    document.getElementById('user-email').value = user.email || '';
-                    document.getElementById('user-role').value = user.role || 'user';
-                    document.getElementById('user-status').checked = user.status === 'active';
-                    document.getElementById('status-text').textContent = user.status === 'active' ? 'פעיל' : 'מושבת';
-                    
-                    // Show modal
-                    document.getElementById('user-modal').style.display = 'flex';
-                }
-            });
-            
-            document.getElementById('close-user-modal').addEventListener('click', function() {
-                document.getElementById('user-modal').style.display = 'none';
-            });
-            
-            document.getElementById('cancel-user').addEventListener('click', function() {
-                document.getElementById('user-modal').style.display = 'none';
-            });
-            
-            document.getElementById('user-status').addEventListener('change', function() {
-                document.getElementById('status-text').textContent = this.checked ? 'פעיל' : 'מושבת';
-            });
-            
-            document.getElementById('user-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const userId = document.getElementById('user-id').value;
-                const name = document.getElementById('user-name').value.trim();
-                const role = document.getElementById('user-role').value;
-                const status = document.getElementById('user-status').checked ? 'active' : 'inactive';
-                
-                if (!userId) {
-                    console.error('User ID is missing');
-                    return;
-                }
-                
-                try {
-                    loadingOverlay.style.display = 'flex';
-                    
-                    const db = firebase.firestore();
-                    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-                    
-                    // Update user
-                    await db.collection('users').doc(userId).update({
-                        name,
-                        role,
-                        status,
-                        updatedAt: timestamp
-                    });
-                    
-                    showMessage('המשתמש עודכן בהצלחה', 'success');
-                    
-                    // Refresh users list
-                    allUsers = [];
-                    await loadUsers();
-                    
-                    // Close modal
-                    document.getElementById('user-modal').style.display = 'none';
-                    loadingOverlay.style.display = 'none';
-                    
-                } catch (error) {
-                    console.error('Error updating user:', error);
-                    loadingOverlay.style.display = 'none';
-                    showMessage('שגיאה בעדכון המשתמש', 'error');
-                }
-            });
-        }
-        
-        // Start initialization
+        // Execute initialization
         init();
+        
+        // Load services from Firebase
+        async function loadServices() {
+            try {
+                const { db } = await import('/js/config/firebase.js');
+                if (!db) throw new Error('Firestore not initialized');
+                
+                const servicesSnapshot = await db.collection('services').get();
+                allServices = [];
+                
+                servicesSnapshot.forEach(doc => {
+                    allServices.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderServices();
+            } catch (error) {
+                console.error('Error loading services:', error);
+                if (servicesListContainer) {
+                    servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים</div>';
+                }
+            }
+        }
+        
+        // Load categories from Firebase
+        async function loadCategories() {
+            try {
+                const { db } = await import('/js/config/firebase.js');
+                if (!db) throw new Error('Firestore not initialized');
+                
+                const categoriesSnapshot = await db.collection('categories').get();
+                allCategories = [];
+                
+                categoriesSnapshot.forEach(doc => {
+                    allCategories.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderCategories();
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                if (categoriesListContainer) {
+                    categoriesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת הקטגוריות</div>';
+                }
+            }
+        }
+        
+        // Load interest areas from Firebase
+        async function loadInterestAreas() {
+            try {
+                const { db } = await import('/js/config/firebase.js');
+                if (!db) throw new Error('Firestore not initialized');
+                
+                const interestAreasSnapshot = await db.collection('interest-areas').get();
+                allInterestAreas = [];
+                
+                interestAreasSnapshot.forEach(doc => {
+                    allInterestAreas.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderInterestAreas();
+            } catch (error) {
+                console.error('Error loading interest areas:', error);
+                if (interestAreasListContainer) {
+                    interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי העניין</div>';
+                }
+            }
+        }
+        
+        // Load users from Firebase
+        async function loadUsers() {
+            try {
+                const { db } = await import('/js/config/firebase.js');
+                if (!db) throw new Error('Firestore not initialized');
+                
+                const usersSnapshot = await db.collection('users').get();
+                allUsers = [];
+                
+                usersSnapshot.forEach(doc => {
+                    allUsers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                renderUsers();
+            } catch (error) {
+                console.error('Error loading users:', error);
+                if (usersListContainer) {
+                    usersListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת המשתמשים</div>';
+                }
+            }
+        }
+
+        // Render services
+        function renderServices() {
+            try {
+                if (!servicesListContainer) {
+                    console.warn('Services list container not found');
+                    return;
+                }
+                
+                if (allServices.length === 0) {
+                    servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+                } else {
+                    const html = allServices.map(service => `
+                        <div class="admin-list-item">
+                            <div class="admin-list-item-content">
+                                <div class="item-main">
+                                    <div class="item-name">${service.name}</div>
+                                    <div class="item-info">
+                                        <span class="status-dot ${service.active ? 'active' : 'inactive'}"></span>
+                                        <span>${service.active ? 'פעיל' : 'לא פעיל'}</span>
+                                    </div>
+                                </div>
+                                <div class="item-description">${service.description || ''}</div>
+                            </div>
+                            <div class="admin-list-item-actions">
+                                <button class="action-button edit-button" data-id="${service.id}">עריכה</button>
+                                <button class="action-button delete-button" data-id="${service.id}">מחיקה</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    servicesListContainer.innerHTML = html;
+                }
+                
+                if (servicesResultsInfo) {
+                    servicesResultsInfo.textContent = `${allServices.length} שירותים`;
+                }
+            } catch (error) {
+                console.error('Error rendering services:', error);
+            }
+        }
+        
+        // Render categories
+        function renderCategories() {
+            try {
+                if (!categoriesListContainer) {
+                    console.warn('Categories list container not found');
+                    return;
+                }
+                
+                if (allCategories.length === 0) {
+                    categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה.</div>';
+                } else {
+                    const html = allCategories.map(category => `
+                        <div class="admin-list-item">
+                            <div class="admin-list-item-content">
+                                <div class="item-main">
+                                    <div class="item-name">${category.name}</div>
+                                </div>
+                                <div class="item-description">${category.description || ''}</div>
+                            </div>
+                            <div class="admin-list-item-actions">
+                                <button class="action-button edit-button" data-id="${category.id}">עריכה</button>
+                                <button class="action-button delete-button" data-id="${category.id}">מחיקה</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    categoriesListContainer.innerHTML = html;
+                }
+                
+                if (categoriesResultsInfo) {
+                    categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
+                }
+            } catch (error) {
+                console.error('Error rendering categories:', error);
+            }
+        }
+        
+        // Render interest areas
+        function renderInterestAreas() {
+            try {
+                if (!interestAreasListContainer) {
+                    console.warn('Interest areas list container not found');
+                    return;
+                }
+                
+                if (allInterestAreas.length === 0) {
+                    interestAreasListContainer.innerHTML = '<div class="empty-message">אין תחומי עניין ברשימה.</div>';
+                } else {
+                    const html = allInterestAreas.map(interestArea => `
+                        <div class="admin-list-item">
+                            <div class="admin-list-item-content">
+                                <div class="item-main">
+                                    <div class="item-name">${interestArea.name}</div>
+                                </div>
+                                <div class="item-description">${interestArea.description || ''}</div>
+                            </div>
+                            <div class="admin-list-item-actions">
+                                <button class="action-button edit-button" data-id="${interestArea.id}">עריכה</button>
+                                <button class="action-button delete-button" data-id="${interestArea.id}">מחיקה</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    interestAreasListContainer.innerHTML = html;
+                }
+                
+                if (interestAreasResultsInfo) {
+                    interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
+                }
+            } catch (error) {
+                console.error('Error rendering interest areas:', error);
+            }
+        }
+        
+        // Render users
+        function renderUsers() {
+            try {
+                if (!usersListContainer) {
+                    console.warn('Users list container not found');
+                    return;
+                }
+                
+                if (allUsers.length === 0) {
+                    usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה.</div>';
+                } else {
+                    const html = allUsers.map(user => `
+                        <div class="admin-list-item">
+                            <div class="admin-list-item-content">
+                                <div class="item-main">
+                                    <div class="item-name">${user.name || user.email}</div>
+                                    <div class="item-info">
+                                        <span class="status-dot ${user.status === 'active' ? 'active' : 'inactive'}"></span>
+                                        <span>${user.status === 'active' ? 'פעיל' : 'מושבת'}</span>
+                                        <span class="role-badge ${user.role}">${user.role === 'admin' ? 'מנהל' : 'משתמש'}</span>
+                                    </div>
+                                </div>
+                                <div class="item-description">${user.email}</div>
+                            </div>
+                            <div class="admin-list-item-actions">
+                                <button class="action-button edit-button" data-id="${user.id}">עריכה</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    usersListContainer.innerHTML = html;
+                }
+                
+                if (usersResultsInfo) {
+                    usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
+                }
+            } catch (error) {
+                console.error('Error rendering users:', error);
+            }
+        }
     </script>
 </body>
 </html> 

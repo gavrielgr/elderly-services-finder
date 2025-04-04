@@ -71,9 +71,20 @@ function processServiceTags(service) {
 
     // אם יש תחומי עניין (interest areas), נוסיף אותם לתגיות
     if (service.interestAreas && Array.isArray(service.interestAreas)) {
+        // Try to find interest area names if available in the global context
+        const interestAreasData = window.appData?.interestAreas || [];
+        
         service.interestAreas.forEach(area => {
             if (typeof area === 'string') {
-                tags.push(area);
+                // Look up the interest area name by ID
+                const interestArea = interestAreasData.find(a => a.id === area);
+                if (interestArea && interestArea.name) {
+                    // Use the Hebrew name if available
+                    tags.push(interestArea.name);
+                } else {
+                    // Fallback to ID if area not found or no name
+                    tags.push(area);
+                }
             } else if (typeof area === 'object' && area.name) {
                 tags.push(area.name);
             }

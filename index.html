@@ -34,6 +34,9 @@
     
     <!-- CSS -->
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/ratings.css">
+    
     <!-- Favicon -->
     <link rel="icon" href="icons/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
@@ -60,6 +63,10 @@
                     <span class="status-icon offline hidden">🔴</span>
                 </div>
             </div>
+            
+            <!-- Authentication Buttons -->
+            <div id="auth-container"></div>
+            
             <button id="theme-switch" aria-label="החלף מצב תצוגה" class="theme-switch">
                 <span class="light-mode-icon">☀️</span>
                 <span class="dark-mode-icon">🌙</span>
@@ -197,6 +204,13 @@
             window.addEventListener('dataUpdated', (event) => {
                 const { timestamp } = event.detail;
                 window.uiManager.updateLastUpdatedText(timestamp);
+            });
+            
+            // Initialize auth buttons
+            import('./js/components/AuthButtons.js').then(module => {
+                module.createAuthButtons('auth-container');
+            }).catch(error => {
+                console.error('Error loading auth buttons:', error);
             });
         });
     </script>

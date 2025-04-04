@@ -28,9 +28,24 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5001',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.error('Proxy error:', err);
+            
+            if (!res.headersSent) {
+              res.writeHead(500, {
+                'Content-Type': 'application/json'
+              });
+              res.end(JSON.stringify({ 
+                error: 'API server is not available',
+                message: 'Please start the API server with "node server.js"'
+              }));
+            }
+          });
+        }
       }
     }
   },
@@ -76,7 +91,8 @@ export default defineConfig({
       }
     },
     // Copy files from public to dist
-    copyPublicDir: true
+    copyPublicDir: true,
+    sourcemap: true
   },
 
   optimizeDeps: {

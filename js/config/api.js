@@ -1,6 +1,6 @@
 import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
 import { ALL_SERVICES_KEY } from './constants.js';
-import { db, auth } from './firebase.js';
+import { initializeFirebase } from './firebase.js';
 import { 
     collection, getDocs, query, limit, orderBy, startAfter, where, 
     doc, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp 
@@ -74,6 +74,12 @@ function isDataFresh(localTimestamp) {
 async function fetchFromServer() {
     try {
         console.log('Fetching data from Firebase with pagination...');
+        
+        // Make sure Firebase is initialized first
+        const { db } = await initializeFirebase();
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
 
         // 1. Get categories (small collection, fetch all at once)
         console.log('Fetching categories...');
@@ -201,104 +207,76 @@ async function fetchFromServer() {
             }
         }
 
-        // 5. Add interest areas to services
+        // Tie interest areas to each service
         services.forEach(service => {
-            const interestAreaIds = serviceInterestAreasMap[service.id] || [];
-            // Add full interest area objects to service
-            service.interestAreas = interestAreaIds
-                .map(areaId => {
-                    const area = interestAreas.find(a => a.id === areaId);
-                    return area ? { id: area.id, name: area.name } : null;
-                })
-                .filter(area => area !== null);
+            service.interestAreas = serviceInterestAreasMap[service.id] || [];
         });
 
-        console.log(`Complete data load: ${services.length} services, ${categories.length} categories, ${interestAreas.length} interest areas`);
-
+        console.log(`Total data fetched: ${services.length} services, ${categories.length} categories, ${interestAreas.length} interest areas`);
+        
+        // Return the complete dataset
         return {
             services,
             categories,
-            interestAreas
+            interestAreas,
+            lastUpdated: new Date().toISOString()
         };
     } catch (error) {
         console.error('Error in fetchFromServer:', error);
-        return null;
+        throw error;
     }
 }
 
-export const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhjH6M2KJrbCQRu4YiofKbgwrkDpjxZGvLIUqE4KrcA_IKd5sp_8eDl0Pb_zEjeWb9_F8A26cGZyN3LnUwLp1tSGwE4DO0MvbpgpbuL6dkaSgQyecapCtZLqZWSy4fns_lzmQ-VVQYa0YZvoLbV3-5Oq0p4FguPA1dOH8tQlui0VwZ_H9mdlkd0D1AgxO53pa8r4r8VlKWtje0O0-W-tIQTtzYauPWkvm8bwXofRooP4qw-IYmKBYIVb_wXqSyHH5n9dcN7a7v5RpLauKypRY9G1hw1Uw&lib=MOF1g2zWJcL4207AxUsxFPKpukIcnFaFe';
-
-/**
- * פונקציה לבדיקה אם המטמון תקף
- * @param {string} key - מפתח המטמון
- * @returns {Promise<boolean>} - האם המטמון תקף
- */
+// Function to check if the cache is valid
 async function isCacheValid(key) {
     try {
         const cachedData = await getFromIndexedDB(key);
-        if (!cachedData || !cachedData.timestamp) return false;
+        if (!cachedData) return false;
         
-        const now = Date.now();
-        const cacheAge = now - cachedData.timestamp;
-        return cacheAge < CACHE_TTL;
+        // Check last updated timestamp
+        const now = new Date();
+        const lastUpdated = new Date(cachedData.lastUpdated);
+        const diffInMs = now - lastUpdated;
+        
+        // Valid if less than CACHE_TTL (default: 24 hours)
+        return diffInMs < CACHE_TTL;
     } catch (error) {
         console.error('Error checking cache validity:', error);
         return false;
     }
 }
 
-/**
- * פונקציה לטעינת נתונים מהשרת
- * מבצעת אופטימיזציה של טעינה בקבוצות ובהשהיות
- * @returns {Promise<Object>} - הנתונים שנטענו
- */
+// Main entry point for data fetching
 export async function fetchFromAPI() {
     try {
         console.log('Fetching data from API');
-        const startTime = performance.now();
-
-        // נסה לקבל נתונים מהמטמון
-        if (await isCacheValid(ALL_SERVICES_KEY)) {
-            const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);
-            console.log('Using valid cached data');
-            return { success: true, data: cachedData };
-        }
-
-        // אם אין מידע במטמון או שהוא לא טרי, נטען מהשרת
-        const serverData = await fetchFromServer();
-        if (serverData) {
-            const timestamp = new Date().toISOString();
-            const data = {
-                services: serverData.services,
-                categories: serverData.categories,
-                interestAreas: serverData.interestAreas,
-                lastUpdated: timestamp,
-                timestamp: Date.now()
-            };
-            
-            // שמירה במטמון
+        
+        // Try to get data from server first
+        try {
+            const data = await fetchFromServer();
+            // Save fresh data to cache for future use
             await saveToCache(data);
+            return data;
+        } catch (error) {
+            console.error('Error in fetchFromServer:', error);
             
-            const endTime = performance.now();
-            console.log(`API fetch completed in ${Math.round(endTime - startTime)}ms`);
-            console.log(`Fetched ${serverData.services.length} services, ${serverData.categories.length} categories, ${serverData.interestAreas.length} interest areas`);
-
-            return { success: true, data };
+            // If server fetch fails, try to get from cache
+            const cachedData = await getFromCache();
+            if (cachedData) {
+                console.log('Returning cached data due to server error');
+                return cachedData;
+            }
+            
+            // If cache also fails, throw the original error
+            throw error;
         }
-
-        // אם לא הצלחנו לקבל נתונים מהשרת, ננסה להשתמש במטמון
-        const cachedData = await getFromCache();
-        if (cachedData) {
-            console.log('Using stale cached data');
-            return { success: true, data: cachedData };
-        }
-
-        return { success: false, error: 'No data found' };
     } catch (error) {
         console.error('Error in fetchFromAPI:', error);
-        return { success: false, error: error.message };
+        throw error;
     }
 }
+
+export const API_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=AehSKLhjH6M2KJrbCQRu4YiofKbgwrkDpjxZGvLIUqE4KrcA_IKd5sp_8eDl0Pb_zEjeWb9_F8A26cGZyN3LnUwLp1tSGwE4DO0MvbpgpbuL6dkaSgQyecapCtZLqZWSy4fns_lzmQ-VVQYa0YZvoLbV3-5Oq0p4FguPA1dOH8tQlui0VwZ_H9mdlkd0D1AgxO53pa8r4r8VlKWtje0O0-W-tIQTtzYauPWkvm8bwXofRooP4qw-IYmKBYIVb_wXqSyHH5n9dcN7a7v5RpLauKypRY9G1hw1Uw&lib=MOF1g2zWJcL4207AxUsxFPKpukIcnFaFe';
 
 /**
  * פונקציה להוספת שירות חדש

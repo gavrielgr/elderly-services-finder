@@ -3,6 +3,7 @@ import { ratingsAdmin } from './RatingsAdmin.js';
 
 class AdminUI {
     constructor() {
+        // DOM elements
         this.loginContainer = document.getElementById('login-container');
         this.adminDashboard = document.getElementById('admin-dashboard');
         this.adminEmail = document.getElementById('admin-email');
@@ -28,27 +29,53 @@ class AdminUI {
             searchTerm: ''
         };
 
-        this.initializeEventListeners();
-        this.checkAuthState();
+        // Check if elements exist (might not if inline script has initialized UI differently)
+        if (this.initializeDomElements()) {
+            this.initializeEventListeners();
+            this.checkAuthState();
+        } else {
+            console.log('Admin UI initialized from inline script, not initializing event listeners');
+        }
+    }
+    
+    // Ensure DOM elements exist before trying to attach event listeners
+    initializeDomElements() {
+        const missingElements = [];
+        
+        if (!this.loginContainer) missingElements.push('login-container');
+        if (!this.adminDashboard) missingElements.push('admin-dashboard');
+        if (!this.adminEmail) missingElements.push('admin-email');
+        if (!this.logoutButton) missingElements.push('logout-button');
+        if (!this.ratingsTable) missingElements.push('ratings-tbody');
+        if (!this.loadMoreButton) missingElements.push('load-more-button');
+        if (!this.moderationModal) missingElements.push('moderation-modal');
+        if (!this.statusMessage) missingElements.push('status-message');
+        
+        if (missingElements.length > 0) {
+            console.warn('Missing DOM elements:', missingElements.join(', '));
+            return false;
+        }
+        
+        return true;
     }
 
     initializeEventListeners() {
         // Auth listeners
-        this.logoutButton.addEventListener('click', () => this.handleLogout());
+        this.logoutButton?.addEventListener('click', () => this.handleLogout());
 
         // Filter listeners
-        this.statusFilter.addEventListener('change', () => this.handleFiltersChange());
-        this.dateFromFilter.addEventListener('change', () => this.handleFiltersChange());
-        this.dateToFilter.addEventListener('change', () => this.handleFiltersChange());
-        this.searchFilter.addEventListener('input', this.debounce(() => this.handleFiltersChange(), 500));
+        this.statusFilter?.addEventListener('change', () => this.handleFiltersChange());
+        this.dateFromFilter?.addEventListener('change', () => this.handleFiltersChange());
+        this.dateToFilter?.addEventListener('change', () => this.handleFiltersChange());
+        this.searchFilter?.addEventListener('input', this.debounce(() => this.handleFiltersChange(), 500));
 
         // Load more listener
-        this.loadMoreButton.addEventListener('click', () => this.loadMoreRatings());
+        this.loadMoreButton?.addEventListener('click', () => this.loadMoreRatings());
 
         // Modal listeners
-        document.querySelector('.close-modal').addEventListener('click', () => this.closeModal());
-        document.getElementById('confirm-reject').addEventListener('click', () => this.handleConfirmReject());
-        document.getElementById('cancel-reject').addEventListener('click', () => this.closeModal());
+        document.querySelector('.close-modal')?.addEventListener('click', () => this.closeModal());
+        document.getElementById('confirm-reject')?.addEventListener('click', () => this.handleConfirmReject());
+        document.getElementById('cancel-reject')?.addEventListener('click', () => this.closeModal());
     }
 
     async checkAuthState() {

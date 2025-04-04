@@ -249,9 +249,20 @@ export class ResultsManager {
             
             // Add interest areas as tags
             if (service.interestAreas && Array.isArray(service.interestAreas)) {
+                // Try to get the interest areas data
+                const interestAreasData = this.uiManager.dataService.getInterestAreas() || [];
+                
                 service.interestAreas.forEach(area => {
                     if (typeof area === 'string') {
-                        tags.push(area);
+                        // Look up the interest area name by ID
+                        const interestArea = interestAreasData.find(a => a.id === area);
+                        if (interestArea && interestArea.name) {
+                            // Use the Hebrew name if available
+                            tags.push(interestArea.name);
+                        } else {
+                            // Fallback to ID if area not found or no name
+                            tags.push(area);
+                        }
                     } else if (typeof area === 'object' && area.name) {
                         tags.push(area.name);
                     }

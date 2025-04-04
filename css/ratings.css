@@ -1,0 +1,222 @@
+/* Rating Component Styles */
+
+.rating-component {
+    margin: 1.5rem 0;
+    padding: 0;
+    font-family: 'Heebo', sans-serif;
+}
+
+/* Average Rating Display */
+.average-rating-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.stars-container {
+    font-size: 1.5rem;
+    color: #ffb400;
+    margin-bottom: 0.25rem;
+}
+
+.average-text {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Rating Form */
+.rating-form-container {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.rating-form-container h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.stars-input {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 2rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.stars-input .star-input {
+    transition: color 0.2s ease;
+}
+
+.stars-input .star-input:hover {
+    color: #ffb400;
+}
+
+.comment-container {
+    margin-bottom: 1rem;
+}
+
+.comment-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.rating-comment {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: 'Heebo', sans-serif;
+}
+
+.submit-rating-button {
+    background-color: #01b3a7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.submit-rating-button:hover {
+    background-color: #018f86;
+}
+
+.delete-rating-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.delete-rating-button:hover {
+    background-color: #d32f2f;
+}
+
+/* Ratings List */
+.ratings-list-container {
+    margin-top: 2rem;
+}
+
+.ratings-list-container h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+.ratings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.rating-item {
+    background-color: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.rating-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.rating-user-avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.rating-user-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.rating-stars {
+    font-size: 1rem;
+    color: #ffb400;
+    margin-bottom: 0.5rem;
+}
+
+.rating-date {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+}
+
+.rating-comment {
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.5;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .rating-form-container {
+        background-color: #333;
+    }
+    
+    .rating-form-container h3 {
+        color: #eee;
+    }
+    
+    .comment-container label {
+        color: #ccc;
+    }
+    
+    .rating-comment {
+        background-color: #444;
+        border-color: #555;
+        color: #eee;
+    }
+    
+    .rating-item {
+        background-color: #333;
+        border-color: #444;
+    }
+    
+    .rating-user-name {
+        color: #eee;
+    }
+    
+    .rating-comment {
+        color: #ddd;
+    }
+    
+    .login-prompt {
+        background-color: #333;
+    }
+    
+    .login-prompt p {
+        color: #ccc;
+    }
+    
+    .average-text {
+        color: #ccc;
+    }
+} 

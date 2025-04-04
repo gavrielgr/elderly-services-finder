@@ -24,6 +24,43 @@ export class ServiceCard {
         const ratingStars = '⭐'.repeat(Math.round(rating));
         const ratingText = rating > 0 ? `${rating.toFixed(1)} (${this.service.ratings?.count || 0} דירוגים)` : 'אין דירוגים עדיין';
 
+        // Process tags or interest areas with proper name lookup
+        let displayTags = [];
+        
+        // Try to get interest areas data from window context
+        const interestAreasData = window.appData?.interestAreas || [];
+        
+        // Process tags if available
+        if (this.service.tags?.length) {
+            this.service.tags.forEach(tag => {
+                if (typeof tag === 'string') {
+                    displayTags.push(tag);
+                } else if (typeof tag === 'object' && tag.name) {
+                    displayTags.push(tag.name);
+                }
+            });
+        }
+        
+        // Process interest areas if available
+        if (this.service.interestAreas?.length) {
+            this.service.interestAreas.forEach(area => {
+                if (typeof area === 'string') {
+                    // Look up the area name from ID
+                    const interestArea = interestAreasData.find(a => a.id === area);
+                    if (interestArea && interestArea.name) {
+                        displayTags.push(interestArea.name);
+                    } else {
+                        displayTags.push(area);
+                    }
+                } else if (typeof area === 'object' && area.name) {
+                    displayTags.push(area.name);
+                }
+            });
+        }
+        
+        // Remove duplicates
+        displayTags = [...new Set(displayTags)];
+
         card.innerHTML = `
             <h3 class="service-title">${this.service.name}</h3>
             ${this.service.description ? 
@@ -34,9 +71,9 @@ export class ServiceCard {
                 <span class="rating-stars">${ratingStars}</span>
                 <span class="rating-text">${ratingText}</span>
             </div>
-            ${this.service.tags?.length ? 
+            ${displayTags.length ? 
                 `<div class="service-tags">
-                    ${this.service.tags.map(tag => `<span class="service-tag">${tag}</span>`).join('')}
+                    ${displayTags.map(tag => `<span class="service-tag">${tag}</span>`).join('')}
                 </div>` : 
                 ''
             }

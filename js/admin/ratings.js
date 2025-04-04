@@ -4,7 +4,7 @@ import { db } from '../config/firebase.js';
 export async function loadRatings(tableBody) {
     try {
         console.log('Loading ratings...');
-        const q = query(collection(db, 'ratings'), where('status', '==', 'pending'));
+        const q = query(collection(db, 'ratings'), where('moderation.status', '==', 'pending'));
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
@@ -36,8 +36,8 @@ export async function loadRatings(tableBody) {
             rows.push(`
                 <tr>
                     <td>${serviceName}</td>
-                    <td>${rating.rating}/5</td>
-                    <td>${rating.comment || ''}</td>
+                    <td>${rating.overall}/5</td>
+                    <td>${rating.text || ''}</td>
                     <td>${rating.userName || 'אנונימי'}</td>
                     <td>${rating.timestamp ? new Date(rating.timestamp.seconds * 1000).toLocaleDateString('he-IL') : ''}</td>
                     <td>
@@ -59,8 +59,8 @@ export async function approveRating(id) {
     try {
         const ratingRef = doc(db, 'ratings', id);
         await updateDoc(ratingRef, {
-            status: 'approved',
-            approvedAt: Timestamp.now()
+            'moderation.status': 'approved',
+            'moderation.reviewedAt': Timestamp.now()
         });
     } catch (error) {
         console.error('Error approving rating:', error);
@@ -72,9 +72,9 @@ export async function rejectRating(id, reason) {
     try {
         const ratingRef = doc(db, 'ratings', id);
         await updateDoc(ratingRef, {
-            status: 'rejected',
-            rejectedAt: Timestamp.now(),
-            rejectionReason: reason
+            'moderation.status': 'rejected',
+            'moderation.reviewedAt': Timestamp.now(),
+            'moderation.rejectionReason': reason
         });
     } catch (error) {
         console.error('Error rejecting rating:', error);

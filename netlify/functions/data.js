@@ -9,6 +9,13 @@ let db;
 const initializeFirebaseAdmin = () => {
   if (!firebaseAdmin) {
     try {
+      // Check for required environment variables
+      if (!process.env.FIREBASE_PROJECT_ID || 
+          !process.env.FIREBASE_CLIENT_EMAIL || 
+          !process.env.FIREBASE_PRIVATE_KEY) {
+        throw new Error('Firebase Admin SDK credentials missing. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables.');
+      }
+      
       firebaseAdmin = initializeApp({
         credential: cert({
           projectId: process.env.FIREBASE_PROJECT_ID,
@@ -75,24 +82,6 @@ export const handler = async (event, context) => {
 
     console.log('Cache miss or expired, fetching fresh data...');
     
-    // Check for Firebase Admin credentials
-    if (!process.env.FIREBASE_PROJECT_ID || 
-        !process.env.FIREBASE_CLIENT_EMAIL || 
-        !process.env.FIREBASE_PRIVATE_KEY) {
-      console.log('Firebase Admin credentials not found, returning mock data');
-      // Return mock data for development/preview
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-          services: [{ id: 'mock1', name: 'שירות מדגם 1', description: 'תיאור לדוגמה' }],
-          categories: [{ id: 'mockCat1', name: 'קטגוריה לדוגמה' }],
-          interestAreas: [{ id: 'mockArea1', name: 'תחום עניין לדוגמה' }],
-          mockData: true
-        })
-      };
-    }
-
     // Initialize Firebase Admin and Firestore
     const { db } = initializeFirebaseAdmin();
     
@@ -159,7 +148,10 @@ export const handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: error.message,
+        details: 'Failed to fetch data from Firestore. Firebase credentials may be invalid or missing.'
+      })
     };
   }
 }; 

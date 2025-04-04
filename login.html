@@ -4,366 +4,167 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>התחברות - שירותי+</title>
-    <meta name="description" content="התחברות למערכת הניהול של שירותי+">
     <link rel="stylesheet" href="/styles/main.css">
-    <link rel="stylesheet" href="/styles/login.css">
-    <link rel="icon" href="/icons/favicon.ico">
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-color: #7DD1D3;
-            --primary-dark: #5CB9BB;
-            --text-color: #333;
-            --bg-color: #f5f5f5;
-            --error-color: #e74c3c;
-        }
-        
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Open Sans', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            direction: rtl;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .login-container {
-            background-color: white;
-            width: 95%;
-            max-width: 400px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .login-header {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 1.5rem;
-            text-align: center;
-        }
-        
-        .login-content {
-            padding: 2rem;
-            text-align: center;
-        }
-        
-        h1 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        p {
-            margin-bottom: 1.5rem;
-            color: #666;
-        }
-        
-        .login-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 0.8rem;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            font-family: 'Open Sans', sans-serif;
-            font-size: 1rem;
-        }
-        
-        .login-button:hover {
-            background-color: #f8f8f8;
-        }
-        
-        .google-logo {
-            width: 20px;
-            height: 20px;
-            margin-left: 10px;
-        }
-        
-        .login-logo {
-            width: 80px;
-            height: auto;
-            margin-bottom: 1rem;
-        }
-        
-        .login-title {
-            font-size: 2rem;
-            margin-bottom: 1rem;
-        }
-        
-        .error-message {
-            color: var(--error-color);
-            background-color: rgba(231, 76, 60, 0.1);
-            padding: 0.8rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .loader {
-            border: 3px solid rgba(0, 0, 0, 0.1);
-            border-radius: 50%;
-            border-top: 3px solid var(--primary-color);
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <script type="module" src="/js/config/app-config.js"></script>
+    <script type="module" src="/js/config/firebase.js"></script>
+    <script type="module" src="/js/services/authService.js"></script>
 </head>
 <body>
-    <div class="login-container">
-        <div class="login-header">
-            <h1 class="login-title">שירותי+</h1>
+    <header class="site-header">
+        <div class="container header-container">
+            <a href="/" class="logo">שירותי+</a>
+            <nav class="primary-nav">
+                <ul>
+                    <li><a href="/">דף הבית</a></li>
+                    <li><a href="/services.html">שירותים</a></li>
+                    <li><a href="/contact.html">צור קשר</a></li>
+                </ul>
+            </nav>
         </div>
-        <div class="login-content">
-            <div id="checking-auth">
-                <p>בודק מצב התחברות...</p>
-                <div class="loader"></div>
-            </div>
-            
-            <div id="login-controls" class="hidden">
-                <h2>התחברות למערכת הניהול</h2>
-                <p>אנא התחבר באמצעות חשבון מאושר</p>
+    </header>
+
+    <main class="main-content">
+        <div class="container auth-container">
+            <div class="auth-box">
+                <h1 class="auth-title">התחברות</h1>
+                <p class="auth-description">התחבר כדי לדרג שירותים ולהשאיר חוות דעת</p>
                 
-                <div id="loading-indicator" class="loader hidden"></div>
-                <div id="error-box" class="error-message hidden"></div>
-                <button id="login-btn" class="login-button">
-                    <img src="/icons/google-logo.png" alt="Google" class="google-logo">
-                    התחבר עם Google
-                </button>
+                <div class="auth-loading" id="loading-indicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>מתחבר...</p>
+                </div>
+                
+                <div class="auth-error" id="error-message" style="display: none;"></div>
+                
+                <div class="auth-buttons" id="login-buttons">
+                    <button id="google-login" class="auth-button google-button">
+                        <img src="/assets/images/google-icon.svg" alt="Google" class="button-icon">
+                        <span>התחבר עם Google</span>
+                    </button>
+                </div>
+                
+                <div class="auth-success" id="login-success" style="display: none;">
+                    <p>התחברת בהצלחה!</p>
+                    <div class="user-info" id="user-info"></div>
+                    <button id="logout-button" class="button button-secondary">התנתק</button>
+                    <div class="redirect-message" id="redirect-message"></div>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    
-    <script>
-        console.log("Script started - initial loading");
+    <footer class="site-footer">
+        <div class="container">
+            <p>© 2023 שירותי+ - פלטפורמה לשירותי זקנים</p>
+        </div>
+    </footer>
 
-        // DOM elements
-        const loginBtn = document.getElementById('login-btn');
+    <script type="module">
+        import { authService } from '/js/services/authService.js';
+        
+        const loginButtons = document.getElementById('login-buttons');
+        const googleLoginButton = document.getElementById('google-login');
         const loadingIndicator = document.getElementById('loading-indicator');
-        const errorBox = document.getElementById('error-box');
-        const loginControls = document.getElementById('login-controls');
-        const checkingAuth = document.getElementById('checking-auth');
-
-        // Check if Firebase SDK loaded correctly
-        if (typeof firebase === 'undefined') {
-            console.error("Firebase SDK not loaded - scripts might not have loaded properly");
-            setTimeout(() => {
-                document.getElementById('checking-auth').innerHTML = `
-                    <p>שגיאה בטעינת המערכת</p>
-                    <div class="error-message">לא ניתן לטעון את Firebase SDK. נסה לרענן את הדף או לנקות את המטמון.</div>
-                    <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
-                `;
-            }, 2000);
-        } else {
-            console.log("Firebase SDK loaded successfully");
-        }
+        const errorMessage = document.getElementById('error-message');
+        const loginSuccess = document.getElementById('login-success');
+        const userInfo = document.getElementById('user-info');
+        const logoutButton = document.getElementById('logout-button');
+        const redirectMessage = document.getElementById('redirect-message');
         
-        // Define a function to handle timeout
-        let authCheckTimeout = setTimeout(() => {
-            console.log("Auth check timed out after 10 seconds");
-            document.getElementById('checking-auth').innerHTML = `
-                <p>התהליך נתקע</p>
-                <div class="error-message">בדיקת ההתחברות נמשכת זמן רב מדי. נסה לרענן את הדף.</div>
-                <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
-            `;
-        }, 10000);
+        // Get query parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectUrl = urlParams.get('redirect') || '/';
         
-        // Initialize Firebase
-        try {
-            console.log("Initializing Firebase authentication");
-            
-            // Check if we're in development mode
-            const isDevelopment = window.location.hostname === 'localhost' || 
-                                 window.location.hostname === '127.0.0.1';
-            
-            if (isDevelopment) {
-                console.log("Development mode detected, using simplified flow");
+        // Check if already logged in
+        authService.onAuthStateChange((user) => {
+            if (user) {
+                showAuthSuccess(user);
                 
-                // Get Firebase config from server but simplified flow
-                fetch('/api/config')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to fetch Firebase configuration');
-                        }
-                        return response.json();
-                    })
-                    .then(firebaseConfig => {
-                        // Initialize Firebase with config from server
-                        firebase.initializeApp(firebaseConfig);
-                        console.log("Firebase initialized with server config (dev mode)");
-                        
-                        // Skip firebase auth and just show login controls
-                        clearTimeout(authCheckTimeout);
-                        checkingAuth.classList.add('hidden');
-                        loginControls.classList.remove('hidden');
-                        
-                        // Set up simple login button for development
-                        loginBtn.addEventListener('click', () => {
-                            console.log("Login clicked in development mode");
-                            window.location.href = '/admin';
-                        });
-                    })
-                    .catch(error => {
-                        console.error("Error in development setup:", error);
-                        document.getElementById('checking-auth').innerHTML = `
-                            <p>שגיאה באתחול מערכת</p>
-                            <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
-                            <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
-                        `;
-                    });
+                // Auto-redirect after login if not admin page
+                if (!redirectUrl.includes('admin')) {
+                    redirectMessage.textContent = 'מעביר אותך בחזרה...';
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 1500);
+                } else {
+                    redirectMessage.textContent = 'ניתן לגשת לממשק הניהול';
+                    setTimeout(() => {
+                        window.location.href = redirectUrl;
+                    }, 1500);
+                }
             } else {
-                // Production flow: get config, then auth token, then sign in
-                fetch('/api/config')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to fetch Firebase configuration');
-                        }
-                        return response.json();
-                    })
-                    .then(firebaseConfig => {
-                        // Initialize Firebase with config from server
-                        firebase.initializeApp(firebaseConfig);
-                        console.log("Firebase initialized with server config");
-                        
-                        // Then initialize authentication
-                        return fetch('/api/auth/init');
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Authentication initialization failed: ' + response.status);
-                        }
-                        return response.json();
-                    })
-                    .then(authData => {
-                        console.log("Auth initialization successful");
-                        
-                        // Sign in with custom token provided by the server
-                        return firebase.auth().signInWithCustomToken(authData.authToken)
-                            .then(userCredential => {
-                                console.log("Successfully authenticated with server token");
-                                // Set up auth functionality with the authenticated user
-                                setupApp(firebase.auth(), firebase.firestore());
-                            })
-                            .catch(error => {
-                                console.error("Error signing in with custom token:", error);
-                                throw error;
-                            });
-                    })
-                    .catch(error => {
-                        console.error("Error initializing authentication:", error);
-                        document.getElementById('checking-auth').innerHTML = `
-                            <p>שגיאה באתחול מערכת</p>
-                            <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
-                            <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
-                        `;
-                    });
+                showLoginForm();
             }
-        } catch (error) {
-            console.error("Error in authentication setup:", error);
-            document.getElementById('checking-auth').innerHTML = `
-                <p>שגיאה באתחול מערכת</p>
-                <div class="error-message">לא ניתן לאתחל את מערכת האימות. נסה לרענן את הדף.</div>
-                <button onclick="location.reload()" class="login-button" style="margin-top: 15px;">רענן דף</button>
-            `;
-        }
+        });
         
-        // Functions
+        // Set up Google login button
+        googleLoginButton.addEventListener('click', async () => {
+            try {
+                showLoading();
+                const user = await authService.loginWithGoogle();
+                if (user) {
+                    showAuthSuccess(user);
+                } else {
+                    showLoginForm();
+                }
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+        
+        // Set up logout button
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await authService.logout();
+                showLoginForm();
+            } catch (error) {
+                showError(error.message);
+            }
+        });
+        
         function showLoading() {
-            loginBtn.disabled = true;
-            loadingIndicator.classList.remove('hidden');
-            errorBox.classList.add('hidden');
+            loginButtons.style.display = 'none';
+            loadingIndicator.style.display = 'flex';
+            errorMessage.style.display = 'none';
+            loginSuccess.style.display = 'none';
         }
         
-        function hideLoading() {
-            loginBtn.disabled = false;
-            loadingIndicator.classList.add('hidden');
+        function showLoginForm() {
+            loginButtons.style.display = 'flex';
+            loadingIndicator.style.display = 'none';
+            errorMessage.style.display = 'none';
+            loginSuccess.style.display = 'none';
         }
         
         function showError(message) {
-            errorBox.textContent = message;
-            errorBox.classList.remove('hidden');
-            hideLoading();
+            loginButtons.style.display = 'flex';
+            loadingIndicator.style.display = 'none';
+            errorMessage.style.display = 'block';
+            errorMessage.textContent = message || 'שגיאה בתהליך ההתחברות';
+            loginSuccess.style.display = 'none';
         }
         
-        function hideError() {
-            errorBox.classList.add('hidden');
-        }
-        
-        function showLoginControls() {
-            checkingAuth.classList.add('hidden');
-            loginControls.classList.remove('hidden');
-        }
-        
-        // Main app setup function
-        function setupApp(auth, firestore) {
-            // Clear the timeout since auth is complete
-            clearTimeout(authCheckTimeout);
-                
-            // Check if user is already signed in
-            auth.onAuthStateChanged((user) => {
-                if (user && user.email) {
-                    console.log("User already signed in:", user.email);
-                    // Redirect to admin page
-                    window.location.href = '/admin.html';
-                    return;
-                }
-                
-                // Show login controls if no user is signed in
-                checkingAuth.classList.add('hidden');
-                loginControls.classList.remove('hidden');
-            });
+        function showAuthSuccess(user) {
+            loginButtons.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+            errorMessage.style.display = 'none';
+            loginSuccess.style.display = 'block';
             
-            // Set up Google auth provider for the login button
-            loginBtn.addEventListener('click', () => {
-                showLoading();
-                hideError();
+            // Display user info
+            const displayName = user.name || user.email || 'משתמש';
+            const photoHTML = user.photoURL ? 
+                `<img src="${user.photoURL}" alt="${displayName}" class="user-avatar">` : 
+                `<div class="user-avatar-placeholder">${displayName.charAt(0)}</div>`;
                 
-                const provider = new firebase.auth.GoogleAuthProvider();
-                
-                auth.signInWithPopup(provider)
-                    .then((result) => {
-                        const user = result.user;
-                        console.log("Google Sign-in successful:", user.email);
-                        
-                        // Add admin check here if needed
-                        window.location.href = '/admin.html';
-                    })
-                    .catch((error) => {
-                        console.error("Google Sign-in error:", error);
-                        showError("שגיאה בהתחברות: " + error.message);
-                        hideLoading();
-                    });
-            });
+            userInfo.innerHTML = `
+                <div class="user-avatar-container">
+                    ${photoHTML}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">${displayName}</div>
+                    <div class="user-email">${user.email || ''}</div>
+                </div>
+            `;
         }
     </script>
 </body>

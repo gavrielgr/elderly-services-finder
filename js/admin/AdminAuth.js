@@ -15,63 +15,80 @@ import {
     collection,
     addDoc
 } from 'firebase/firestore';
-import { app } from '../config/firebase.js';
-
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { initializeFirebase } from '../config/firebase.js';
 
 export class AdminAuth {
     constructor() {
         this.currentUser = null;
-        this.authInitialized = false; // Flag to check if initial auth state is processed
-        this.authStatePromise = new Promise((resolve) => {
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    try {
-                        const userDoc = await getDoc(doc(db, 'users', user.uid));
-                        if (userDoc.exists()) {
-                            const userData = userDoc.data();
-                            if (userData.role === 'admin' && userData.status === 'active') {
-                                this.currentUser = {
-                                    uid: user.uid,
-                                    email: user.email,
-                                    name: user.displayName,
-                                    ...userData
-                                };
-                                // Do NOT update lastLogin or log activity here on initial load
+        this.currentAdmin = null;
+        this.authInitialized = false;
+        this.initializeAuth();
+    }
+    
+    async initializeAuth() {
+        try {
+            // Initialize Firebase first
+            const { auth, db } = await initializeFirebase();
+            this.auth = auth;
+            this.db = db;
+            
+            this.authStatePromise = new Promise((resolve) => {
+                const unsubscribe = onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        try {
+                            const userDoc = await getDoc(doc(db, 'users', user.uid));
+                            if (userDoc.exists()) {
+                                const userData = userDoc.data();
+                                if (userData.role === 'admin' && userData.status === 'active') {
+                                    this.currentUser = {
+                                        uid: user.uid,
+                                        email: user.email,
+                                        name: user.displayName,
+                                        ...userData
+                                    };
+                                    this.currentAdmin = this.currentUser;
+                                    // Do NOT update lastLogin or log activity here on initial load
+                                } else {
+                                    this.currentUser = null;
+                                    this.currentAdmin = null;
+                                    // Don't throw error here, let login() handle it
+                                }
                             } else {
-                                this.currentUser = null;
-                                // Don't throw error here, let login() handle it
+                               // User exists in Auth but not in Firestore - treat as non-admin
+                               this.currentUser = null;
+                               this.currentAdmin = null;
                             }
-                        } else {
-                           // User exists in Auth but not in Firestore - treat as non-admin
-                           this.currentUser = null; 
+                        } catch (error) {
+                            console.error("Error fetching user data on auth state change:", error);
+                            this.currentUser = null;
+                            this.currentAdmin = null;
                         }
-                    } catch (error) {
-                        console.error("Error fetching user data on auth state change:", error);
+                    } else {
                         this.currentUser = null;
+                        this.currentAdmin = null;
                     }
-                } else {
-                    this.currentUser = null;
-                }
-                this.authInitialized = true;
-                resolve(); // Resolve the promise once initial state is known
-                // Keep listening for future changes if needed, or unsubscribe if only initial check is desired.
-                // For a persistent login system, keeping the listener is usually correct.
+                    this.authInitialized = true;
+                    resolve(); // Resolve the promise once initial state is known
+                });
             });
-        });
+            
+            await this.authStatePromise;
+        } catch (error) {
+            console.error("Failed to initialize authentication:", error);
+            this.authInitialized = true;
+            this.currentUser = null;
+            this.currentAdmin = null;
+        }
     }
 
     async login() {
         try {
+            await this.authStatePromise; // Wait for auth to be initialized
+            
+            const { auth, db } = await initializeFirebase();
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
-            
-            // Wait for auth state processing if it hasn't finished
-            if (!this.authInitialized) {
-                await this.authStatePromise;
-            }
 
             // Re-check user data after login popup
             const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -84,6 +101,7 @@ export class AdminAuth {
                         name: user.displayName,
                         ...userData
                     };
+                    this.currentAdmin = this.currentUser;
 
                     // Try to update lastLogin but continue even if it fails
                     try {
@@ -95,13 +113,13 @@ export class AdminAuth {
                         // Continue despite the error
                     }
                     
-                    // Skip activity logging to avoid potential permission error
-                    // Go directly to admin page instead of trying to log
+                    // Go directly to admin page
                     window.location.href = '/admin';
                     return this.currentUser;
                 } else {
                     // User exists but is not an active admin
                     this.currentUser = null;
+                    this.currentAdmin = null;
                     try {
                         await signOut(auth); // Just sign out without logging
                     } catch (error) {
@@ -125,6 +143,7 @@ export class AdminAuth {
                     // Continue despite error
                 }
                 this.currentUser = null;
+                this.currentAdmin = null;
                 try {
                     await signOut(auth); // Just sign out without logging
                 } catch (error) {
@@ -150,24 +169,86 @@ export class AdminAuth {
 
     async logout() {
         try {
+            const { auth } = await initializeFirebase();
             await signOut(auth);
         } catch (error) {
             console.warn('Logout error:', error);
         }
         this.currentUser = null;
+        this.currentAdmin = null;
         if (window.location.pathname !== '/login') {
             window.location.href = '/login';
         }
     }
+    
+    async checkPermission(permission) {
+        if (!this.currentAdmin || this.currentAdmin.role !== 'admin') {
+            console.warn(`Permission check failed for ${permission}: No admin user`);
+            return false;
+        }
+        
+        // For now, any admin has all permissions
+        // In a more complex system, you could check specific permission fields
+        return true;
+    }
+    
+    // Method to support auth state listeners
+    onAuthStateChanged(callback) {
+        if (!this.auth) {
+            // Not initialized yet - store the callback and call it once initialized
+            this.authStatePromise.then(() => {
+                callback(this.currentUser);
+            });
+            return () => {}; // Return dummy unsubscribe function
+        }
+        
+        return onAuthStateChanged(this.auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(this.db, 'users', user.uid));
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        if (userData.role === 'admin' && userData.status === 'active') {
+                            this.currentUser = {
+                                uid: user.uid,
+                                email: user.email,
+                                name: user.displayName,
+                                ...userData
+                            };
+                            this.currentAdmin = this.currentUser;
+                            callback(this.currentUser);
+                        } else {
+                            this.currentUser = null;
+                            this.currentAdmin = null;
+                            callback(null);
+                        }
+                    } else {
+                       this.currentUser = null;
+                       this.currentAdmin = null; 
+                       callback(null);
+                    }
+                } catch (error) {
+                    console.error("Error in auth state change:", error);
+                    this.currentUser = null;
+                    this.currentAdmin = null;
+                    callback(null);
+                }
+            } else {
+                this.currentUser = null;
+                this.currentAdmin = null;
+                callback(null);
+            }
+        });
+    }
 
     async logActivity(action) {
-        // Don't even try if not admin
         if (!this.currentUser || this.currentUser.role !== 'admin') {
             console.warn('Attempted to log activity without admin privileges');
             return; 
         }
         
         try {
+            const { db } = await initializeFirebase();
             const activityRef = collection(db, 'activities');
             await addDoc(activityRef, {
                 userId: this.currentUser.uid,
