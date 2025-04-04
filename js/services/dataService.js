@@ -224,6 +224,9 @@ export class DataService {
                         const index = this.allServicesData.services.findIndex(s => s.id === serviceId);
                         if (index >= 0) {
                             this.allServicesData.services[index] = serviceData;
+                            
+                            // Save the updated data to IndexedDB
+                            await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
                         }
                     }
                     
@@ -260,6 +263,57 @@ export class DataService {
         } catch (error) {
             console.error('Error getting cached data:', error);
             return null;
+        }
+    }
+
+    /**
+     * Check if the service version in cache is up to date
+     * This implements the versioned cache strategy for ratings
+     * @param {string} serviceId - The ID of the service to check
+     * @returns {Promise<boolean>} - Whether the service needs to be refreshed
+     */
+    async checkServiceVersion(serviceId) {
+        if (!serviceId || !this.allServicesData?.services) {
+            return false;
+        }
+        
+        try {
+            // Find the service in our local cache
+            const cachedService = this.allServicesData.services.find(s => s.id === serviceId);
+            if (!cachedService) {
+                return false;
+            }
+            
+            // Get the timestamp from either metadata.updated or updatedAt
+            const cachedTimestamp = cachedService.metadata?.updated || 
+                                   (cachedService.updatedAt?.seconds ? 
+                                    new Date(cachedService.updatedAt.seconds * 1000).toISOString() : 
+                                    null);
+            
+            if (!cachedTimestamp) {
+                return true; // No timestamp, better refresh to be safe
+            }
+            
+            // Check the version with the server using a lightweight API call
+            const response = await fetch(`${window.location.origin.replace('5173', '5001')}/api/service-version/${serviceId}`);
+            
+            if (response.ok) {
+                const versionData = await response.json();
+                const serverTimestamp = versionData.updated;
+                
+                // If the server has a newer timestamp, we need to refresh
+                if (serverTimestamp && serverTimestamp !== cachedTimestamp) {
+                    console.log(`Service ${serviceId} has a new version. Cache: ${cachedTimestamp}, Server: ${serverTimestamp}`);
+                    return true;
+                }
+                
+                return false; // No update needed
+            }
+            
+            return false; // Couldn't check, assume no update needed
+        } catch (error) {
+            console.error(`Error checking service version for ${serviceId}:`, error);
+            return false; // On error, assume no update needed
         }
     }
 }

@@ -218,7 +218,11 @@ export class RatingsAdmin {
                 'ratings.average': averageRating,
                 'ratings.count': count,
                 'ratings.categoryAverages': categoryAverages,
-                'ratings.lastUpdated': serverTimestamp()
+                'ratings.lastUpdated': serverTimestamp(),
+                
+                // Update timestamps for version checking
+                updatedAt: serverTimestamp(),
+                'metadata.updated': new Date().toISOString()
             });
 
         } catch (error) {

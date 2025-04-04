@@ -45,13 +45,25 @@ export class ModalManager {
         }
     }
 
-    showServiceDetails(service) {
+    async showServiceDetails(service) {
         console.log('Showing service details:', service);
         this.currentService = service;
         
         if (!this.detailsContainer) {
             console.error('Details container not found');
             return;
+        }
+        
+        // Check if the service needs to be refreshed (implement versioned cache)
+        const needsRefresh = await this.uiManager.dataService.checkServiceVersion(service.id);
+        if (needsRefresh) {
+            // Get the latest version from the server
+            console.log('Service has been updated, fetching latest version');
+            const updatedService = await this.uiManager.dataService.getServiceById(service.id, true);
+            if (updatedService) {
+                this.currentService = updatedService;
+                service = updatedService;
+            }
         }
         
         this.detailsContainer.innerHTML = '';

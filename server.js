@@ -353,6 +353,71 @@ app.get('/api/service/:serviceId', async (req, res) => {
     }
 });
 
+// Lightweight endpoint to check service version/timestamp
+app.get('/api/service-version/:serviceId', async (req, res) => {
+    try {
+        const serviceId = req.params.serviceId;
+        
+        // Try to get the version from cache first
+        if (cache.services) {
+            const cachedService = cache.services.find(s => s.id === serviceId);
+            if (cachedService) {
+                const updated = cachedService.metadata?.updated || 
+                               (cachedService.updatedAt?.seconds ? 
+                                new Date(cachedService.updatedAt.seconds * 1000).toISOString() : 
+                                null);
+                                
+                return res.json({ 
+                    serviceId, 
+                    updated,
+                    source: 'cache'
+                });
+            }
+        }
+        
+        // If not in cache, try using Firestore Web SDK
+        const { initializeApp } = await import('firebase/app');
+        const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+        
+        // Get Firebase config
+        const apiUrl = `http://localhost:${PORT}/api/config`;
+        const configResponse = await fetch(apiUrl);
+        if (!configResponse.ok) {
+            throw new Error('Failed to fetch Firebase config');
+        }
+        
+        const firebaseConfig = await configResponse.json();
+        const app = initializeApp(firebaseConfig);
+        const webDb = getFirestore(app);
+        
+        // Get only the metadata field from the service document
+        const serviceDoc = await getDoc(doc(webDb, 'services', serviceId));
+        
+        if (!serviceDoc.exists()) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        
+        // Get the updated timestamp
+        const data = serviceDoc.data();
+        const updated = data.metadata?.updated || 
+                       (data.updatedAt?.seconds ? 
+                        new Date(data.updatedAt.seconds * 1000).toISOString() : 
+                        null);
+        
+        res.json({ 
+            serviceId, 
+            updated,
+            source: 'firestore'
+        });
+    } catch (error) {
+        console.error('Error checking service version:', error);
+        res.status(500).json({ 
+            error: 'Failed to check service version',
+            message: error.message
+        });
+    }
+});
+
 // Serve static files 
 app.use(express.static('public'));
 

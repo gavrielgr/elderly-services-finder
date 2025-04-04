@@ -236,7 +236,9 @@ class RatingService {
                     // Also update the existing path for backward compatibility
                     'ratings.average': avgRating,
                     'ratings.count': count,
-                    updatedAt: serverTimestamp()
+                    // Update timestamps for version checking
+                    updatedAt: serverTimestamp(),
+                    'metadata.updated': new Date().toISOString()
                 });
             });
             
