@@ -42,7 +42,7 @@ export class RatingComponent {
         this.render();
     }
     
-    async loadData() {
+    async loadData(silent = false) {
         try {
             // Load user's rating if authenticated
             if (authService.isAuthenticated()) {
@@ -62,22 +62,28 @@ export class RatingComponent {
                 
             if (hasRatings) {
                 // Service has ratings, use the metadata we already have
-                const ratingsSource = this.currentService.stats?.ratings !== undefined ? 'stats' : 'ratings';
-                console.log(`Using ratings from service object (${ratingsSource}):`, 
-                    ratingsSource === 'stats' ? 
-                    { average: this.currentService.stats.averageRating, count: this.currentService.stats.ratings } : 
-                    this.currentService.ratings);
+                if (!silent) {
+                    const ratingsSource = this.currentService.stats?.ratings !== undefined ? 'stats' : 'ratings';
+                    console.log(`Using ratings from service object (${ratingsSource}):`, 
+                        ratingsSource === 'stats' ? 
+                        { average: this.currentService.stats.averageRating, count: this.currentService.stats.ratings } : 
+                        this.currentService.ratings);
+                }
                 this.serviceRatings = [];
             } else if (hasNoRatings) {
                 // Service has no ratings, don't try to load any
-                console.log('Service has no ratings, skipping API call');
+                if (!silent) {
+                    console.log('Service has no ratings, skipping API call');
+                }
                 this.serviceRatings = [];
             } else {
                 // Only attempt to fetch individual ratings if needed in some special case
                 try {
                     this.serviceRatings = await ratingService.getServiceRatings(this.serviceId);
                 } catch (error) {
-                    console.log('Failed to load ratings, using service metadata instead');
+                    if (!silent) {
+                        console.log('Failed to load ratings, using service metadata instead');
+                    }
                     this.serviceRatings = [];
                 }
             }
@@ -453,8 +459,8 @@ export class RatingComponent {
             await new Promise(resolve => setTimeout(resolve, 300));
         }
         
-        // Reload data and re-render
-        await this.loadData();
+        // Reload data and re-render - use silent mode to avoid duplicate console logs
+        await this.loadData(true);
         this.render();
         
         // Remove animation after a brief delay
