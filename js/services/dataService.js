@@ -181,6 +181,69 @@ export class DataService {
         return this.allServicesData.categories.find(cat => cat.id === categoryId);
     }
 
+    getInterestAreas() {
+        if (!this.allServicesData || !this.allServicesData.interestAreas) {
+            console.warn('Interest areas not available in allServicesData');
+            return [];
+        }
+        return this.allServicesData.interestAreas;
+    }
+
+    getInterestArea(areaId) {
+        if (!this.allServicesData?.interestAreas) {
+            console.warn('Interest areas not available:', this.allServicesData);
+            return null;
+        }
+        return this.allServicesData.interestAreas.find(area => area.id === areaId);
+    }
+
+    // Get a service by ID with option to refresh from server
+    async getServiceById(serviceId, forceRefresh = false) {
+        if (!serviceId) {
+            return null;
+        }
+        
+        // First check if we have it in memory
+        if (this.allServicesData?.services && !forceRefresh) {
+            const service = this.allServicesData.services.find(s => s.id === serviceId);
+            if (service) {
+                return service;
+            }
+        }
+        
+        if (forceRefresh) {
+            try {
+                // Fetch the latest service data from the server
+                const response = await fetch(`${window.location.origin.replace('5173', '5001')}/api/service/${serviceId}`);
+                
+                if (response.ok) {
+                    const serviceData = await response.json();
+                    
+                    // Update the service in our local data if it exists
+                    if (this.allServicesData?.services) {
+                        const index = this.allServicesData.services.findIndex(s => s.id === serviceId);
+                        if (index >= 0) {
+                            this.allServicesData.services[index] = serviceData;
+                        }
+                    }
+                    
+                    return serviceData;
+                } else {
+                    console.warn(`Failed to fetch service ${serviceId} from server:`, response.status);
+                }
+            } catch (error) {
+                console.error(`Error fetching service ${serviceId}:`, error);
+            }
+        }
+        
+        // Fallback to local cache
+        if (this.allServicesData?.services) {
+            return this.allServicesData.services.find(s => s.id === serviceId) || null;
+        }
+        
+        return null;
+    }
+
     async getCachedData() {
         try {
             const cachedData = await getFromIndexedDB(ALL_SERVICES_KEY);

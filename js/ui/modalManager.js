@@ -4,6 +4,7 @@ export class ModalManager {
         this.modal = document.getElementById('service-modal');
         this.detailsContainer = document.getElementById('service-details-container');
         this.currentService = null;
+        this.ratingComponent = null;
         
         this.initModal();
     }
@@ -127,11 +128,26 @@ export class ModalManager {
 
         // תגיות
         if (service.interestAreas?.length > 0) {
+            // Try to get the interest areas data
+            const interestAreasData = this.uiManager.dataService.getInterestAreas() || [];
+            
             const areasHtml = service.interestAreas
                 .map(area => {
                     // בדיקה אם האובייקט הוא מחרוזת או אובייקט עם שדה name
-                    const areaName = typeof area === 'string' ? area : (area.name || '');
-                    return areaName ? `<span class="service-tag">${areaName}</span>` : '';
+                    if (typeof area === 'string') {
+                        // Look up the interest area name by ID
+                        const interestArea = interestAreasData.find(a => a.id === area);
+                        if (interestArea && interestArea.name) {
+                            // Use the Hebrew name if available
+                            return `<span class="service-tag">${interestArea.name}</span>`;
+                        } else {
+                            // Fallback to ID if area not found or no name
+                            return `<span class="service-tag">${area}</span>`;
+                        }
+                    } else if (typeof area === 'object' && area.name) {
+                        return `<span class="service-tag">${area.name}</span>`;
+                    }
+                    return '';
                 })
                 .filter(html => html) // מסנן תגיות ריקות
                 .join('');
@@ -163,8 +179,31 @@ export class ModalManager {
             detailsHTML += this.createDetailSection('מיקום', locationHtml);
         }
 
+        // Add rating container with refresh button
+        detailsHTML += `
+            <div class="rating-section">
+                <div class="rating-header">
+                    <h3>דירוגים</h3>
+                    <button id="refresh-ratings-button" class="refresh-ratings-button" title="רענן דירוגים">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="service-rating-container"></div>
+            </div>`;
+
         this.detailsContainer.innerHTML = detailsHTML;
         this.modal.style.display = 'block';
+        
+        // Initialize rating component
+        this.initRatingComponent(service.id);
+        
+        // Set up refresh button event listener
+        const refreshButton = document.getElementById('refresh-ratings-button');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => this.refreshRatings());
+        }
         
         // Configure call button
         const callButton = document.getElementById('call-button');
@@ -229,5 +268,64 @@ export class ModalManager {
         document.body.removeChild(input);
         
         alert('הטקסט הועתק ללוח. כעת תוכל להדביק אותו בכל מקום.');
+    }
+    
+    async initRatingComponent(serviceId) {
+        try {
+            // Import Rating Component dynamically
+            const RatingModule = await import('../components/RatingComponent.js');
+            
+            // Clean up previous rating component if exists
+            if (this.ratingComponent) {
+                this.ratingComponent.destroy();
+                this.ratingComponent = null;
+            }
+            
+            // Create new rating component
+            this.ratingComponent = RatingModule.createRatingComponent('service-rating-container', serviceId, this.currentService);
+        } catch (error) {
+            console.error('Error initializing rating component:', error);
+        }
+    }
+
+    // Add a new method to refresh ratings
+    async refreshRatings() {
+        if (!this.currentService || !this.ratingComponent) {
+            return;
+        }
+        
+        console.log('Refreshing ratings for service:', this.currentService.id);
+        
+        // Show loading indicator on the button
+        const refreshButton = document.getElementById('refresh-ratings-button');
+        if (refreshButton) {
+            refreshButton.classList.add('loading');
+            refreshButton.innerHTML = '<span class="loading-spinner"></span>';
+        }
+        
+        try {
+            // Fetch the latest service data including ratings
+            const updatedService = await this.uiManager.dataService.getServiceById(this.currentService.id, true);
+            
+            if (updatedService) {
+                // Update the current service with the new data
+                this.currentService = updatedService;
+                
+                // Update the rating component
+                await this.ratingComponent.updateServiceData(this.currentService);
+            }
+        } catch (error) {
+            console.error('Error refreshing ratings:', error);
+        } finally {
+            // Restore the refresh button
+            if (refreshButton) {
+                refreshButton.classList.remove('loading');
+                refreshButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+                    </svg>
+                `;
+            }
+        }
     }
 }

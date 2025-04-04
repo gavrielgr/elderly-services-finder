@@ -1,4 +1,3 @@
-import { db } from '../config/firebase.js';
 import { 
     collection,
     doc,
@@ -13,6 +12,7 @@ import {
     serverTimestamp
 } from 'firebase/firestore';
 import { adminAuth } from './AdminAuth.js';
+import { initializeFirebase } from '../config/firebase.js';
 
 export class RatingsAdmin {
     constructor() {
@@ -33,6 +33,8 @@ export class RatingsAdmin {
                 throw new Error('אין הרשאת צפייה בדירוגים');
             }
 
+            const { db } = await initializeFirebase();
+            
             // Build query
             let q = collection(db, 'ratings');
             
@@ -71,17 +73,17 @@ export class RatingsAdmin {
             });
 
             // If search term provided, filter in memory
-            // Note: In a real app, you might want to use Algolia or similar for better search
+            let filteredRatings = ratings;
             if (searchTerm) {
                 const term = searchTerm.toLowerCase();
-                return ratings.filter(rating => 
+                filteredRatings = ratings.filter(rating => 
                     rating.text?.toLowerCase().includes(term) ||
                     rating.serviceId?.toLowerCase().includes(term)
                 );
             }
 
             return {
-                ratings,
+                ratings: filteredRatings,
                 lastDoc: snapshot.docs[snapshot.docs.length - 1],
                 hasMore: ratings.length === this.RATINGS_PER_PAGE
             };
@@ -99,6 +101,7 @@ export class RatingsAdmin {
                 throw new Error('אין הרשאת מחיקת דירוגים');
             }
 
+            const { db } = await initializeFirebase();
             const ratingRef = doc(db, 'ratings', ratingId);
             const ratingDoc = await getDoc(ratingRef);
             
@@ -138,6 +141,7 @@ export class RatingsAdmin {
                 throw new Error('אין הרשאת אישור דירוגים');
             }
 
+            const { db } = await initializeFirebase();
             const ratingRef = doc(db, 'ratings', ratingId);
             const ratingDoc = await getDoc(ratingRef);
             
@@ -170,6 +174,7 @@ export class RatingsAdmin {
 
     async updateServiceStats(serviceId) {
         try {
+            const { db } = await initializeFirebase();
             const ratingsQuery = query(
                 collection(db, 'ratings'),
                 where('serviceId', '==', serviceId),
@@ -202,9 +207,14 @@ export class RatingsAdmin {
                 categoryAverages[category] = count > 0 ? total / count : 0;
             });
 
-            // Update service document
+            // Update service document with both field paths for consistency
             const serviceRef = doc(db, 'services', serviceId);
             await updateDoc(serviceRef, {
+                // Update with correct field paths
+                'stats.averageRating': averageRating,
+                'stats.ratings': count,
+                
+                // Keep backward compatibility with existing field paths
                 'ratings.average': averageRating,
                 'ratings.count': count,
                 'ratings.categoryAverages': categoryAverages,

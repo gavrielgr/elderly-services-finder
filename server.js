@@ -3,22 +3,38 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import fetch from 'node-fetch'; // For Node.js versions that don't have fetch built-in
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config();
 
-const app = express();
-app.use(cors({
-  origin: [
+// Define PORT at the top so it's available throughout the file
+const PORT = process.env.PORT || 5001;
+
+// Generate localhost origins for a range of ports
+const generateLocalhostOrigins = (startPort, endPort) => {
+  const origins = [];
+  for (let port = startPort; port <= endPort; port++) {
+    origins.push(`http://localhost:${port}`);
+  }
+  return origins;
+};
+
+// Get allowed origins including production and all potential local ports
+const getAllowedOrigins = () => {
+  return [
     'https://elderly-service-finder.firebaseapp.com',
     'https://elderly-service-finder.web.app',
-    'http://localhost:3000',
-    'http://localhost:5000',
-    'http://localhost:5173',
-    'http://localhost:5174'
-  ],
+    ...generateLocalhostOrigins(3000, 3010),
+    ...generateLocalhostOrigins(5000, 5200)
+  ];
+};
+
+const app = express();
+app.use(cors({
+  origin: getAllowedOrigins(),
   credentials: true
 }));
 app.use(express.json());
@@ -27,7 +43,6 @@ const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 
 console.log('Server starting with configuration:');
 console.log('Project ID:', FIREBASE_PROJECT_ID);
-console.log('Environment:', process.env.NODE_ENV || 'development');
 
 // Firebase Admin initialization
 let auth;
@@ -35,32 +50,28 @@ let db;
 let isFirebaseInitialized = false;
 
 try {
-    if (process.env.NODE_ENV === 'production') {
-        const { initializeApp, cert } = await import('firebase-admin/app');
-        const { getFirestore } = await import('firebase-admin/firestore');
-        const { getAuth } = await import('firebase-admin/auth');
-        
-        const adminApp = initializeApp({
-            credential: cert({
-                projectId: FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-            })
-        });
-        
-        db = getFirestore();
-        auth = getAuth();
-        isFirebaseInitialized = true;
-        console.log('Firebase Admin SDK initialized successfully');
-    } else {
-        console.log('Running in development mode - Firebase Admin SDK not initialized');
-    }
+    const { initializeApp, cert } = await import('firebase-admin/app');
+    const { getFirestore } = await import('firebase-admin/firestore');
+    const { getAuth } = await import('firebase-admin/auth');
+    
+    const adminApp = initializeApp({
+        credential: cert({
+            projectId: FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+        })
+    });
+    
+    db = getFirestore();
+    auth = getAuth();
+    isFirebaseInitialized = true;
+    console.log('Firebase Admin SDK initialized successfully');
 } catch (error) {
     console.error('Error initializing Firebase Admin SDK:', error);
-    console.log('Continuing without Firebase Admin SDK');
+    console.log('Server will not be able to perform admin operations');
 }
 
-// קאש בזיכרון
+// In-memory cache
 let cache = {
     services: null,
     categories: null,
@@ -68,18 +79,18 @@ let cache = {
     lastFetch: null
 };
 
-const CACHE_TTL = 5 * 60 * 1000; // 5 דקות בmilliseconds
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 function isCacheValid() {
     return cache.lastFetch && (Date.now() - cache.lastFetch) < CACHE_TTL;
 }
 
-// נקודת קצה לקבלת נתונים מ-Firestore
+// Endpoint to get data from Firestore
 app.get('/api/data', async (req, res) => {
     try {
         console.log('Received request for /api/data');
 
-        // בדיקה אם יש מידע בקאש ואם הוא עדיין תקף
+        // Check if we have valid cached data
         if (isCacheValid()) {
             console.log('Returning cached data');
             return res.json({
@@ -91,44 +102,15 @@ app.get('/api/data', async (req, res) => {
 
         console.log('Cache miss or expired, fetching fresh data...');
         
-        // Check if we're in development mode (Firebase not initialized)
+        // Ensure Firebase is initialized
         if (!isFirebaseInitialized || !db) {
-            console.log('Development mode detected, returning mock data');
-            
-            // Create mock data for development
-            const mockServices = [
-                { id: 'service1', name: 'שירות לדוגמה 1', description: 'תיאור שירות לדוגמה 1', categoryId: 'cat1' },
-                { id: 'service2', name: 'שירות לדוגמה 2', description: 'תיאור שירות לדוגמה 2', categoryId: 'cat2' },
-                { id: 'service3', name: 'שירות לדוגמה 3', description: 'תיאור שירות לדוגמה 3', categoryId: 'cat1' }
-            ];
-            
-            const mockCategories = [
-                { id: 'cat1', name: 'קטגוריה 1', description: 'תיאור קטגוריה 1' },
-                { id: 'cat2', name: 'קטגוריה 2', description: 'תיאור קטגוריה 2' }
-            ];
-            
-            const mockInterestAreas = [
-                { id: 'area1', name: 'תחום עניין 1', description: 'תיאור תחום עניין 1' },
-                { id: 'area2', name: 'תחום עניין 2', description: 'תיאור תחום עניין 2' }
-            ];
-            
-            // Update the cache with mock data
-            cache = {
-                services: mockServices,
-                categories: mockCategories,
-                interestAreas: mockInterestAreas,
-                lastFetch: Date.now()
-            };
-            
-            return res.json({
-                services: mockServices,
-                categories: mockCategories,
-                interestAreas: mockInterestAreas,
-                mockData: true
+            return res.status(500).json({ 
+                error: 'Firebase not initialized', 
+                message: 'Check Firebase credentials in server environment'
             });
         }
         
-        // Production mode with Firebase initialized
+        // Fetch data from Firestore
         console.log('Fetching services...');
         const servicesSnapshot = await db.collection('services').get();
         const services = servicesSnapshot.docs.map(doc => ({
@@ -153,7 +135,7 @@ app.get('/api/data', async (req, res) => {
         }));
         console.log(`Retrieved ${interestAreas.length} interest areas`);
         
-        // עדכון הקאש
+        // Update cache
         cache = {
             services,
             categories,
@@ -172,7 +154,7 @@ app.get('/api/data', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/data:', error);
         
-        // אם יש שגיאה אבל יש מידע בקאש, נחזיר אותו גם אם פג תוקפו
+        // If there's an error but we have cached data, return it even if expired
         if (cache.services) {
             console.log('Error occurred, returning stale cache data');
             return res.json({
@@ -187,29 +169,19 @@ app.get('/api/data', async (req, res) => {
     }
 });
 
-// נקודת קצה מאובטחת לקונפיגורציית Firebase
+// Endpoint for the client to get Firebase config
 app.get('/api/config', (req, res) => {
     try {
-        // בדיקת המקור של הבקשה
+        // Check request origin
         const origin = req.headers.origin || req.headers.referer;
-        const allowedOrigins = [
-            'https://elderly-service-finder.firebaseapp.com',
-            'https://elderly-service-finder.web.app',
-            'http://localhost:3000',
-            'http://localhost:5000',
-            'http://localhost:5173',
-            'http://localhost:5174'
-        ];
+        const allowedOrigins = getAllowedOrigins();
         
-        // אם המקור אינו ברשימת המקורות המורשים, נחזיר שגיאה
         if (origin && !allowedOrigins.some(allowed => origin.startsWith(allowed))) {
-            console.warn(`Unauthorized config request from: ${origin}`);
+            console.warn(`Unauthorized config request from origin: ${origin}`);
             return res.status(403).json({ error: 'Unauthorized' });
         }
         
-        // שליחת רק המידע הנדרש לקליינט בצורה מאובטחת
-        // הערה: חלק מהמידע עדיין יהיה נגיש בצד הקליינט, אבל זה הכרחי לפעולה תקינה
-        // ורצוי להגדיר כללי אבטחה מתאימים ב-Firebase
+        // Send only necessary information to the client securely
         const clientConfig = {
             apiKey: process.env.VITE_FIREBASE_API_KEY,
             authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -226,77 +198,180 @@ app.get('/api/config', (req, res) => {
     }
 });
 
-// נקודת קצה לאתחול מאובטח של מערכת האימות
+// Authentication initialization endpoint
 app.get('/api/auth/init', async (req, res) => {
     try {
-        // בדיקת המקור של הבקשה כמו בנקודת הקצה הקודמת
+        // Check request origin
         const origin = req.headers.origin || req.headers.referer;
-        const allowedOrigins = [
-            'https://elderly-service-finder.firebaseapp.com',
-            'https://elderly-service-finder.web.app',
-            'http://localhost:3000',
-            'http://localhost:5000',
-            'http://localhost:5173',
-            'http://localhost:5174'
-        ];
+        const allowedOrigins = getAllowedOrigins();
         
         if (origin && !allowedOrigins.some(allowed => origin.startsWith(allowed))) {
             console.warn(`Unauthorized auth init request from: ${origin}`);
             return res.status(403).json({ error: 'Unauthorized' });
         }
         
-        if (isFirebaseInitialized && auth) {
-            try {
-                // יצירת טוקן אימות מיוחד בצד השרת
-                const token = await auth.createCustomToken('server-auth');
-                
-                // החזרת טוקן האימות לקליינט
-                res.json({
-                    status: 'success',
-                    authToken: token,
-                    projectId: process.env.VITE_FIREBASE_PROJECT_ID
-                });
-            } catch (error) {
-                console.error('Error creating auth token:', error);
-                res.status(500).json({ error: 'Authentication token creation failed' });
-            }
-        } else {
-            // For development mode, send a mock token
-            console.log('Sending mock auth token for development mode');
-            res.json({
-                status: 'success',
-                authToken: 'dev-mock-token-12345',
-                projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'elderly-service-finder',
-                developmentMode: true
+        if (!isFirebaseInitialized || !auth) {
+            return res.status(500).json({ 
+                error: 'Firebase Auth not initialized',
+                message: 'Check Firebase credentials in server environment'
             });
         }
+        
+        // Create auth token for server auth
+        try {
+            const token = await auth.createCustomToken('server-auth');
+            res.json({
+                status: 'success',
+                authToken: token,
+                projectId: process.env.VITE_FIREBASE_PROJECT_ID
+            });
+        } catch (error) {
+            console.error('Error creating auth token:', error);
+            res.status(500).json({ error: 'Authentication token creation failed' });
+        }
     } catch (error) {
-        console.error('Error in /api/auth/init:', error);
+        console.error('Error in auth initialization:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-// Create a static file middleware for development only
-if (process.env.NODE_ENV !== 'production') {
-    // For development, serve static files
-    app.use(express.static(__dirname));
-    
-    // Fallback route for all other requests in development
-    app.get('*', (req, res) => {
-        // Only serve HTML/static files for GET requests
-        if (req.method === 'GET' && !req.path.startsWith('/api/')) {
-            if (req.path === '/login') {
-                res.sendFile(__dirname + '/login.html');
-            } else {
-                res.sendFile(__dirname + '/index.html');
-            }
+// Server-side API endpoint to get service ratings
+app.get('/api/ratings/:serviceId', async (req, res) => {
+    try {
+        const serviceId = req.params.serviceId;
+        
+        // If Firebase Admin initialized successfully, use it
+        if (isFirebaseInitialized && db) {
+            // Query for approved ratings for this service using admin access
+            const ratingsSnapshot = await db.collection('ratings')
+                .where('serviceId', '==', serviceId)
+                .where('moderation.status', '==', 'approved')
+                .orderBy('timestamp', 'desc')
+                .limit(10)
+                .get();
+                
+            // Transform to array of rating objects
+            const ratings = ratingsSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            return res.json({ ratings });
         } else {
-            res.status(404).json({ error: 'Not found' });
+            // Load Firebase Web SDK dynamically
+            console.log('Admin SDK not available, using Firestore Web SDK instead');
+            const { initializeApp } = await import('firebase/app');
+            const { getFirestore, collection, query, where, orderBy, limit, getDocs } = await import('firebase/firestore');
+            
+            // Get Firebase config
+            const apiUrl = `http://localhost:${PORT}/api/config`;
+            const configResponse = await fetch(apiUrl);
+            if (!configResponse.ok) {
+                throw new Error('Failed to fetch Firebase config');
+            }
+            
+            const firebaseConfig = await configResponse.json();
+            const app = initializeApp(firebaseConfig);
+            const webDb = getFirestore(app);
+            
+            // Query for approved ratings for this service
+            const ratingsQuery = query(
+                collection(webDb, 'ratings'),
+                where('serviceId', '==', serviceId),
+                where('moderation.status', '==', 'approved'),
+                orderBy('timestamp', 'desc'),
+                limit(10)
+            );
+            
+            const snapshot = await getDocs(ratingsQuery);
+            
+            // Transform to array of rating objects
+            const ratings = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            return res.json({ ratings });
         }
-    });
-}
+    } catch (error) {
+        console.error('Error fetching ratings:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch ratings',
+            message: error.message
+        });
+    }
+});
 
-const PORT = process.env.PORT || 5000;
+// Endpoint to get a single service by ID
+app.get('/api/service/:serviceId', async (req, res) => {
+    try {
+        const serviceId = req.params.serviceId;
+        
+        // Try to load service from cache first
+        if (cache.services) {
+            const cachedService = cache.services.find(s => s.id === serviceId);
+            if (cachedService) {
+                return res.json(cachedService);
+            }
+        }
+        
+        // If not in cache or Firebase Admin is not initialized, try using Firestore Web SDK
+        const { initializeApp } = await import('firebase/app');
+        const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+        
+        // Get Firebase config
+        const apiUrl = `http://localhost:${PORT}/api/config`;
+        const configResponse = await fetch(apiUrl);
+        if (!configResponse.ok) {
+            throw new Error('Failed to fetch Firebase config');
+        }
+        
+        const firebaseConfig = await configResponse.json();
+        const app = initializeApp(firebaseConfig);
+        const webDb = getFirestore(app);
+        
+        // Get the service document
+        const serviceDoc = await getDoc(doc(webDb, 'services', serviceId));
+        
+        if (!serviceDoc.exists()) {
+            return res.status(404).json({ error: 'Service not found' });
+        }
+        
+        // Return the service data
+        const serviceData = {
+            id: serviceDoc.id,
+            ...serviceDoc.data()
+        };
+        
+        res.json(serviceData);
+    } catch (error) {
+        console.error('Error fetching service:', error);
+        res.status(500).json({ 
+            error: 'Failed to fetch service',
+            message: error.message
+        });
+    }
+});
+
+// Serve static files 
+app.use(express.static('public'));
+
+// Handle SPA routes
+app.get('*', (req, res) => {
+    // Only serve HTML/static files for GET requests
+    if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+        if (req.path === '/login' || req.path === '/login.html') {
+            res.sendFile(__dirname + '/login.html');
+        } else if (req.path === '/admin' || req.path === '/admin.html') {
+            res.sendFile(__dirname + '/admin.html');
+        } else {
+            res.sendFile(__dirname + '/index.html');
+        }
+    } else {
+        res.status(404).json({ error: 'Not found' });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Access the API at http://localhost:${PORT}/api/data`);
