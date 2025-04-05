@@ -666,6 +666,66 @@
             cursor: pointer;
             font-size: 14px;
         }
+        
+        /* Admin list items */
+        .admin-list-item {
+            background-color: white;
+            border-radius: 6px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .admin-list-item-content {
+            flex: 1;
+        }
+        
+        .admin-list-item-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        
+        .item-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .item-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .item-info {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+        
+        .item-description {
+            margin-bottom: 10px;
+            color: #555;
+        }
+        
+        .item-contact-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555;
+            background-color: #f9f9f9;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        
+        .contact-item {
+            margin-bottom: 5px;
+        }
+        
+        .contact-label {
+            font-weight: bold;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
@@ -1634,8 +1694,121 @@
                             categoryName = categoryName.replace(/\b\w/g, l => l.toUpperCase());
                         }
                         
+                        // Format contact information
+                        let contactInfo = '';
+                        
+                        // Handle phone numbers
+                        if (service.contact && service.contact.phone) {
+                            let phones = [];
+                            if (Array.isArray(service.contact.phone)) {
+                                phones = service.contact.phone.map(p => 
+                                    typeof p === 'object' ? p.number || p : p
+                                );
+                            } else if (typeof service.contact.phone === 'string') {
+                                phones = [service.contact.phone];
+                            }
+                            
+                            if (phones.length > 0) {
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">טלפון:</span> 
+                                    <span>${phones.join(', ')}</span>
+                                </div>`;
+                            }
+                        }
+                        
+                        // Handle emails
+                        if (service.contact && service.contact.email) {
+                            let emails = [];
+                            if (Array.isArray(service.contact.email)) {
+                                emails = service.contact.email.map(e => 
+                                    typeof e === 'object' ? e.address || e : e
+                                );
+                            } else if (typeof service.contact.email === 'string') {
+                                emails = [service.contact.email];
+                            }
+                            
+                            if (emails.length > 0) {
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">אימייל:</span> 
+                                    <span>${emails.join(', ')}</span>
+                                </div>`;
+                            }
+                        }
+                        
+                        // Handle websites
+                        if (service.contact && service.contact.website) {
+                            let websites = [];
+                            if (Array.isArray(service.contact.website)) {
+                                websites = service.contact.website.map(w => 
+                                    typeof w === 'object' ? w.url || w : w
+                                );
+                            } else if (typeof service.contact.website === 'string') {
+                                websites = [service.contact.website];
+                            }
+                            
+                            if (websites.length > 0) {
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">אתר:</span> 
+                                    <span>${websites.join(', ')}</span>
+                                </div>`;
+                            }
+                        }
+                        
+                        // Handle address and city
+                        const addressParts = [];
+                        if (service.contact && service.contact.address) {
+                            addressParts.push(service.contact.address);
+                        }
+                        if (service.contact && service.contact.city) {
+                            addressParts.push(service.contact.city);
+                        }
+                        
+                        if (addressParts.length > 0) {
+                            contactInfo += `<div class="contact-item">
+                                <span class="contact-label">כתובת:</span> 
+                                <span>${addressParts.join(', ')}</span>
+                            </div>`;
+                        }
+                        
+                        // Fallback to legacy format if contact object doesn't exist
+                        if (!service.contact) {
+                            if (service.phone) {
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">טלפון:</span> 
+                                    <span>${service.phone}</span>
+                                </div>`;
+                            }
+                            if (service.email) {
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">אימייל:</span> 
+                                    <span>${service.email}</span>
+                                </div>`;
+                            }
+                            if (service.website) {
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">אתר:</span> 
+                                    <span>${service.website}</span>
+                                </div>`;
+                            }
+                            if (service.address || service.city) {
+                                const parts = [];
+                                if (service.address) parts.push(service.address);
+                                if (service.city) parts.push(service.city);
+                                
+                                contactInfo += `<div class="contact-item">
+                                    <span class="contact-label">כתובת:</span> 
+                                    <span>${parts.join(', ')}</span>
+                                </div>`;
+                            }
+                        }
+                        
                         // Default active to true if not explicitly set to false
                         const isActive = service.active !== false;
+                        
+                        // Generate the contact section HTML if there is any contact info
+                        const contactSection = contactInfo 
+                            ? `<div class="item-contact-info">${contactInfo}</div>` 
+                            : '';
                         
                         return `
                         <div class="admin-list-item">
@@ -1649,6 +1822,7 @@
                                     </div>
                                 </div>
                                 <div class="item-description">${service.description || ''}</div>
+                                ${contactSection}
                             </div>
                             <div class="admin-list-item-actions">
                                 <button class="action-button edit-button" data-id="${service.id}">עריכה</button>
