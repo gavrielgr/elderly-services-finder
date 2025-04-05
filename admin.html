@@ -2777,12 +2777,25 @@
             }
         }
 
+        // Add setup code to expose functions to the global scope
+        function setupRatingFunctions() {
+            // Expose necessary functions to global scope for the event handlers
+            window.approveRating = approveRating;
+            window.showRejectModal = showRejectModal;
+            window.handleRejectRating = handleRejectRating;
+            window.loadRatings = loadRatings;
+            window.filterRatings = filterRatings;
+            window.loadMoreRatings = loadMoreRatings;
+        }
+
         async function setupEventListeners() {
             // ... existing code ...
             
             // Add ratings event listeners
             const ratingsSection = document.getElementById('ratings-section');
             if (ratingsSection) {
+                setupRatingFunctions();
+                
                 document.getElementById('rating-status-filter')?.addEventListener('change', filterRatings);
                 document.getElementById('rating-date-from')?.addEventListener('change', filterRatings);
                 document.getElementById('rating-date-to')?.addEventListener('change', filterRatings);
@@ -3052,13 +3065,13 @@
             const status = rating.moderation?.status || 'pending';
             
             if (status === 'approved') {
-                return `<button class="action-button delete-button" data-action="reject" data-id="${rating.id}">דחה</button>`;
+                return `<button class="action-button delete-button" onclick="showRejectModal('${rating.id}')" data-action="reject" data-id="${rating.id}">דחה</button>`;
             } else if (status === 'rejected') {
-                return `<button class="action-button primary-button" data-action="approve" data-id="${rating.id}">אשר</button>`;
+                return `<button class="action-button primary-button" onclick="approveRating('${rating.id}')" data-action="approve" data-id="${rating.id}">אשר</button>`;
             } else {
                 return `
-                <button class="action-button primary-button" data-action="approve" data-id="${rating.id}">אשר</button>
-                <button class="action-button delete-button" data-action="reject" data-id="${rating.id}">דחה</button>
+                <button class="action-button primary-button" onclick="approveRating('${rating.id}')" data-action="approve" data-id="${rating.id}">אשר</button>
+                <button class="action-button delete-button" onclick="showRejectModal('${rating.id}')" data-action="reject" data-id="${rating.id}">דחה</button>
                 `;
             }
         }
@@ -3245,6 +3258,10 @@
                 // Skip initialization if already done via admin.js
                 if (window.adminUI) {
                     console.log('Admin UI already initialized from admin.js');
+                    // Make sure rating functions are exposed globally
+                    if (typeof setupRatingFunctions === 'function') {
+                        setupRatingFunctions();
+                    }
                     return;
                 }
                 
@@ -3259,6 +3276,11 @@
                     await initializeFirebase();
                 } else {
                     console.error('Firebase initialization function not found');
+                }
+                
+                // Setup global functions first for button handlers
+                if (typeof setupRatingFunctions === 'function') {
+                    setupRatingFunctions();
                 }
                 
                 // Setup event listeners
