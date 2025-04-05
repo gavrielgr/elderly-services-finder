@@ -2788,6 +2788,78 @@
             window.loadMoreRatings = loadMoreRatings;
         }
 
+        // Setup event listeners for the rejection modal
+        function setupRejectionModal() {
+            // Add click event for close button
+            document.getElementById('close-rejection-modal')?.addEventListener('click', function() {
+                document.getElementById('rejection-modal').style.display = 'none';
+            });
+            
+            // Add click event for cancel button
+            document.getElementById('cancel-rejection')?.addEventListener('click', function() {
+                document.getElementById('rejection-modal').style.display = 'none';
+            });
+            
+            // Add submit event for the form
+            document.getElementById('rejection-form')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                try {
+                    const ratingId = document.getElementById('rating-id-to-reject').value;
+                    const reason = document.getElementById('rejection-reason').value;
+                    
+                    if (!ratingId) {
+                        console.error('No rating ID provided for rejection');
+                        return;
+                    }
+                    
+                    if (!reason) {
+                        alert('נא להזין סיבת דחייה');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    const submitButton = document.getElementById('confirm-rejection');
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'מעבד...';
+                    
+                    console.log('Rejecting rating:', ratingId, 'with reason:', reason);
+                    
+                    // Update rating in Firestore directly
+                    const firebaseMods = window.firebaseModules;
+                    firebaseMods.updateDoc(
+                        firebaseMods.doc(window.firestoreDB, 'ratings', ratingId), 
+                        {
+                            'moderation.status': 'rejected',
+                            'moderation.reviewedAt': firebaseMods.serverTimestamp(),
+                            'moderation.rejectionReason': reason
+                        }
+                    ).then(() => {
+                        // Close modal and reload ratings
+                        document.getElementById('rejection-modal').style.display = 'none';
+                        showMessage('הדירוג נדחה בהצלחה', 'success');
+                        
+                        // Reload ratings to update the UI
+                        if (typeof loadRatings === 'function') loadRatings();
+                        
+                        // Reset button state
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'דחה דירוג';
+                    }).catch(error => {
+                        console.error('Error rejecting rating:', error);
+                        showMessage('שגיאה בדחיית הדירוג', 'error');
+                        
+                        // Reset button state
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'דחה דירוג';
+                    });
+                } catch (error) {
+                    console.error('Error in reject form submit handler:', error);
+                    alert('שגיאה בדחיית הדירוג');
+                }
+            });
+        }
+
         async function setupEventListeners() {
             // ... existing code ...
             
@@ -2795,24 +2867,13 @@
             const ratingsSection = document.getElementById('ratings-section');
             if (ratingsSection) {
                 setupRatingFunctions();
+                setupRejectionModal();
                 
                 document.getElementById('rating-status-filter')?.addEventListener('change', filterRatings);
                 document.getElementById('rating-date-from')?.addEventListener('change', filterRatings);
                 document.getElementById('rating-date-to')?.addEventListener('change', filterRatings);
                 document.getElementById('ratings-search')?.addEventListener('input', debounce(filterRatings, 500));
                 document.getElementById('load-more-ratings')?.addEventListener('click', loadMoreRatings);
-                
-                // Rejection modal
-                document.getElementById('close-rejection-modal')?.addEventListener('click', () => {
-                    document.getElementById('rejection-modal').style.display = 'none';
-                });
-                document.getElementById('cancel-rejection')?.addEventListener('click', () => {
-                    document.getElementById('rejection-modal').style.display = 'none';
-                });
-                document.getElementById('rejection-form')?.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    handleRejectRating();
-                });
             }
         }
         
@@ -3060,19 +3121,54 @@
             return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
         }
         
-        // Get action buttons HTML
+        // Get action buttons HTML - using completely inline functionality
         function getActionButtons(rating) {
             const status = rating.moderation?.status || 'pending';
+            const ratingId = rating.id;
+            
+            // For approve button - implement functionality directly in onclick
+            const approveButton = `<button class="action-button primary-button" onclick="(function() {
+                try {
+                    console.log('Approving rating: ${ratingId}');
+                    const firebaseMods = window.firebaseModules;
+                    firebaseMods.updateDoc(
+                        firebaseMods.doc(window.firestoreDB, 'ratings', '${ratingId}'),
+                        {
+                            'moderation.status': 'approved',
+                            'moderation.reviewedAt': firebaseMods.serverTimestamp()
+                        }
+                    ).then(() => {
+                        showMessage('הדירוג אושר בהצלחה', 'success');
+                        if(typeof loadRatings === 'function') loadRatings();
+                    }).catch(err => {
+                        console.error('Error approving rating:', err);
+                        showMessage('שגיאה באישור הדירוג', 'error');
+                    });
+                } catch(err) {
+                    console.error('Error in approve button handler:', err);
+                    alert('שגיאה באישור הדירוג');
+                }
+            })()">אשר</button>`;
+            
+            // For reject button - just show modal
+            const rejectButton = `<button class="action-button delete-button" onclick="(function() {
+                try {
+                    console.log('Showing reject modal for rating: ${ratingId}');
+                    document.getElementById('rating-id-to-reject').value = '${ratingId}';
+                    document.getElementById('rejection-reason').value = '';
+                    document.getElementById('rejection-modal').style.display = 'block';
+                } catch(err) {
+                    console.error('Error showing reject modal:', err);
+                    alert('שגיאה בפתיחת חלון הדחייה');
+                }
+            })()">דחה</button>`;
             
             if (status === 'approved') {
-                return `<button class="action-button delete-button" onclick="showRejectModal('${rating.id}')" data-action="reject" data-id="${rating.id}">דחה</button>`;
+                return rejectButton;
             } else if (status === 'rejected') {
-                return `<button class="action-button primary-button" onclick="approveRating('${rating.id}')" data-action="approve" data-id="${rating.id}">אשר</button>`;
+                return approveButton;
             } else {
-                return `
-                <button class="action-button primary-button" onclick="approveRating('${rating.id}')" data-action="approve" data-id="${rating.id}">אשר</button>
-                <button class="action-button delete-button" onclick="showRejectModal('${rating.id}')" data-action="reject" data-id="${rating.id}">דחה</button>
-                `;
+                return approveButton + ' ' + rejectButton;
             }
         }
         
@@ -3255,43 +3351,60 @@
             try {
                 console.log('Initializing admin page...');
                 
+                // Initialize global helper for debugging
+                window.showConsoleMessage = function(message, data) {
+                    console.log('%c ' + message, 'background: #222; color: #bada55', data || '');
+                };
+                
+                window.showConsoleMessage('Starting initialization');
+                
                 // Skip initialization if already done via admin.js
                 if (window.adminUI) {
-                    console.log('Admin UI already initialized from admin.js');
-                    // Make sure rating functions are exposed globally
-                    if (typeof setupRatingFunctions === 'function') {
-                        setupRatingFunctions();
-                    }
+                    window.showConsoleMessage('Admin UI already initialized from admin.js');
                     return;
                 }
                 
-                // Wait for any external scripts to load first
-                if (typeof initializeFirebase !== 'function') {
-                    console.log('Waiting for scripts to load...');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                // Wait for Firebase modules to load first (they come from CDN)
+                if (!window.firebaseModules) {
+                    window.showConsoleMessage('Waiting for Firebase modules to load...');
+                    for (let i = 0; i < 10; i++) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        if (window.firebaseModules) {
+                            window.showConsoleMessage('Firebase modules loaded after waiting');
+                            break;
+                        }
+                    }
                 }
                 
-                // Initialize Firebase first
+                // Initialize Firebase connection
                 if (typeof initializeFirebase === 'function') {
-                    await initializeFirebase();
+                    try {
+                        await initializeFirebase();
+                        window.showConsoleMessage('Firebase initialized successfully');
+                    } catch (err) {
+                        console.error('Firebase initialization error:', err);
+                    }
                 } else {
                     console.error('Firebase initialization function not found');
                 }
                 
-                // Setup global functions first for button handlers
-                if (typeof setupRatingFunctions === 'function') {
-                    setupRatingFunctions();
-                }
-                
-                // Setup event listeners
+                // Set up event listeners - first to ensure UI responsiveness
                 if (typeof setupEventListeners === 'function') {
                     setupEventListeners();
+                    window.showConsoleMessage('Event listeners set up');
                 }
                 
                 // Initialize sections last
                 setupAdminSections();
+                window.showConsoleMessage('Admin sections initialized');
+                
+                // Run first load of services data
+                if (typeof loadServices === 'function') {
+                    loadServices();
+                }
                 
                 console.log('Admin page initialized successfully');
+                window.adminInitialized = true;
             } catch (error) {
                 console.error('Error initializing admin page:', error);
                 showMessage('שגיאה באתחול העמוד. אנא רענן את הדף ונסה שוב.', 'error');
