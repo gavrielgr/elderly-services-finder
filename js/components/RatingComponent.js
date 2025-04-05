@@ -17,21 +17,86 @@ export class RatingComponent {
         this.serviceRatings = [];
         this.dataLoaded = false; // Flag to prevent duplicate loads
         
+        // Pagination variables
+        this.currentPage = 1;
+        this.ratingsPerPage = 5;
+        this.hasMoreRatings = false;
+        this.isLoadingRatings = false;
+        
+        // Bind methods to maintain context
+        this.handleLogin = this.handleLogin.bind(this);
+        this.handleLoadMoreRatings = this.handleLoadMoreRatings.bind(this);
+        
         this.initialize();
     }
     
     async initialize() {
-        // Create main container
+        // Create the main container for the rating component
         this.ratingContainer = document.createElement('div');
         this.ratingContainer.className = 'rating-component';
         this.container.appendChild(this.ratingContainer);
         
-        // Initial data load and render BEFORE setting up auth listener
-        await this.loadData();
-        this.render();
+        // Add styles for pagination
+        this.addStyles();
         
-        // Set up auth state listener AFTER initial load to prevent double loading
-        this.unsubscribeAuth = authService.onAuthStateChange(user => this.handleAuthChange(user));
+        // Listen for auth state changes
+        this.unsubscribeAuth = authService.onAuthStateChanged((user) => {
+            // Re-render if auth state changes
+            this.render();
+        });
+        
+        // Load initial data and render
+        this.loadData()
+            .then(() => this.render())
+            .catch(error => console.error('Error initializing rating component:', error));
+    }
+    
+    addStyles() {
+        // Check if styles are already added
+        if (document.getElementById('rating-component-styles')) {
+            return;
+        }
+        
+        // Create a style element
+        const styleElement = document.createElement('style');
+        styleElement.id = 'rating-component-styles';
+        
+        // Add the CSS
+        styleElement.textContent = `
+            .load-ratings-button, .load-more-ratings-button {
+                background-color: var(--primary-color, #01b3a7);
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 16px;
+                margin-top: 12px;
+                cursor: pointer;
+                font-weight: 500;
+                transition: background-color 0.2s;
+            }
+            
+            .load-ratings-button:hover, .load-more-ratings-button:hover {
+                background-color: var(--primary-hover-color, #019589);
+            }
+            
+            .load-ratings-button:disabled, .load-more-ratings-button:disabled {
+                opacity: 0.7;
+                cursor: not-allowed;
+            }
+            
+            .load-more-container {
+                text-align: center;
+                margin: 15px 0;
+            }
+            
+            .ratings-message {
+                text-align: center;
+                margin: 15px 0;
+            }
+        `;
+        
+        // Add the style element to the document head
+        document.head.appendChild(styleElement);
     }
     
     async handleAuthChange(user) {
@@ -42,12 +107,12 @@ export class RatingComponent {
         this.render();
     }
     
-    async loadData(silent = false) {
+    async loadData(silent = false, isLoadMore = false) {
         try {
-            // Load user's rating if authenticated
-            if (authService.isAuthenticated()) {
+            // Load user's rating if authenticated and not just loading more
+            if (authService.isAuthenticated() && !isLoadMore) {
                 this.userRating = await ratingService.getUserRating(this.serviceId);
-            } else {
+            } else if (!authService.isAuthenticated()) {
                 this.userRating = null;
             }
             
@@ -60,37 +125,60 @@ export class RatingComponent {
                 (this.currentService?.stats?.ratings === 0 || !this.currentService?.stats) && 
                 (this.currentService?.ratings?.count === 0 || !this.currentService?.ratings);
                 
-            if (hasRatings) {
-                // Service has ratings, use the metadata we already have
-                if (!silent) {
-                    const ratingsSource = this.currentService.stats?.ratings !== undefined ? 'stats' : 'ratings';
-                    console.log(`Using ratings from service object (${ratingsSource}):`, 
-                        ratingsSource === 'stats' ? 
-                        { average: this.currentService.stats.averageRating, count: this.currentService.stats.ratings } : 
-                        this.currentService.ratings);
-                }
+            // Reset pagination if not loading more
+            if (!isLoadMore) {
                 this.serviceRatings = [];
-            } else if (hasNoRatings) {
-                // Service has no ratings, don't try to load any
-                if (!silent) {
-                    console.log('Service has no ratings, skipping API call');
-                }
-                this.serviceRatings = [];
-            } else {
-                // Only attempt to fetch individual ratings if needed in some special case
+                this.currentPage = 1;
+                this.hasMoreRatings = false;
+            }
+            
+            // Try to load ratings if we know there are some or we're explicitly trying to load more
+            if (hasRatings || isLoadMore) {
                 try {
-                    this.serviceRatings = await ratingService.getServiceRatings(this.serviceId);
+                    const page = isLoadMore ? this.currentPage : 1;
+                    this.isLoadingRatings = true;
+                    
+                    const newRatings = await ratingService.getServiceRatings(
+                        this.serviceId, 
+                        this.ratingsPerPage, 
+                        page
+                    );
+                    
+                    if (!silent) {
+                        console.log(`Loaded ${newRatings.length} ratings for page ${page}`);
+                    }
+                    
+                    // Check if we have more pages
+                    this.hasMoreRatings = newRatings.length === this.ratingsPerPage;
+                    
+                    // Add to existing ratings if loading more
+                    if (isLoadMore) {
+                        this.serviceRatings = [...this.serviceRatings, ...newRatings];
+                        this.currentPage++;
+                    } else {
+                        this.serviceRatings = newRatings;
+                        this.currentPage = 2; // Next page would be 2
+                    }
+                    
+                    this.isLoadingRatings = false;
                 } catch (error) {
                     if (!silent) {
-                        console.log('Failed to load ratings, using service metadata instead');
+                        console.log('Failed to load ratings:', error);
                     }
-                    this.serviceRatings = [];
+                    this.isLoadingRatings = false;
+                    this.hasMoreRatings = false;
+                }
+            } else if (hasNoRatings) {
+                // Service has no ratings confirmed
+                if (!silent) {
+                    console.log('Service has no ratings, skipping API call');
                 }
             }
             
             this.dataLoaded = true; // Mark that data has been loaded
         } catch (error) {
             console.error('Error loading rating data:', error);
+            this.isLoadingRatings = false;
         }
     }
     
@@ -261,13 +349,11 @@ export class RatingComponent {
     }
     
     renderRatingsList() {
-        // If we have currentService ratings but no individual ratings, 
-        // show a message that individual ratings aren't available
+        // If we have currentService ratings but no individual ratings loaded yet, 
+        // show a button to load ratings
         if (this.serviceRatings.length === 0) {
             const messageContainer = document.createElement('div');
             messageContainer.className = 'ratings-message';
-            
-            const messageText = document.createElement('p');
             
             // Check for ratings count in either path
             const ratingsCount = 
@@ -275,27 +361,57 @@ export class RatingComponent {
                 (this.currentService?.ratings?.count > 0 ? this.currentService.ratings.count : 0);
                 
             if (ratingsCount > 0) {
-                messageText.textContent = `יש ${ratingsCount} דירוגים לשירות זה. צפייה בדירוגים בודדים אינה זמינה כרגע.`;
+                // Create a message with load button
+                const messageText = document.createElement('p');
+                messageText.textContent = `יש ${ratingsCount} דירוגים לשירות זה.`;
+                
+                const loadButton = document.createElement('button');
+                loadButton.className = 'load-ratings-button';
+                loadButton.textContent = 'הצג דירוגים';
+                loadButton.addEventListener('click', this.handleLoadMoreRatings);
+                
+                messageContainer.appendChild(messageText);
+                messageContainer.appendChild(loadButton);
             } else {
+                const messageText = document.createElement('p');
                 messageText.textContent = 'אין דירוגים זמינים לשירות זה כרגע';
+                messageContainer.appendChild(messageText);
             }
             
-            messageContainer.appendChild(messageText);
             this.ratingContainer.appendChild(messageContainer);
             return;
         }
         
-        const ratingsListContainer = document.createElement('div');
-        ratingsListContainer.className = 'ratings-list-container';
+        // Create ratings list container if not already rendered
+        let ratingsListContainer = this.ratingContainer.querySelector('.ratings-list-container');
+        let ratingsList = null;
         
-        const ratingsHeader = document.createElement('h3');
-        ratingsHeader.textContent = 'דירוגים';
-        ratingsListContainer.appendChild(ratingsHeader);
+        if (!ratingsListContainer) {
+            ratingsListContainer = document.createElement('div');
+            ratingsListContainer.className = 'ratings-list-container';
+            
+            const ratingsHeader = document.createElement('h3');
+            ratingsHeader.textContent = 'דירוגים';
+            ratingsListContainer.appendChild(ratingsHeader);
+            
+            ratingsList = document.createElement('div');
+            ratingsList.className = 'ratings-list';
+            ratingsListContainer.appendChild(ratingsList);
+            
+            this.ratingContainer.appendChild(ratingsListContainer);
+        } else {
+            // Use existing ratings list
+            ratingsList = ratingsListContainer.querySelector('.ratings-list');
+        }
         
-        const ratingsList = document.createElement('div');
-        ratingsList.className = 'ratings-list';
-        
-        this.serviceRatings.forEach(rating => {
+        // Add ratings to the list
+        this.serviceRatings.forEach((rating, index) => {
+            // Skip ratings already rendered
+            const existingItems = ratingsList.querySelectorAll('.rating-item');
+            if (index < existingItems.length) {
+                return;
+            }
+            
             const ratingItem = document.createElement('div');
             ratingItem.className = 'rating-item';
             
@@ -359,8 +475,30 @@ export class RatingComponent {
             ratingsList.appendChild(ratingItem);
         });
         
-        ratingsListContainer.appendChild(ratingsList);
-        this.ratingContainer.appendChild(ratingsListContainer);
+        // Add "Load More" button if we have more ratings to load
+        let loadMoreButton = ratingsListContainer.querySelector('.load-more-ratings-button');
+        
+        if (this.hasMoreRatings) {
+            if (!loadMoreButton) {
+                const loadMoreContainer = document.createElement('div');
+                loadMoreContainer.className = 'load-more-container';
+                
+                loadMoreButton = document.createElement('button');
+                loadMoreButton.className = 'load-more-ratings-button';
+                loadMoreButton.textContent = 'טען עוד דירוגים';
+                loadMoreButton.addEventListener('click', this.handleLoadMoreRatings);
+                
+                loadMoreContainer.appendChild(loadMoreButton);
+                ratingsListContainer.appendChild(loadMoreContainer);
+            } else {
+                // Reset button state
+                loadMoreButton.disabled = false;
+                loadMoreButton.textContent = 'טען עוד דירוגים';
+            }
+        } else if (loadMoreButton) {
+            // Remove button if no more ratings
+            loadMoreButton.parentNode.remove();
+        }
     }
     
     handleStarClick(value, starsContainer) {
@@ -473,6 +611,41 @@ export class RatingComponent {
                 }
             }
         }, 300);
+    }
+    
+    async handleLoadMoreRatings() {
+        if (this.isLoadingRatings) {
+            return;
+        }
+        
+        try {
+            // Update UI to show loading
+            const button = this.ratingContainer.querySelector('.load-more-ratings-button') || 
+                          this.ratingContainer.querySelector('.load-ratings-button');
+                          
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'טוען...';
+            }
+            
+            // Load more ratings
+            await this.loadData(false, true);
+            
+            // Re-render the ratings list
+            this.renderRatingsList();
+        } catch (error) {
+            console.error('Error loading more ratings:', error);
+            
+            // Reset button state
+            const button = this.ratingContainer.querySelector('.load-more-ratings-button') || 
+                          this.ratingContainer.querySelector('.load-ratings-button');
+                          
+            if (button) {
+                button.disabled = false;
+                button.textContent = button.classList.contains('load-more-ratings-button') ? 
+                    'טען עוד דירוגים' : 'הצג דירוגים';
+            }
+        }
     }
 }
 

@@ -126,23 +126,52 @@ class RatingService {
         }
     }
     
-    async getServiceRatings(serviceId, maxResults = 10) {
+    async getServiceRatings(serviceId, maxResults = 10, page = 1) {
         if (!serviceId) {
             throw new Error('Service ID is required');
         }
         
         try {
-            // Try using the server API endpoint
+            // Try using the server API endpoint with pagination
             const serverUrl = window.location.origin.replace('5173', '5001');
-            const response = await fetch(`${serverUrl}/api/ratings/${serviceId}`);
+            const response = await fetch(`${serverUrl}/api/ratings/${serviceId}?limit=${maxResults}&page=${page}`);
             
             if (response.ok) {
                 const data = await response.json();
                 return data.ratings || [];
             } else {
-                // Don't attempt direct Firebase access if the API fails
-                console.warn('Server API failed to retrieve ratings');
-                throw new Error('Failed to retrieve ratings from server');
+                // As a fallback, try to get ratings directly from Firestore
+                console.warn('Server API failed to retrieve ratings. Attempting direct Firestore access.');
+                
+                // Initialize Firebase and get db reference
+                const { db } = await initializeFirebase();
+                this.db = db;
+                
+                // Calculate pagination offsets
+                const offset = (page - 1) * maxResults;
+                
+                // Query to get approved ratings for this service with pagination
+                const ratingsQuery = query(
+                    collection(this.db, 'ratings'),
+                    where('serviceId', '==', serviceId),
+                    where('moderation.status', '==', 'approved'),
+                    orderBy('timestamp', 'desc'),
+                    limit(maxResults)
+                );
+                
+                // Get all ratings that match this query
+                const snapshot = await getDocs(ratingsQuery);
+                
+                // Convert to array of rating objects
+                const ratings = [];
+                snapshot.forEach((doc) => {
+                    ratings.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                return ratings;
             }
         } catch (error) {
             console.error('Error getting service ratings:', error);
