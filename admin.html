@@ -3065,25 +3065,20 @@
         
         // Add event listeners to rating action buttons
         function addRatingActionListeners() {
-            const ratingRows = document.querySelectorAll('#ratings-tbody tr');
+            // Find all approve buttons and add click listeners
+            document.querySelectorAll('#ratings-tbody button[data-action="approve"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ratingId = this.getAttribute('data-id');
+                    approveRating(ratingId);
+                });
+            });
             
-            ratingRows.forEach(row => {
-                const approveButton = row.querySelector('button[data-action="approve"]');
-                const rejectButton = row.querySelector('button[data-action="reject"]');
-                
-                if (approveButton) {
-                    approveButton.addEventListener('click', () => {
-                        const ratingId = approveButton.getAttribute('data-id');
-                        approveRating(ratingId);
-                    });
-                }
-                
-                if (rejectButton) {
-                    rejectButton.addEventListener('click', () => {
-                        const ratingId = rejectButton.getAttribute('data-id');
-                        showRejectModal(ratingId);
-                    });
-                }
+            // Find all reject buttons and add click listeners
+            document.querySelectorAll('#ratings-tbody button[data-action="reject"]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const ratingId = this.getAttribute('data-id');
+                    showRejectModal(ratingId);
+                });
             });
         }
         
