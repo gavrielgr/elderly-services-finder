@@ -2155,6 +2155,7 @@
             window.handleFormSubmit = handleFormSubmit;
             window.handleDocumentClick = handleDocumentClick;
             window.showMessage = showMessage;
+            window.handleLogout = handleLogout;
         }
 
         // Edit a service based on its ID
@@ -2742,29 +2743,48 @@
                 // Use Firebase modules from window
                 const { collection, getDocs, orderBy, query } = window.firebaseModules;
                 
-                // Get all interest areas
-                const interestAreasQuery = query(
-                    collection(window.firestoreDB, 'interestAreas'),
-                    orderBy('name')
-                );
-                const interestAreasSnapshot = await getDocs(interestAreasQuery);
-                
-                allInterestAreas = [];
-                interestAreasSnapshot.forEach(doc => {
-                    allInterestAreas.push({
-                        id: doc.id,
-                        ...doc.data()
+                try {
+                    // Get all interest areas
+                    const interestAreasQuery = query(
+                        collection(window.firestoreDB, 'interestAreas'),
+                        orderBy('name')
+                    );
+                    const interestAreasSnapshot = await getDocs(interestAreasQuery);
+                    
+                    allInterestAreas = [];
+                    interestAreasSnapshot.forEach(doc => {
+                        allInterestAreas.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
                     });
-                });
-                
-                // Render interest areas
-                renderInterestAreas();
+                    
+                    // Render interest areas
+                    renderInterestAreas();
+                } catch (permissionError) {
+                    console.error('Permission error loading interest areas:', permissionError);
+                    
+                    if (interestAreasListContainer) {
+                        interestAreasListContainer.innerHTML = `
+                            <div class="error-message">
+                                <p>אין הרשאות לטעון תחומי עניין</p>
+                                <p>מנהל המערכת צריך להעניק לך הרשאות גישה לקולקציה זו</p>
+                            </div>
+                        `;
+                    }
+                    
+                    // Set empty array to avoid errors
+                    allInterestAreas = [];
+                }
                 
             } catch (error) {
                 console.error('Error loading interest areas:', error);
                 if (interestAreasListContainer) {
                     interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי העניין</div>';
                 }
+                
+                // Set empty array to avoid errors
+                allInterestAreas = [];
             }
         }
         
@@ -2879,6 +2899,27 @@
             // Update results info
             if (usersResultsInfo) {
                 usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
+            }
+        }
+
+        // Handle logout
+        async function handleLogout() {
+            try {
+                const { signOut } = window.firebaseModules;
+                const auth = window.firebaseAuth;
+                if (auth) {
+                    await signOut(auth);
+                    showMessage('התנתקת בהצלחה', 'success');
+                    
+                    // Redirect to login page
+                    window.location.href = '/login.html?redirect=admin.html';
+                } else {
+                    console.error('Auth not initialized');
+                    showMessage('שגיאה בהתנתקות', 'error');
+                }
+            } catch (error) {
+                console.error('Error signing out:', error);
+                showMessage('שגיאה בהתנתקות', 'error');
             }
         }
     </script>
