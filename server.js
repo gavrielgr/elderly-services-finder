@@ -44,6 +44,37 @@ const FIREBASE_PROJECT_ID = process.env.VITE_FIREBASE_PROJECT_ID;
 console.log('Server starting with configuration:');
 console.log('Project ID:', FIREBASE_PROJECT_ID);
 
+// Utility function to properly format the Firebase private key
+function formatFirebasePrivateKey(key) {
+    if (!key) {
+        console.error('FIREBASE_PRIVATE_KEY is missing or empty');
+        return null;
+    }
+    
+    try {
+        // If it's a JSON string, parse it first
+        if (typeof key === 'string' && (key.startsWith('"') && key.endsWith('"'))) {
+            key = JSON.parse(key);
+        }
+        
+        // Replace escaped newlines with actual newlines
+        if (typeof key === 'string') {
+            key = key.replace(/\\n/g, '\n');
+        }
+        
+        // Validate that the key appears to be in PEM format
+        if (typeof key === 'string' && !key.includes('-----BEGIN PRIVATE KEY-----')) {
+            console.error('Private key does not appear to be in valid PEM format');
+            return null;
+        }
+        
+        return key;
+    } catch (error) {
+        console.error('Error formatting private key:', error);
+        return null;
+    }
+}
+
 // Firebase Admin initialization
 let auth;
 let db;
@@ -54,11 +85,33 @@ try {
     const { getFirestore } = await import('firebase-admin/firestore');
     const { getAuth } = await import('firebase-admin/auth');
     
+    // Format the private key properly
+    const privateKey = formatFirebasePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
+    
+    if (!privateKey) {
+        console.warn(`
+-------------------------------------------------------
+⚠️ Invalid or missing Firebase private key ⚠️
+
+The server will continue running with limited functionality.
+Admin features that require the Firebase Admin SDK will not work.
+
+To fix this issue:
+1. Make sure you have a valid Firebase service account key
+2. Run the setup helper: node setup-firebase-env.js
+3. Restart the server
+-------------------------------------------------------
+`);
+        throw new Error('Invalid or missing Firebase private key');
+    }
+    
+    console.log('Initializing Firebase Admin with project ID:', FIREBASE_PROJECT_ID);
+    
     const adminApp = initializeApp({
         credential: cert({
             projectId: FIREBASE_PROJECT_ID,
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+            privateKey: privateKey
         })
     });
     
@@ -68,7 +121,20 @@ try {
     console.log('Firebase Admin SDK initialized successfully');
 } catch (error) {
     console.error('Error initializing Firebase Admin SDK:', error);
-    console.log('Server will not be able to perform admin operations');
+    console.log(`
+-------------------------------------------------------
+⚠️ Firebase Admin SDK failed to initialize ⚠️
+
+The server will continue running with limited functionality.
+Admin features that require the Firebase Admin SDK will not work.
+
+Please run the setup helper to fix your configuration:
+   node setup-firebase-env.js
+
+If the error persists, try generating a new service account key
+from the Firebase console.
+-------------------------------------------------------
+`);
 }
 
 // In-memory cache

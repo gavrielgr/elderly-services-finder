@@ -30,8 +30,17 @@ export async function initializeFirebase() {
     // Initialize Firebase with server-provided config
     // This does NOT require authentication - anyone can initialize and read public data
     app = initializeApp(firebaseConfig);
+    
+    // Initialize Firestore and Auth using the Firebase app
     db = getFirestore(app);
     auth = getAuth(app);
+    
+    // Also add to window for direct access in debugging
+    if (typeof window !== 'undefined') {
+      window._firebaseApp = app;
+      window._firebaseDb = db;
+      window._firebaseAuth = auth;
+    }
     
     console.log('Firebase initialized successfully');
     return { app, db, auth };
@@ -39,6 +48,11 @@ export async function initializeFirebase() {
     console.error('Error initializing Firebase:', error);
     throw error;
   }
+}
+
+// Helper function to get the Firebase app instance
+export function getFirebaseApp() {
+  return app;
 }
 
 // Export empty instances initially - must call initializeFirebase() first

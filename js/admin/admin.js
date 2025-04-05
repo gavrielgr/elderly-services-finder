@@ -29,10 +29,13 @@ class AdminUI {
             searchTerm: ''
         };
 
-        // Check if elements exist (might not if inline script has initialized UI differently)
-        if (this.initializeDomElements()) {
-            this.initializeEventListeners();
-            this.checkAuthState();
+        // Check if we're in the right admin page (ratings module)
+        // This helps when this script is loaded on an admin page that doesn't have these elements
+        if (document.querySelector('.ratings-section')) {
+            if (this.initializeDomElements()) {
+                this.initializeEventListeners();
+                this.checkAuthState();
+            }
         } else {
             console.log('Admin UI initialized from inline script, not initializing event listeners');
         }
@@ -40,16 +43,25 @@ class AdminUI {
     
     // Ensure DOM elements exist before trying to attach event listeners
     initializeDomElements() {
+        // Only check for the elements we actually need in this page
         const missingElements = [];
         
-        if (!this.loginContainer) missingElements.push('login-container');
-        if (!this.adminDashboard) missingElements.push('admin-dashboard');
-        if (!this.adminEmail) missingElements.push('admin-email');
-        if (!this.logoutButton) missingElements.push('logout-button');
-        if (!this.ratingsTable) missingElements.push('ratings-tbody');
-        if (!this.loadMoreButton) missingElements.push('load-more-button');
-        if (!this.moderationModal) missingElements.push('moderation-modal');
-        if (!this.statusMessage) missingElements.push('status-message');
+        const requiredElements = {
+            'login-container': this.loginContainer,
+            'admin-dashboard': this.adminDashboard,
+            'admin-email': this.adminEmail,
+            'ratings-tbody': this.ratingsTable,
+            'load-more-button': this.loadMoreButton,
+            'moderation-modal': this.moderationModal,
+            'status-message': this.statusMessage
+        };
+        
+        // Only check elements that should exist in this page version
+        for (const [name, element] of Object.entries(requiredElements)) {
+            if (!element && document.getElementById(name) === null) {
+                missingElements.push(name);
+            }
+        }
         
         if (missingElements.length > 0) {
             console.warn('Missing DOM elements:', missingElements.join(', '));
