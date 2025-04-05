@@ -2063,6 +2063,824 @@
                 showMessage('שגיאה באתחול העמוד. אנא רענן את הדף ונסה שוב.', 'error');
             }
         }
+
+        // Handle form submissions
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formId = form.id;
+            
+            if (formId === 'service-form') {
+                await saveService(form);
+            } else if (formId === 'category-form') {
+                await saveCategory(form);
+            } else if (formId === 'interest-area-form') {
+                await saveInterestArea(form);
+            } else if (formId === 'user-form') {
+                await saveUser(form);
+            } else if (formId === 'rejection-form') {
+                await handleRejectRating();
+            }
+        }
+        
+        // Handle clicks on dynamically created buttons
+        function handleDocumentClick(event) {
+            // Handle edit buttons
+            if (event.target.classList.contains('edit-button')) {
+                const id = event.target.getAttribute('data-id');
+                const section = event.target.closest('.admin-section');
+                
+                if (section.id === 'services-section') {
+                    editService(id);
+                } else if (section.id === 'categories-section') {
+                    editCategory(id);
+                } else if (section.id === 'interest-areas-section') {
+                    editInterestArea(id);
+                } else if (section.id === 'users-section') {
+                    editUser(id);
+                }
+            }
+            
+            // Handle delete buttons
+            if (event.target.classList.contains('delete-button') && !event.target.getAttribute('onclick')) {
+                const id = event.target.getAttribute('data-id');
+                const section = event.target.closest('.admin-section');
+                
+                if (section.id === 'services-section') {
+                    deleteService(id);
+                } else if (section.id === 'categories-section') {
+                    deleteCategory(id);
+                } else if (section.id === 'interest-areas-section') {
+                    deleteInterestArea(id);
+                }
+            }
+        }
+        
+        // Set up admin UI and load data with proper dependencies
+        async function loadAllData() {
+            try {
+                // Load categories first (for dropdown options)
+                if (typeof loadCategories === 'function') {
+                    await loadCategories();
+                }
+                
+                // Then load services (which depend on categories)
+                if (typeof loadServices === 'function') {
+                    await loadServices();
+                }
+                
+                // Load remaining data
+                if (typeof loadInterestAreas === 'function') {
+                    await loadInterestAreas();
+                }
+                
+                if (typeof loadUsers === 'function') {
+                    await loadUsers();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showMessage('שגיאה בטעינת נתונים', 'error');
+            }
+        }
+        
+        // Add setup code to expose functions to the global scope
+        function setupRatingFunctions() {
+            // Expose necessary functions to global scope for the event handlers
+            window.approveRating = approveRating;
+            window.showRejectModal = showRejectModal;
+            window.handleRejectRating = handleRejectRating;
+            window.loadRatings = loadRatings;
+            window.filterRatings = filterRatings;
+            window.loadMoreRatings = loadMoreRatings;
+            window.handleFormSubmit = handleFormSubmit;
+            window.handleDocumentClick = handleDocumentClick;
+            window.showMessage = showMessage;
+        }
+
+        // Edit a service based on its ID
+        function editService(id) {
+            // Find the service in the array
+            const service = allServices.find(s => s.id === id);
+            console.log('Editing service:', service);
+            
+            if (service) {
+                // Set service ID and make it visible
+                document.getElementById('service-id').value = id;
+                const idDisplay = document.getElementById('service-id-display');
+                if (idDisplay) idDisplay.style.display = 'block';
+                
+                // Set Firebase ID in the visible field
+                document.getElementById('service-id-visible').value = id;
+                
+                // Populate form fields
+                document.getElementById('service-name').value = service.name || '';
+                document.getElementById('service-description').value = service.description || '';
+                
+                // Set category dropdown
+                const categorySelect = document.getElementById('service-category');
+                if (service.category) {
+                    categorySelect.value = service.category;
+                } else {
+                    categorySelect.value = '';
+                }
+                
+                // Set active status
+                const activeCheckbox = document.getElementById('service-active');
+                if (activeCheckbox) {
+                    activeCheckbox.checked = service.active !== false; // Default to true if not specified
+                }
+                
+                // Show the modal
+                document.getElementById('service-modal').style.display = 'block';
+            } else {
+                showMessage('שירות לא נמצא', 'error');
+            }
+        }
+        
+        // Save a service
+        async function saveService(form) {
+            try {
+                // Get basic information
+                const serviceId = form.querySelector('#service-id').value;
+                const serviceName = form.querySelector('#service-name').value;
+                const serviceDescription = form.querySelector('#service-description').value;
+                const serviceCategory = form.querySelector('#service-category').value;
+                const serviceActive = form.querySelector('#service-active').checked;
+                
+                // Create service object
+                const serviceData = {
+                    name: serviceName,
+                    description: serviceDescription,
+                    category: serviceCategory,
+                    active: serviceActive,
+                    updatedAt: window.firebaseModules.serverTimestamp()
+                };
+                
+                // Add or update service in Firestore
+                if (serviceId) {
+                    // Update existing service
+                    await window.firebaseModules.updateDoc(
+                        window.firebaseModules.doc(window.firestoreDB, 'services', serviceId),
+                        serviceData
+                    );
+                    showMessage('השירות עודכן בהצלחה', 'success');
+                } else {
+                    // Add new service
+                    serviceData.createdAt = window.firebaseModules.serverTimestamp();
+                    const docRef = await window.firebaseModules.addDoc(
+                        window.firebaseModules.collection(window.firestoreDB, 'services'),
+                        serviceData
+                    );
+                    showMessage('השירות נוצר בהצלחה', 'success');
+                }
+                
+                // Close the modal and refresh the list
+                document.getElementById('service-modal').style.display = 'none';
+                loadServices();
+            } catch (error) {
+                console.error('Error saving service:', error);
+                showMessage('שגיאה בשמירת השירות', 'error');
+            }
+        }
+        
+        // Delete a service
+        async function deleteService(id) {
+            try {
+                if (confirm('האם אתה בטוח שברצונך למחוק את השירות הזה?')) {
+                    await window.firebaseModules.deleteDoc(
+                        window.firebaseModules.doc(window.firestoreDB, 'services', id)
+                    );
+                    showMessage('השירות נמחק בהצלחה', 'success');
+                    loadServices();
+                }
+            } catch (error) {
+                console.error('Error deleting service:', error);
+                showMessage('שגיאה במחיקת השירות', 'error');
+            }
+        }
+        
+        // Edit a category
+        function editCategory(id) {
+            // Find the category in the array
+            const category = allCategories.find(c => c.id === id);
+            
+            if (category) {
+                // Set category ID
+                document.getElementById('category-id').value = id;
+                
+                // Populate form fields
+                document.getElementById('category-name').value = category.name || '';
+                document.getElementById('category-description').value = category.description || '';
+                
+                // Show the modal
+                document.getElementById('category-modal').style.display = 'block';
+            } else {
+                showMessage('קטגוריה לא נמצאה', 'error');
+            }
+        }
+        
+        // Save a category
+        async function saveCategory(form) {
+            try {
+                // Get basic information
+                const categoryId = form.querySelector('#category-id').value;
+                const categoryName = form.querySelector('#category-name').value;
+                const categoryDescription = form.querySelector('#category-description').value;
+                
+                // Create category object
+                const categoryData = {
+                    name: categoryName,
+                    description: categoryDescription,
+                    updatedAt: window.firebaseModules.serverTimestamp()
+                };
+                
+                // Add or update category in Firestore
+                if (categoryId) {
+                    // Update existing category
+                    await window.firebaseModules.updateDoc(
+                        window.firebaseModules.doc(window.firestoreDB, 'categories', categoryId),
+                        categoryData
+                    );
+                    showMessage('הקטגוריה עודכנה בהצלחה', 'success');
+                } else {
+                    // Add new category
+                    categoryData.createdAt = window.firebaseModules.serverTimestamp();
+                    const docRef = await window.firebaseModules.addDoc(
+                        window.firebaseModules.collection(window.firestoreDB, 'categories'),
+                        categoryData
+                    );
+                    showMessage('הקטגוריה נוצרה בהצלחה', 'success');
+                }
+                
+                // Close the modal and refresh the list
+                document.getElementById('category-modal').style.display = 'none';
+                loadCategories();
+            } catch (error) {
+                console.error('Error saving category:', error);
+                showMessage('שגיאה בשמירת הקטגוריה', 'error');
+            }
+        }
+        
+        // Delete a category
+        async function deleteCategory(id) {
+            try {
+                if (confirm('האם אתה בטוח שברצונך למחוק את הקטגוריה הזו?')) {
+                    await window.firebaseModules.deleteDoc(
+                        window.firebaseModules.doc(window.firestoreDB, 'categories', id)
+                    );
+                    showMessage('הקטגוריה נמחקה בהצלחה', 'success');
+                    loadCategories();
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
+                showMessage('שגיאה במחיקת הקטגוריה', 'error');
+            }
+        }
+        
+        // Edit an interest area
+        function editInterestArea(id) {
+            // Find the interest area in the array
+            const interestArea = allInterestAreas.find(ia => ia.id === id);
+            
+            if (interestArea) {
+                // Set interest area ID
+                document.getElementById('interest-area-id').value = id;
+                
+                // Populate form fields
+                document.getElementById('interest-area-name').value = interestArea.name || '';
+                document.getElementById('interest-area-description').value = interestArea.description || '';
+                
+                // Show the modal
+                document.getElementById('interest-area-modal').style.display = 'block';
+            } else {
+                showMessage('תחום עניין לא נמצא', 'error');
+            }
+        }
+        
+        // Save an interest area
+        async function saveInterestArea(form) {
+            try {
+                // Get basic information
+                const interestAreaId = form.querySelector('#interest-area-id').value;
+                const interestAreaName = form.querySelector('#interest-area-name').value;
+                const interestAreaDescription = form.querySelector('#interest-area-description').value;
+                
+                // Create interest area object
+                const interestAreaData = {
+                    name: interestAreaName,
+                    description: interestAreaDescription,
+                    updatedAt: window.firebaseModules.serverTimestamp()
+                };
+                
+                // Add or update interest area in Firestore
+                if (interestAreaId) {
+                    // Update existing interest area
+                    await window.firebaseModules.updateDoc(
+                        window.firebaseModules.doc(window.firestoreDB, 'interestAreas', interestAreaId),
+                        interestAreaData
+                    );
+                    showMessage('תחום העניין עודכן בהצלחה', 'success');
+                } else {
+                    // Add new interest area
+                    interestAreaData.createdAt = window.firebaseModules.serverTimestamp();
+                    const docRef = await window.firebaseModules.addDoc(
+                        window.firebaseModules.collection(window.firestoreDB, 'interestAreas'),
+                        interestAreaData
+                    );
+                    showMessage('תחום העניין נוצר בהצלחה', 'success');
+                }
+                
+                // Close the modal and refresh the list
+                document.getElementById('interest-area-modal').style.display = 'none';
+                loadInterestAreas();
+            } catch (error) {
+                console.error('Error saving interest area:', error);
+                showMessage('שגיאה בשמירת תחום העניין', 'error');
+            }
+        }
+        
+        // Delete an interest area
+        async function deleteInterestArea(id) {
+            try {
+                if (confirm('האם אתה בטוח שברצונך למחוק את תחום העניין הזה?')) {
+                    await window.firebaseModules.deleteDoc(
+                        window.firebaseModules.doc(window.firestoreDB, 'interestAreas', id)
+                    );
+                    showMessage('תחום העניין נמחק בהצלחה', 'success');
+                    loadInterestAreas();
+                }
+            } catch (error) {
+                console.error('Error deleting interest area:', error);
+                showMessage('שגיאה במחיקת תחום העניין', 'error');
+            }
+        }
+        
+        // Edit a user
+        function editUser(id) {
+            // Find the user in the array
+            const user = allUsers.find(u => u.id === id);
+            
+            if (user) {
+                // Set user ID
+                document.getElementById('user-id').value = id;
+                
+                // Populate form fields
+                document.getElementById('user-name').value = user.name || '';
+                document.getElementById('user-email').value = user.email || '';
+                
+                // Set role dropdown
+                const roleSelect = document.getElementById('user-role');
+                if (user.role) {
+                    roleSelect.value = user.role;
+                } else {
+                    roleSelect.value = 'user';
+                }
+                
+                // Set active status
+                const statusCheckbox = document.getElementById('user-status');
+                if (statusCheckbox) {
+                    statusCheckbox.checked = user.status === 'active';
+                }
+                
+                // Show the modal
+                document.getElementById('user-modal').style.display = 'block';
+            } else {
+                showMessage('משתמש לא נמצא', 'error');
+            }
+        }
+        
+        // Save a user
+        async function saveUser(form) {
+            try {
+                // Get basic information
+                const userId = form.querySelector('#user-id').value;
+                const userName = form.querySelector('#user-name').value;
+                const userRole = form.querySelector('#user-role').value;
+                const userStatus = form.querySelector('#user-status').checked ? 'active' : 'inactive';
+                
+                // Create user object
+                const userData = {
+                    name: userName,
+                    role: userRole,
+                    status: userStatus,
+                    updatedAt: window.firebaseModules.serverTimestamp()
+                };
+                
+                // Update user in Firestore
+                await window.firebaseModules.updateDoc(
+                    window.firebaseModules.doc(window.firestoreDB, 'users', userId),
+                    userData
+                );
+                showMessage('המשתמש עודכן בהצלחה', 'success');
+                
+                // Close the modal and refresh the list
+                document.getElementById('user-modal').style.display = 'none';
+                loadUsers();
+            } catch (error) {
+                console.error('Error saving user:', error);
+                showMessage('שגיאה בשמירת המשתמש', 'error');
+            }
+        }
+
+        // Global variables for pagination
+        let lastServiceDoc = null;
+        const servicesPerPage = 10;
+        let hasMoreServices = true;
+        
+        // Load services from Firebase
+        async function loadServices(isLoadMore = false) {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                // Show loading state
+                if (!isLoadMore) {
+                    if (servicesListContainer) {
+                        servicesListContainer.innerHTML = '<div class="spinner"></div>';
+                    }
+                    // Reset pagination state
+                    lastServiceDoc = null;
+                    allServices = [];
+                    hasMoreServices = true;
+                } else {
+                    // Show loading for load more
+                    const loadMoreBtn = document.getElementById('load-more-services');
+                    if (loadMoreBtn) {
+                        loadMoreBtn.disabled = true;
+                        loadMoreBtn.innerHTML = '<span class="spinner-small"></span> טוען...';
+                    }
+                }
+                
+                // Use Firebase modules from window
+                const { collection, query, orderBy, limit, startAfter, getDocs } = window.firebaseModules;
+                
+                // Build query with pagination
+                let servicesQuery;
+                
+                if (lastServiceDoc && isLoadMore) {
+                    servicesQuery = query(
+                        collection(window.firestoreDB, 'services'),
+                        orderBy('name'),
+                        startAfter(lastServiceDoc),
+                        limit(servicesPerPage)
+                    );
+                } else {
+                    servicesQuery = query(
+                        collection(window.firestoreDB, 'services'),
+                        orderBy('name'),
+                        limit(servicesPerPage)
+                    );
+                }
+                
+                const servicesSnapshot = await getDocs(servicesQuery);
+                
+                // Check if we have more services to load
+                hasMoreServices = servicesSnapshot.docs.length === servicesPerPage;
+                
+                // Update the last visible service for next pagination
+                if (servicesSnapshot.docs.length > 0) {
+                    lastServiceDoc = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
+                } else if (!isLoadMore) {
+                    // No services found on initial load
+                    if (servicesListContainer) {
+                        servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+                    }
+                    return;
+                }
+                
+                // Process the services
+                const newServices = [];
+                servicesSnapshot.forEach(doc => {
+                    const serviceData = doc.data();
+                    
+                    // Ensure active property exists (set default if missing)
+                    if (serviceData.active === undefined) {
+                        serviceData.active = true;
+                    }
+                    
+                    newServices.push({
+                        id: doc.id,
+                        ...serviceData
+                    });
+                });
+                
+                // Append to existing services if loading more
+                if (isLoadMore) {
+                    allServices = [...allServices, ...newServices];
+                } else {
+                    allServices = newServices;
+                }
+                
+                console.log('Loaded services:', allServices.length);
+                
+                // Render the services
+                renderServices(isLoadMore);
+                
+            } catch (error) {
+                console.error('Error loading services:', error);
+                if (servicesListContainer) {
+                    servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים</div>';
+                }
+                // Reset load more button if error
+                const loadMoreBtn = document.getElementById('load-more-services');
+                if (loadMoreBtn) {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'טען עוד';
+                }
+            }
+        }
+        
+        // Render services in the list
+        function renderServices(isAppend = false) {
+            if (!servicesListContainer) return;
+            
+            if (allServices.length === 0 && !isAppend) {
+                servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+                return;
+            }
+            
+            const html = allServices.map(service => {
+                // Format category name
+                let categoryName = '';
+                if (service.category) {
+                    const category = allCategories.find(c => c.id === service.category);
+                    categoryName = category ? category.name : 'קטגוריה לא מוגדרת';
+                }
+                
+                // Format active status
+                const statusDot = service.active !== false ? 
+                    '<span class="status-dot active"></span> פעיל' : 
+                    '<span class="status-dot inactive"></span> לא פעיל';
+                
+                return `
+                <div class="item-card">
+                    <div class="item-actions">
+                        <button class="action-button edit-button" data-id="${service.id}">עריכה</button>
+                        <button class="action-button delete-button" data-id="${service.id}">מחיקה</button>
+                    </div>
+                    <div class="item-title">${service.name}</div>
+                    <div class="item-details">
+                        <div class="item-category">
+                            <span class="category-badge">${categoryName}</span>
+                        </div>
+                        <div class="item-description">${service.description || 'אין תיאור'}</div>
+                        <div class="item-status">${statusDot}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            if (isAppend) {
+                servicesListContainer.insertAdjacentHTML('beforeend', html);
+            } else {
+                servicesListContainer.innerHTML = html;
+            }
+            
+            // Update results info
+            if (servicesResultsInfo) {
+                servicesResultsInfo.textContent = `${allServices.length} שירותים ${hasMoreServices ? '(טען עוד להצגת הכל)' : ''}`;
+            }
+            
+            // Add or update load more button
+            if (hasMoreServices) {
+                const loadMoreContainer = document.querySelector('.load-more-container') || document.createElement('div');
+                loadMoreContainer.className = 'load-more-container';
+                loadMoreContainer.innerHTML = `<button id="load-more-services" class="load-more-button">טען עוד שירותים</button>`;
+                servicesListContainer.after(loadMoreContainer);
+                
+                // Add event listener to load more button
+                document.getElementById('load-more-services').addEventListener('click', () => loadServices(true));
+            } else {
+                // Remove load more button if no more services
+                const loadMoreContainer = document.querySelector('.load-more-container');
+                if (loadMoreContainer) {
+                    loadMoreContainer.remove();
+                }
+            }
+        }
+        
+        // Load categories from Firebase
+        async function loadCategories() {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                // Show loading state
+                if (categoriesListContainer) {
+                    categoriesListContainer.innerHTML = '<div class="spinner"></div>';
+                }
+                
+                // Use Firebase modules from window
+                const { collection, getDocs, orderBy, query } = window.firebaseModules;
+                
+                // Get all categories
+                const categoriesQuery = query(
+                    collection(window.firestoreDB, 'categories'),
+                    orderBy('name')
+                );
+                const categoriesSnapshot = await getDocs(categoriesQuery);
+                
+                allCategories = [];
+                categoriesSnapshot.forEach(doc => {
+                    allCategories.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Render categories
+                renderCategories();
+                
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                if (categoriesListContainer) {
+                    categoriesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת הקטגוריות</div>';
+                }
+            }
+        }
+        
+        // Render categories in the list
+        function renderCategories() {
+            if (!categoriesListContainer) return;
+            
+            if (allCategories.length === 0) {
+                categoriesListContainer.innerHTML = '<div class="empty-message">אין קטגוריות ברשימה.</div>';
+                return;
+            }
+            
+            const html = allCategories.map(category => {
+                return `
+                <div class="item-card">
+                    <div class="item-actions">
+                        <button class="action-button edit-button" data-id="${category.id}">עריכה</button>
+                        <button class="action-button delete-button" data-id="${category.id}">מחיקה</button>
+                    </div>
+                    <div class="item-title">${category.name}</div>
+                    <div class="item-details">
+                        <div class="item-description">${category.description || 'אין תיאור'}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            categoriesListContainer.innerHTML = html;
+            
+            // Update results info
+            if (categoriesResultsInfo) {
+                categoriesResultsInfo.textContent = `${allCategories.length} קטגוריות`;
+            }
+        }
+        
+        // Load interest areas from Firebase
+        async function loadInterestAreas() {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                // Show loading state
+                if (interestAreasListContainer) {
+                    interestAreasListContainer.innerHTML = '<div class="spinner"></div>';
+                }
+                
+                // Use Firebase modules from window
+                const { collection, getDocs, orderBy, query } = window.firebaseModules;
+                
+                // Get all interest areas
+                const interestAreasQuery = query(
+                    collection(window.firestoreDB, 'interestAreas'),
+                    orderBy('name')
+                );
+                const interestAreasSnapshot = await getDocs(interestAreasQuery);
+                
+                allInterestAreas = [];
+                interestAreasSnapshot.forEach(doc => {
+                    allInterestAreas.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Render interest areas
+                renderInterestAreas();
+                
+            } catch (error) {
+                console.error('Error loading interest areas:', error);
+                if (interestAreasListContainer) {
+                    interestAreasListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת תחומי העניין</div>';
+                }
+            }
+        }
+        
+        // Render interest areas in the list
+        function renderInterestAreas() {
+            if (!interestAreasListContainer) return;
+            
+            if (allInterestAreas.length === 0) {
+                interestAreasListContainer.innerHTML = '<div class="empty-message">אין תחומי עניין ברשימה.</div>';
+                return;
+            }
+            
+            const html = allInterestAreas.map(interestArea => {
+                return `
+                <div class="item-card">
+                    <div class="item-actions">
+                        <button class="action-button edit-button" data-id="${interestArea.id}">עריכה</button>
+                        <button class="action-button delete-button" data-id="${interestArea.id}">מחיקה</button>
+                    </div>
+                    <div class="item-title">${interestArea.name}</div>
+                    <div class="item-details">
+                        <div class="item-description">${interestArea.description || 'אין תיאור'}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            interestAreasListContainer.innerHTML = html;
+            
+            // Update results info
+            if (interestAreasResultsInfo) {
+                interestAreasResultsInfo.textContent = `${allInterestAreas.length} תחומי עניין`;
+            }
+        }
+        
+        // Load users from Firebase
+        async function loadUsers() {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                // Show loading state
+                if (usersListContainer) {
+                    usersListContainer.innerHTML = '<div class="spinner"></div>';
+                }
+                
+                // Use Firebase modules from window
+                const { collection, getDocs, orderBy, query } = window.firebaseModules;
+                
+                // Get all users
+                const usersQuery = query(
+                    collection(window.firestoreDB, 'users'),
+                    orderBy('email')
+                );
+                const usersSnapshot = await getDocs(usersQuery);
+                
+                allUsers = [];
+                usersSnapshot.forEach(doc => {
+                    allUsers.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Render users
+                renderUsers();
+                
+            } catch (error) {
+                console.error('Error loading users:', error);
+                if (usersListContainer) {
+                    usersListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת המשתמשים</div>';
+                }
+            }
+        }
+        
+        // Render users in the list
+        function renderUsers() {
+            if (!usersListContainer) return;
+            
+            if (allUsers.length === 0) {
+                usersListContainer.innerHTML = '<div class="empty-message">אין משתמשים ברשימה.</div>';
+                return;
+            }
+            
+            const html = allUsers.map(user => {
+                // Format role badge
+                const roleBadge = user.role === 'admin' ? 
+                    '<span class="role-badge admin">מנהל</span>' : 
+                    '<span class="role-badge user">משתמש</span>';
+                
+                // Format status
+                const statusDot = user.status === 'active' ? 
+                    '<span class="status-dot active"></span> פעיל' : 
+                    '<span class="status-dot inactive"></span> לא פעיל';
+                
+                return `
+                <div class="item-card">
+                    <div class="item-actions">
+                        <button class="action-button edit-button" data-id="${user.id}">עריכה</button>
+                    </div>
+                    <div class="item-title">${user.name || 'ללא שם'}</div>
+                    <div class="item-details">
+                        <div class="item-email">${user.email || 'אין אימייל'}</div>
+                        <div class="item-role">${roleBadge}</div>
+                        <div class="item-status">${statusDot}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            usersListContainer.innerHTML = html;
+            
+            // Update results info
+            if (usersResultsInfo) {
+                usersResultsInfo.textContent = `${allUsers.length} משתמשים`;
+            }
+        }
     </script>
 
     <!-- Ratings Rejection Modal -->
