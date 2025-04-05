@@ -334,24 +334,38 @@
         
         .modal-content {
             background-color: white;
-            padding: 20px;
+            padding: 0;
             border-radius: 6px;
             width: 450px;
             max-width: 90%;
             max-height: 90vh;
-            overflow-y: auto;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 20px;
+            margin-bottom: 0;
+            background-color: white;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .modal-title {
             font-size: 20px;
             font-weight: bold;
+        }
+        
+        .modal form {
+            padding: 0 20px 20px 20px;
+            overflow-y: auto;
+            max-height: calc(90vh - 70px);
         }
         
         .close-modal {
@@ -391,11 +405,16 @@
             margin-top: 5px;
         }
         
-        .form-buttons {
+        .form-actions {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
             margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            background-color: white;
+            position: sticky;
+            bottom: 0;
         }
         
         .btn {
