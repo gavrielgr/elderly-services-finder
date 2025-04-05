@@ -615,6 +615,22 @@
         input:checked + .slider:before {
             transform: translateX(26px);
         }
+        
+        /* Contact information container */
+        .contact-info-container {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+        
+        .contact-info-container .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .contact-info-container .form-group:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -741,6 +757,34 @@
                     <label for="service-interest-areas" class="form-label">תחומי עניין</label>
                     <div id="service-interest-areas-container" style="margin-top: 8px;"></div>
                 </div>
+                
+                <!-- Contact information section -->
+                <div class="form-group">
+                    <label class="form-label">פרטי התקשרות</label>
+                    <div class="contact-info-container">
+                        <div class="form-group">
+                            <label for="service-phone" class="form-label">טלפון</label>
+                            <input type="text" id="service-phone" class="form-input" placeholder="מספר טלפון">
+                        </div>
+                        <div class="form-group">
+                            <label for="service-email" class="form-label">אימייל</label>
+                            <input type="email" id="service-email" class="form-input" placeholder="כתובת אימייל">
+                        </div>
+                        <div class="form-group">
+                            <label for="service-website" class="form-label">אתר אינטרנט</label>
+                            <input type="url" id="service-website" class="form-input" placeholder="כתובת אתר">
+                        </div>
+                        <div class="form-group">
+                            <label for="service-address" class="form-label">כתובת</label>
+                            <input type="text" id="service-address" class="form-input" placeholder="כתובת פיזית">
+                        </div>
+                        <div class="form-group">
+                            <label for="service-city" class="form-label">עיר</label>
+                            <input type="text" id="service-city" class="form-input" placeholder="עיר">
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="form-group">
                     <label class="form-label">סטטוס</label>
                     <div class="status-toggle">
@@ -1590,6 +1634,54 @@
                     categorySelect.appendChild(option);
                 });
                 
+                // Populate contact fields
+                if (service.contact) {
+                    // Handle phone - could be string, array, or object
+                    if (service.contact.phone) {
+                        if (Array.isArray(service.contact.phone)) {
+                            document.getElementById('service-phone').value = service.contact.phone
+                                .map(p => typeof p === 'object' ? p.number : p)
+                                .join(', ');
+                        } else {
+                            document.getElementById('service-phone').value = service.contact.phone;
+                        }
+                    }
+                    
+                    // Handle email - could be string, array, or object
+                    if (service.contact.email) {
+                        if (Array.isArray(service.contact.email)) {
+                            document.getElementById('service-email').value = service.contact.email
+                                .map(e => typeof e === 'object' ? e.address : e)
+                                .join(', ');
+                        } else {
+                            document.getElementById('service-email').value = service.contact.email;
+                        }
+                    }
+                    
+                    // Handle website - could be string, array, or object
+                    if (service.contact.website) {
+                        if (Array.isArray(service.contact.website)) {
+                            document.getElementById('service-website').value = service.contact.website
+                                .map(w => typeof w === 'object' ? w.url : w)
+                                .join(', ');
+                        } else {
+                            document.getElementById('service-website').value = service.contact.website;
+                        }
+                    }
+                    
+                    // Address fields
+                    document.getElementById('service-address').value = service.contact.address || '';
+                } else {
+                    // Legacy format - direct properties
+                    document.getElementById('service-phone').value = service.phone || '';
+                    document.getElementById('service-email').value = service.email || '';
+                    document.getElementById('service-website').value = service.website || '';
+                    document.getElementById('service-address').value = service.address || '';
+                }
+                
+                // City field
+                document.getElementById('service-city').value = service.city || '';
+                
                 // Set active status if available
                 const activeCheckbox = document.getElementById('service-active');
                 if (activeCheckbox) {
@@ -1629,6 +1721,21 @@
                 const serviceCategory = form.querySelector('#service-category').value;
                 const serviceActive = form.querySelector('#service-active')?.checked ?? true;
                 
+                // Get contact information
+                const servicePhone = form.querySelector('#service-phone').value;
+                const serviceEmail = form.querySelector('#service-email').value;
+                const serviceWebsite = form.querySelector('#service-website').value;
+                const serviceAddress = form.querySelector('#service-address').value;
+                const serviceCity = form.querySelector('#service-city').value;
+                
+                // Create contact object
+                const contact = {
+                    phone: servicePhone,
+                    email: serviceEmail,
+                    website: serviceWebsite,
+                    address: serviceAddress
+                };
+                
                 const { doc, collection, addDoc, updateDoc } = window.firebaseModules;
                 
                 if (serviceId) {
@@ -1637,7 +1744,9 @@
                         name: serviceName,
                         description: serviceDescription,
                         category: serviceCategory,
-                        active: serviceActive
+                        active: serviceActive,
+                        contact: contact,
+                        city: serviceCity
                     });
                     
                     // Update local array
@@ -1648,7 +1757,9 @@
                             name: serviceName,
                             description: serviceDescription,
                             category: serviceCategory,
-                            active: serviceActive
+                            active: serviceActive,
+                            contact: contact,
+                            city: serviceCity
                         };
                     }
                     
@@ -1659,7 +1770,9 @@
                         name: serviceName,
                         description: serviceDescription,
                         category: serviceCategory,
-                        active: serviceActive
+                        active: serviceActive,
+                        contact: contact,
+                        city: serviceCity
                     };
                     
                     const docRef = await addDoc(collection(window.firestoreDB, 'services'), newService);
