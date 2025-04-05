@@ -40,7 +40,7 @@ export class RatingComponent {
         this.addStyles();
         
         // Listen for auth state changes
-        this.unsubscribeAuth = authService.onAuthStateChanged((user) => {
+        this.unsubscribeAuth = authService.onAuthStateChange((user) => {
             // Re-render if auth state changes
             this.render();
         });
