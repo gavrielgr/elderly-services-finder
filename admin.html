@@ -738,6 +738,11 @@
             </div>
             <form id="service-form">
                 <input type="hidden" id="service-id">
+                <div class="form-group" id="service-id-display" style="display: none;">
+                    <label class="form-label">מזהה Firebase</label>
+                    <input type="text" id="service-id-visible" class="form-input" readonly style="background-color: #f5f5f5; color: #666; font-family: monospace; border: 1px dashed #ccc; padding: 8px; font-size: 13px;">
+                    <div class="form-hint" style="font-size: 11px; color: #777; margin-top: 5px;">מזהה זה משמש למטרות זיהוי ברשומות נתונים</div>
+                </div>
                 <div class="form-group">
                     <label for="service-name" class="form-label">שם השירות</label>
                     <input type="text" id="service-name" class="form-input" required>
@@ -1119,6 +1124,12 @@
                         document.getElementById('service-modal-title').textContent = 'הוספת שירות חדש';
                         document.getElementById('service-form').reset();
                         document.getElementById('service-id').value = '';
+                        
+                        // Hide the Firebase ID display for new services
+                        const idDisplay = document.getElementById('service-id-display');
+                        if (idDisplay) {
+                            idDisplay.style.display = 'none';
+                        }
                         
                         // Populate category dropdown
                         const categorySelect = document.getElementById('service-category');
@@ -1617,6 +1628,15 @@
             if (form && modal) {
                 // Populate form fields
                 document.getElementById('service-id').value = service.id;
+                
+                // Display the Firebase ID for existing services
+                const idDisplay = document.getElementById('service-id-display');
+                const idVisible = document.getElementById('service-id-visible');
+                if (idDisplay && idVisible) {
+                    idDisplay.style.display = 'block';
+                    idVisible.value = service.id;
+                }
+                
                 document.getElementById('service-name').value = service.name || '';
                 document.getElementById('service-description').value = service.description || '';
                 
