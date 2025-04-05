@@ -513,6 +513,90 @@
         .section-actions {
             margin-bottom: 15px;
         }
+
+        .role-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        
+        .role-badge.admin {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .role-badge.user {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .category-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 5px;
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        /* Status toggle switch */
+        .status-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4caf50;
+        }
+        
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4caf50;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
     </style>
 </head>
 <body>
@@ -638,6 +722,16 @@
                 <div class="form-group">
                     <label for="service-interest-areas" class="form-label">תחומי עניין</label>
                     <div id="service-interest-areas-container" style="margin-top: 8px;"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">סטטוס</label>
+                    <div class="status-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="service-active">
+                            <span class="slider"></span>
+                        </label>
+                        <span id="status-text">פעיל</span>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="cancel-button" id="cancel-service">ביטול</button>
@@ -966,6 +1060,23 @@
                         document.getElementById('service-modal-title').textContent = 'הוספת שירות חדש';
                         document.getElementById('service-form').reset();
                         document.getElementById('service-id').value = '';
+                        
+                        // Populate category dropdown
+                        const categorySelect = document.getElementById('service-category');
+                        categorySelect.innerHTML = '<option value="">בחר קטגוריה</option>';
+                        
+                        allCategories.forEach(category => {
+                            const option = document.createElement('option');
+                            option.value = category.id;
+                            option.textContent = category.name;
+                            categorySelect.appendChild(option);
+                        });
+                        
+                        // Set active status to true by default
+                        const activeCheckbox = document.getElementById('service-active');
+                        if (activeCheckbox) {
+                            activeCheckbox.checked = true;
+                        }
                     }
                 });
             }
@@ -1044,6 +1155,17 @@
             
             // Add click listener for the document to handle dynamically created edit/delete buttons
             document.addEventListener('click', handleDocumentClick);
+            
+            // Service active status toggle
+            const serviceActiveCheckbox = document.getElementById('service-active');
+            if (serviceActiveCheckbox) {
+                serviceActiveCheckbox.addEventListener('change', () => {
+                    const statusText = document.getElementById('status-text');
+                    if (statusText) {
+                        statusText.textContent = serviceActiveCheckbox.checked ? 'פעיל' : 'לא פעיל';
+                    }
+                });
+            }
         }
         
         // Handle clicks on dynamically created buttons
@@ -1231,7 +1353,12 @@
                 if (allServices.length === 0) {
                     servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
                 } else {
-                    const html = allServices.map(service => `
+                    const html = allServices.map(service => {
+                        // Find category name
+                        const category = allCategories.find(c => c.id === service.category);
+                        const categoryName = category ? category.name : 'ללא קטגוריה';
+                        
+                        return `
                         <div class="admin-list-item">
                             <div class="admin-list-item-content">
                                 <div class="item-main">
@@ -1239,6 +1366,7 @@
                                     <div class="item-info">
                                         <span class="status-dot ${service.active ? 'active' : 'inactive'}"></span>
                                         <span>${service.active ? 'פעיל' : 'לא פעיל'}</span>
+                                        <span class="category-badge">${categoryName}</span>
                                     </div>
                                 </div>
                                 <div class="item-description">${service.description || ''}</div>
@@ -1248,7 +1376,8 @@
                                 <button class="action-button delete-button" data-id="${service.id}">מחיקה</button>
                             </div>
                         </div>
-                    `).join('');
+                        `;
+                    }).join('');
                     
                     servicesListContainer.innerHTML = html;
                 }
@@ -1387,10 +1516,30 @@
             const modal = document.getElementById('service-modal');
             
             if (form && modal) {
+                // Populate form fields
                 document.getElementById('service-id').value = service.id;
                 document.getElementById('service-name').value = service.name || '';
                 document.getElementById('service-description').value = service.description || '';
-                // Fill other fields...
+                
+                // Populate category dropdown
+                const categorySelect = document.getElementById('service-category');
+                categorySelect.innerHTML = '<option value="">בחר קטגוריה</option>';
+                
+                allCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    if (service.category === category.id) {
+                        option.selected = true;
+                    }
+                    categorySelect.appendChild(option);
+                });
+                
+                // Set active status if available
+                const activeCheckbox = document.getElementById('service-active');
+                if (activeCheckbox) {
+                    activeCheckbox.checked = service.active !== false; // Default to true if not set
+                }
                 
                 document.getElementById('service-modal-title').textContent = 'עריכת שירות';
                 modal.style.display = 'flex';
@@ -1422,6 +1571,8 @@
                 const serviceId = form.querySelector('#service-id').value;
                 const serviceName = form.querySelector('#service-name').value;
                 const serviceDescription = form.querySelector('#service-description').value;
+                const serviceCategory = form.querySelector('#service-category').value;
+                const serviceActive = form.querySelector('#service-active')?.checked ?? true;
                 
                 const { doc, collection, addDoc, updateDoc } = window.firebaseModules;
                 
@@ -1430,7 +1581,8 @@
                     await updateDoc(doc(window.firestoreDB, 'services', serviceId), {
                         name: serviceName,
                         description: serviceDescription,
-                        // Add other fields as needed
+                        category: serviceCategory,
+                        active: serviceActive
                     });
                     
                     // Update local array
@@ -1439,7 +1591,9 @@
                         allServices[index] = {
                             ...allServices[index],
                             name: serviceName,
-                            description: serviceDescription
+                            description: serviceDescription,
+                            category: serviceCategory,
+                            active: serviceActive
                         };
                     }
                     
@@ -1449,8 +1603,8 @@
                     const newService = {
                         name: serviceName,
                         description: serviceDescription,
-                        active: true,
-                        // Add other fields as needed
+                        category: serviceCategory,
+                        active: serviceActive
                     };
                     
                     const docRef = await addDoc(collection(window.firestoreDB, 'services'), newService);
