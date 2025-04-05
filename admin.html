@@ -14,6 +14,33 @@
     <script type="module" src="/js/admin/RatingsAdmin.js"></script>
     <script type="module" src="/js/admin/admin.js"></script>
     
+    <!-- Preload Firebase modules -->
+    <script type="module">
+        // Import Firebase modules directly from CDN
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
+        import { 
+            getFirestore, doc, getDoc, collection, getDocs, 
+            query, where, orderBy, limit, addDoc, updateDoc, deleteDoc
+        } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+        
+        // Make Firebase modules available globally
+        window.firebaseModules = {
+            initializeApp,
+            getFirestore, doc, getDoc, collection, getDocs,
+            query, where, orderBy, limit, addDoc, updateDoc, deleteDoc,
+            getAuth, onAuthStateChanged, signOut
+        };
+        
+        // Signal that modules are loaded
+        window.firebaseModulesLoaded = true;
+        
+        // Trigger initialization if it's waiting
+        if (typeof window.onFirebaseModulesLoaded === 'function') {
+            window.onFirebaseModulesLoaded();
+        }
+    </script>
+    
     <style>
         /* Base styles */
         body, html {
@@ -228,10 +255,31 @@
             cursor: pointer;
             opacity: 0.6;
             transition: opacity 0.2s;
+            color: #333;
+            padding: 5px 10px;
+            margin-left: 5px;
+            border-radius: 4px;
         }
         
         .action-button:hover {
             opacity: 1;
+            background-color: #f0f0f0;
+        }
+        
+        .edit-button {
+            color: #2196F3;
+        }
+        
+        .edit-button:before {
+            content: '✏️ ';
+        }
+        
+        .delete-button {
+            color: #F44336;
+        }
+        
+        .delete-button:before {
+            content: '🗑️ ';
         }
         
         .item-title {
@@ -700,6 +748,28 @@
         const errorMessage = document.getElementById('error-message');
         const adminContainer = document.querySelector('.admin-container');
         
+        // Global Firebase references
+        let firebaseApp;
+        let firebaseAuth;
+        
+        // Global data storage
+        let allServices = [];
+        let allCategories = [];
+        let allInterestAreas = [];
+        let allUsers = [];
+        
+        // DOM elements for data lists
+        const servicesListContainer = document.getElementById('services-list');
+        const categoriesListContainer = document.getElementById('categories-list');
+        const interestAreasListContainer = document.getElementById('interest-areas-list');
+        const usersListContainer = document.getElementById('users-list');
+        
+        // DOM elements for results info
+        const servicesResultsInfo = document.getElementById('services-results-info');
+        const categoriesResultsInfo = document.getElementById('categories-results-info');
+        const interestAreasResultsInfo = document.getElementById('interest-areas-results-info');
+        const usersResultsInfo = document.getElementById('users-results-info');
+        
         function showError(message) {
             loadingOverlay.style.display = 'none';
             errorMessage.textContent = message;
@@ -736,9 +806,40 @@
         // Initialize Firebase with config from server
         async function initializeFirebase() {
             try {
-                // Import initializeFirebase function 
-                const module = await import('/js/config/firebase.js');
-                const { app, db, auth } = await module.initializeFirebase();
+                // Wait for Firebase modules to load if needed
+                if (!window.firebaseModulesLoaded) {
+                    console.log('Waiting for Firebase modules to load...');
+                    await new Promise(resolve => {
+                        window.onFirebaseModulesLoaded = resolve;
+                    });
+                }
+                
+                // Get Firebase modules
+                const { 
+                    initializeApp, getFirestore, getAuth 
+                } = window.firebaseModules;
+                
+                // Fetch Firebase config from server
+                const apiUrl = '/api/config';
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch Firebase configuration: ${response.status}`);
+                }
+                
+                const firebaseConfig = await response.json();
+                
+                // Initialize Firebase with the configuration
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                const auth = getAuth(app);
+                
+                // Store references for global access
+                window.firebaseApp = app;
+                window.firestoreDB = db;
+                window.firebaseAuth = auth;
+                
+                console.log('Firebase initialized successfully with modules from CDN');
                 
                 return { app, db, auth };
             } catch (error) {
@@ -752,50 +853,66 @@
         async function init() {
             try {
                 // Initialize Firebase first
-                const firebase = await initializeFirebase();
-                if (!firebase) return;
+                const fbResult = await initializeFirebase();
+                if (!fbResult) {
+                    console.error('Firebase initialization failed');
+                    showError('שגיאה באתחול מערכת. נא לנסות שוב מאוחר יותר.');
+                    return;
+                }
                 
-                const { auth, db } = firebase;
+                const { auth, db } = fbResult;
+                
+                // Get Firebase auth modules
+                const { onAuthStateChanged, signOut } = window.firebaseModules;
                 
                 // Set up auth state listener
-                auth.onAuthStateChanged(async (user) => {
+                onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         console.log('User is signed in:', user.uid);
                         
-                        // Check if user is admin
-                        const userDoc = await db.collection('users').doc(user.uid).get();
-                        
-                        if (!userDoc.exists) {
-                            console.log('User document does not exist');
-                            showError('חשבון משתמש לא קיים במערכת. אנא פנה למנהל המערכת.');
-                            await auth.signOut();
-                            return;
+                        try {
+                            // Get Firestore modules
+                            const { doc, getDoc } = window.firebaseModules;
+                            
+                            // Check if user is admin
+                            const userDocRef = doc(db, 'users', user.uid);
+                            const userDocSnap = await getDoc(userDocRef);
+                            
+                            if (!userDocSnap.exists()) {
+                                console.log('User document does not exist');
+                                showError('חשבון משתמש לא קיים במערכת. אנא פנה למנהל המערכת.');
+                                await signOut(auth);
+                                return;
+                            }
+                            
+                            const userData = userDocSnap.data();
+                            if (userData.role !== 'admin') {
+                                console.log('User is not an admin');
+                                showError('אין לך הרשאות מנהל במערכת. אנא פנה למנהל המערכת.');
+                                await signOut(auth);
+                                return;
+                            }
+                            
+                            if (userData.status !== 'active') {
+                                console.log('User is not active');
+                                showError('חשבון המנהל שלך אינו פעיל. אנא פנה למנהל המערכת.');
+                                await signOut(auth);
+                                return;
+                            }
+                            
+                            // User is an admin, show admin UI
+                            document.getElementById('user-info').textContent = `שלום ${user.displayName || userData.name || 'מנהל'}`;
+                            showAdmin();
+                            
+                            // Set up admin UI and load data
+                            loadServices();
+                            loadCategories();
+                            loadInterestAreas();
+                            loadUsers();
+                        } catch (error) {
+                            console.error('Error checking user permissions:', error);
+                            showError('שגיאה באימות הרשאות. נא לנסות שוב מאוחר יותר.');
                         }
-                        
-                        const userData = userDoc.data();
-                        if (userData.role !== 'admin') {
-                            console.log('User is not an admin');
-                            showError('אין לך הרשאות מנהל במערכת. אנא פנה למנהל המערכת.');
-                            await auth.signOut();
-                            return;
-                        }
-                        
-                        if (userData.status !== 'active') {
-                            console.log('User is not active');
-                            showError('חשבון המנהל שלך אינו פעיל. אנא פנה למנהל המערכת.');
-                            await auth.signOut();
-                            return;
-                        }
-                        
-                        // User is an admin, show admin UI
-                        document.getElementById('user-info').textContent = `שלום ${user.displayName || userData.name || 'מנהל'}`;
-                        showAdmin();
-                        
-                        // Set up admin UI and load data
-                        loadServices();
-                        loadCategories();
-                        loadInterestAreas();
-                        loadUsers();
                     } else {
                         // User is not signed in, redirect to login
                         window.location.href = '/login.html?redirect=admin.html';
@@ -808,18 +925,201 @@
             }
         }
         
-        // Execute initialization
-        init();
+        // Execute initialization and setup event listeners
+        init().then(() => {
+            // Setup event listeners after the page is fully loaded
+            setupEventListeners();
+        });
+        
+        // Set up UI event listeners after Firebase initialization
+        function setupEventListeners() {
+            // Add tab navigation event listeners
+            const navButtons = document.querySelectorAll('.nav-button');
+            const sections = document.querySelectorAll('.admin-section');
+            
+            navButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const target = button.getAttribute('data-section');
+                    
+                    // Update active button
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Show target section, hide others
+                    sections.forEach(section => {
+                        if (section.id === target) {
+                            section.classList.add('active');
+                        } else {
+                            section.classList.remove('active');
+                        }
+                    });
+                });
+            });
+            
+            // Add event listeners for add new buttons
+            const addServiceButton = document.getElementById('add-service');
+            if (addServiceButton) {
+                addServiceButton.addEventListener('click', () => {
+                    const modal = document.getElementById('service-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        document.getElementById('service-modal-title').textContent = 'הוספת שירות חדש';
+                        document.getElementById('service-form').reset();
+                        document.getElementById('service-id').value = '';
+                    }
+                });
+            }
+            
+            const addCategoryButton = document.getElementById('add-category');
+            if (addCategoryButton) {
+                addCategoryButton.addEventListener('click', () => {
+                    const modal = document.getElementById('category-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        document.getElementById('category-modal-title').textContent = 'הוספת קטגוריה חדשה';
+                        document.getElementById('category-form').reset();
+                        document.getElementById('category-id').value = '';
+                    }
+                });
+            }
+            
+            const addInterestAreaButton = document.getElementById('add-interest-area');
+            if (addInterestAreaButton) {
+                addInterestAreaButton.addEventListener('click', () => {
+                    const modal = document.getElementById('interest-area-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                        document.getElementById('interest-area-modal-title').textContent = 'הוספת תחום עניין חדש';
+                        document.getElementById('interest-area-form').reset();
+                        document.getElementById('interest-area-id').value = '';
+                    }
+                });
+            }
+            
+            // Close modal buttons
+            const closeButtons = document.querySelectorAll('.close-modal');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Add event listeners for cancel buttons
+            const cancelButtons = document.querySelectorAll('.cancel-button');
+            cancelButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Add event listeners for forms
+            const serviceForms = document.querySelectorAll('form');
+            serviceForms.forEach(form => {
+                form.addEventListener('submit', handleFormSubmit);
+            });
+            
+            // Add event listener for logout button
+            const logoutButton = document.getElementById('logout-button');
+            if (logoutButton) {
+                logoutButton.addEventListener('click', handleLogout);
+            }
+            
+            // Add event listener for refresh data button
+            const refreshButton = document.getElementById('refresh-data-button');
+            if (refreshButton) {
+                refreshButton.addEventListener('click', () => {
+                    loadServices();
+                    loadCategories();
+                    loadInterestAreas();
+                    loadUsers();
+                    showMessage('הנתונים רועננו בהצלחה', 'success');
+                });
+            }
+            
+            // Add click listener for the document to handle dynamically created edit/delete buttons
+            document.addEventListener('click', handleDocumentClick);
+        }
+        
+        // Handle clicks on dynamically created buttons
+        function handleDocumentClick(event) {
+            // Handle edit buttons
+            if (event.target.classList.contains('edit-button')) {
+                const id = event.target.getAttribute('data-id');
+                const section = event.target.closest('.admin-section');
+                
+                if (section.id === 'services-section') {
+                    editService(id);
+                } else if (section.id === 'categories-section') {
+                    editCategory(id);
+                } else if (section.id === 'interest-areas-section') {
+                    editInterestArea(id);
+                } else if (section.id === 'users-section') {
+                    editUser(id);
+                }
+            }
+            
+            // Handle delete buttons
+            if (event.target.classList.contains('delete-button')) {
+                const id = event.target.getAttribute('data-id');
+                const section = event.target.closest('.admin-section');
+                
+                if (section.id === 'services-section') {
+                    deleteService(id);
+                } else if (section.id === 'categories-section') {
+                    deleteCategory(id);
+                } else if (section.id === 'interest-areas-section') {
+                    deleteInterestArea(id);
+                }
+            }
+        }
+        
+        // Handle form submissions
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formId = form.id;
+            
+            if (formId === 'service-form') {
+                await saveService(form);
+            } else if (formId === 'category-form') {
+                await saveCategory(form);
+            } else if (formId === 'interest-area-form') {
+                await saveInterestArea(form);
+            } else if (formId === 'user-form') {
+                await saveUser(form);
+            }
+        }
+        
+        // Handle logout
+        async function handleLogout() {
+            try {
+                const { signOut } = window.firebaseModules;
+                await signOut(window.firebaseAuth);
+                window.location.href = '/login.html?redirect=admin.html';
+            } catch (error) {
+                console.error('Error signing out:', error);
+                showMessage('שגיאה בהתנתקות', 'error');
+            }
+        }
         
         // Load services from Firebase
         async function loadServices() {
             try {
-                const { db } = await import('/js/config/firebase.js');
-                if (!db) throw new Error('Firestore not initialized');
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
                 
-                const servicesSnapshot = await db.collection('services').get();
+                // Use Firebase modules from window
+                const { collection, getDocs } = window.firebaseModules;
+                
+                const servicesCollection = collection(window.firestoreDB, 'services');
+                const servicesSnapshot = await getDocs(servicesCollection);
+                
                 allServices = [];
-                
                 servicesSnapshot.forEach(doc => {
                     allServices.push({
                         id: doc.id,
@@ -839,12 +1139,15 @@
         // Load categories from Firebase
         async function loadCategories() {
             try {
-                const { db } = await import('/js/config/firebase.js');
-                if (!db) throw new Error('Firestore not initialized');
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
                 
-                const categoriesSnapshot = await db.collection('categories').get();
+                // Use Firebase modules from window
+                const { collection, getDocs } = window.firebaseModules;
+                
+                const categoriesCollection = collection(window.firestoreDB, 'categories');
+                const categoriesSnapshot = await getDocs(categoriesCollection);
+                
                 allCategories = [];
-                
                 categoriesSnapshot.forEach(doc => {
                     allCategories.push({
                         id: doc.id,
@@ -864,12 +1167,15 @@
         // Load interest areas from Firebase
         async function loadInterestAreas() {
             try {
-                const { db } = await import('/js/config/firebase.js');
-                if (!db) throw new Error('Firestore not initialized');
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
                 
-                const interestAreasSnapshot = await db.collection('interest-areas').get();
+                // Use Firebase modules from window
+                const { collection, getDocs } = window.firebaseModules;
+                
+                const interestAreasCollection = collection(window.firestoreDB, 'interest-areas');
+                const interestAreasSnapshot = await getDocs(interestAreasCollection);
+                
                 allInterestAreas = [];
-                
                 interestAreasSnapshot.forEach(doc => {
                     allInterestAreas.push({
                         id: doc.id,
@@ -889,12 +1195,15 @@
         // Load users from Firebase
         async function loadUsers() {
             try {
-                const { db } = await import('/js/config/firebase.js');
-                if (!db) throw new Error('Firestore not initialized');
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
                 
-                const usersSnapshot = await db.collection('users').get();
+                // Use Firebase modules from window
+                const { collection, getDocs } = window.firebaseModules;
+                
+                const usersCollection = collection(window.firestoreDB, 'users');
+                const usersSnapshot = await getDocs(usersCollection);
+                
                 allUsers = [];
-                
                 usersSnapshot.forEach(doc => {
                     allUsers.push({
                         id: doc.id,
@@ -1064,6 +1373,329 @@
                 }
             } catch (error) {
                 console.error('Error rendering users:', error);
+            }
+        }
+
+        // Placeholder functions for CRUD operations - these will need to be implemented
+        async function editService(id) {
+            // Find the service in the array
+            const service = allServices.find(s => s.id === id);
+            if (!service) return;
+            
+            // Show the form and fill it with data
+            const form = document.getElementById('service-form');
+            const modal = document.getElementById('service-modal');
+            
+            if (form && modal) {
+                document.getElementById('service-id').value = service.id;
+                document.getElementById('service-name').value = service.name || '';
+                document.getElementById('service-description').value = service.description || '';
+                // Fill other fields...
+                
+                document.getElementById('service-modal-title').textContent = 'עריכת שירות';
+                modal.style.display = 'flex';
+            }
+        }
+        
+        async function deleteService(id) {
+            if (confirm('האם אתה בטוח שברצונך למחוק את השירות הזה?')) {
+                try {
+                    // Delete the service from Firestore
+                    const { doc, deleteDoc } = window.firebaseModules;
+                    await deleteDoc(doc(window.firestoreDB, 'services', id));
+                    
+                    // Remove from local array and re-render
+                    allServices = allServices.filter(s => s.id !== id);
+                    renderServices();
+                    
+                    showMessage('השירות נמחק בהצלחה', 'success');
+                } catch (error) {
+                    console.error('Error deleting service:', error);
+                    showMessage('שגיאה במחיקת השירות', 'error');
+                }
+            }
+        }
+        
+        // Stub for other CRUD functions
+        async function saveService(form) {
+            try {
+                const serviceId = form.querySelector('#service-id').value;
+                const serviceName = form.querySelector('#service-name').value;
+                const serviceDescription = form.querySelector('#service-description').value;
+                
+                const { doc, collection, addDoc, updateDoc } = window.firebaseModules;
+                
+                if (serviceId) {
+                    // Update existing service
+                    await updateDoc(doc(window.firestoreDB, 'services', serviceId), {
+                        name: serviceName,
+                        description: serviceDescription,
+                        // Add other fields as needed
+                    });
+                    
+                    // Update local array
+                    const index = allServices.findIndex(s => s.id === serviceId);
+                    if (index !== -1) {
+                        allServices[index] = {
+                            ...allServices[index],
+                            name: serviceName,
+                            description: serviceDescription
+                        };
+                    }
+                    
+                    showMessage('השירות עודכן בהצלחה', 'success');
+                } else {
+                    // Add new service
+                    const newService = {
+                        name: serviceName,
+                        description: serviceDescription,
+                        active: true,
+                        // Add other fields as needed
+                    };
+                    
+                    const docRef = await addDoc(collection(window.firestoreDB, 'services'), newService);
+                    
+                    // Add to local array
+                    allServices.push({
+                        id: docRef.id,
+                        ...newService
+                    });
+                    
+                    showMessage('השירות נוסף בהצלחה', 'success');
+                }
+                
+                // Hide form and re-render
+                form.reset();
+                document.getElementById('service-modal').style.display = 'none';
+                renderServices();
+            } catch (error) {
+                console.error('Error saving service:', error);
+                showMessage('שגיאה בשמירת השירות', 'error');
+            }
+        }
+
+        // Category CRUD operations
+        async function editCategory(id) {
+            const category = allCategories.find(c => c.id === id);
+            if (!category) return;
+            
+            const form = document.getElementById('category-form');
+            const modal = document.getElementById('category-modal');
+            
+            if (form && modal) {
+                document.getElementById('category-id').value = category.id;
+                document.getElementById('category-name').value = category.name || '';
+                document.getElementById('category-description').value = category.description || '';
+                
+                document.getElementById('category-modal-title').textContent = 'עריכת קטגוריה';
+                modal.style.display = 'flex';
+            }
+        }
+        
+        async function deleteCategory(id) {
+            if (confirm('האם אתה בטוח שברצונך למחוק את הקטגוריה הזו?')) {
+                try {
+                    const { doc, deleteDoc } = window.firebaseModules;
+                    await deleteDoc(doc(window.firestoreDB, 'categories', id));
+                    
+                    allCategories = allCategories.filter(c => c.id !== id);
+                    renderCategories();
+                    
+                    showMessage('הקטגוריה נמחקה בהצלחה', 'success');
+                } catch (error) {
+                    console.error('Error deleting category:', error);
+                    showMessage('שגיאה במחיקת הקטגוריה', 'error');
+                }
+            }
+        }
+        
+        async function saveCategory(form) {
+            try {
+                const categoryId = form.querySelector('#category-id').value;
+                const categoryName = form.querySelector('#category-name').value;
+                const categoryDescription = form.querySelector('#category-description').value;
+                
+                const { doc, collection, addDoc, updateDoc } = window.firebaseModules;
+                
+                if (categoryId) {
+                    // Update existing category
+                    await updateDoc(doc(window.firestoreDB, 'categories', categoryId), {
+                        name: categoryName,
+                        description: categoryDescription
+                    });
+                    
+                    const index = allCategories.findIndex(c => c.id === categoryId);
+                    if (index !== -1) {
+                        allCategories[index] = {
+                            ...allCategories[index],
+                            name: categoryName,
+                            description: categoryDescription
+                        };
+                    }
+                    
+                    showMessage('הקטגוריה עודכנה בהצלחה', 'success');
+                } else {
+                    // Add new category
+                    const newCategory = {
+                        name: categoryName,
+                        description: categoryDescription
+                    };
+                    
+                    const docRef = await addDoc(collection(window.firestoreDB, 'categories'), newCategory);
+                    
+                    allCategories.push({
+                        id: docRef.id,
+                        ...newCategory
+                    });
+                    
+                    showMessage('הקטגוריה נוספה בהצלחה', 'success');
+                }
+                
+                form.reset();
+                document.getElementById('category-modal').style.display = 'none';
+                renderCategories();
+            } catch (error) {
+                console.error('Error saving category:', error);
+                showMessage('שגיאה בשמירת הקטגוריה', 'error');
+            }
+        }
+
+        // Interest Area CRUD operations
+        async function editInterestArea(id) {
+            const interestArea = allInterestAreas.find(ia => ia.id === id);
+            if (!interestArea) return;
+            
+            const form = document.getElementById('interest-area-form');
+            const modal = document.getElementById('interest-area-modal');
+            
+            if (form && modal) {
+                document.getElementById('interest-area-id').value = interestArea.id;
+                document.getElementById('interest-area-name').value = interestArea.name || '';
+                document.getElementById('interest-area-description').value = interestArea.description || '';
+                
+                document.getElementById('interest-area-modal-title').textContent = 'עריכת תחום עניין';
+                modal.style.display = 'flex';
+            }
+        }
+        
+        async function saveInterestArea(form) {
+            try {
+                const interestAreaId = form.querySelector('#interest-area-id').value;
+                const interestAreaName = form.querySelector('#interest-area-name').value;
+                const interestAreaDescription = form.querySelector('#interest-area-description').value;
+                
+                const { doc, collection, addDoc, updateDoc } = window.firebaseModules;
+                
+                if (interestAreaId) {
+                    // Update existing interest area
+                    await updateDoc(doc(window.firestoreDB, 'interest-areas', interestAreaId), {
+                        name: interestAreaName,
+                        description: interestAreaDescription
+                    });
+                    
+                    const index = allInterestAreas.findIndex(ia => ia.id === interestAreaId);
+                    if (index !== -1) {
+                        allInterestAreas[index] = {
+                            ...allInterestAreas[index],
+                            name: interestAreaName,
+                            description: interestAreaDescription
+                        };
+                    }
+                    
+                    showMessage('תחום העניין עודכן בהצלחה', 'success');
+                } else {
+                    // Add new interest area
+                    const newInterestArea = {
+                        name: interestAreaName,
+                        description: interestAreaDescription
+                    };
+                    
+                    const docRef = await addDoc(collection(window.firestoreDB, 'interest-areas'), newInterestArea);
+                    
+                    allInterestAreas.push({
+                        id: docRef.id,
+                        ...newInterestArea
+                    });
+                    
+                    showMessage('תחום העניין נוסף בהצלחה', 'success');
+                }
+                
+                form.reset();
+                document.getElementById('interest-area-modal').style.display = 'none';
+                renderInterestAreas();
+            } catch (error) {
+                console.error('Error saving interest area:', error);
+                showMessage('שגיאה בשמירת תחום העניין', 'error');
+            }
+        }
+
+        // User CRUD operations
+        async function editUser(id) {
+            const user = allUsers.find(u => u.id === id);
+            if (!user) return;
+            
+            const form = document.getElementById('user-form');
+            const modal = document.getElementById('user-modal');
+            
+            if (form && modal) {
+                document.getElementById('user-id').value = user.id;
+                document.getElementById('user-email').value = user.email || '';
+                document.getElementById('user-role').value = user.role || 'user';
+                document.getElementById('user-status').checked = user.status === 'active';
+                
+                document.getElementById('user-modal-title').textContent = 'עריכת משתמש';
+                modal.style.display = 'flex';
+            }
+        }
+        
+        async function saveUser(form) {
+            try {
+                const userId = form.querySelector('#user-id').value;
+                const userRole = form.querySelector('#user-role').value;
+                const userStatus = form.querySelector('#user-status').checked ? 'active' : 'inactive';
+                
+                const { doc, updateDoc } = window.firebaseModules;
+                
+                // Update existing user (we don't add new users from admin UI)
+                await updateDoc(doc(window.firestoreDB, 'users', userId), {
+                    role: userRole,
+                    status: userStatus
+                });
+                
+                const index = allUsers.findIndex(u => u.id === userId);
+                if (index !== -1) {
+                    allUsers[index] = {
+                        ...allUsers[index],
+                        role: userRole,
+                        status: userStatus
+                    };
+                }
+                
+                showMessage('המשתמש עודכן בהצלחה', 'success');
+                
+                form.reset();
+                document.getElementById('user-modal').style.display = 'none';
+                renderUsers();
+            } catch (error) {
+                console.error('Error saving user:', error);
+                showMessage('שגיאה בשמירת המשתמש', 'error');
+            }
+        }
+
+        async function deleteInterestArea(id) {
+            if (confirm('האם אתה בטוח שברצונך למחוק את תחום העניין הזה?')) {
+                try {
+                    const { doc, deleteDoc } = window.firebaseModules;
+                    await deleteDoc(doc(window.firestoreDB, 'interest-areas', id));
+                    
+                    allInterestAreas = allInterestAreas.filter(ia => ia.id !== id);
+                    renderInterestAreas();
+                    
+                    showMessage('תחום העניין נמחק בהצלחה', 'success');
+                } catch (error) {
+                    console.error('Error deleting interest area:', error);
+                    showMessage('שגיאה במחיקת תחום העניין', 'error');
+                }
             }
         }
     </script>
