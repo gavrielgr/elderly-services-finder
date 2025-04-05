@@ -2037,6 +2037,25 @@
             try {
                 console.log('Initializing admin page...');
 
+                // Global variable declarations for container references
+                // Data arrays
+                window.allServices = [];
+                window.allCategories = [];
+                window.allInterestAreas = [];
+                window.allUsers = [];
+                
+                // DOM element references
+                window.servicesListContainer = document.getElementById('services-list');
+                window.categoriesListContainer = document.getElementById('categories-list');
+                window.interestAreasListContainer = document.getElementById('interest-areas-list');
+                window.usersListContainer = document.getElementById('users-list');
+                
+                // Results info elements
+                window.servicesResultsInfo = document.getElementById('services-results-info');
+                window.categoriesResultsInfo = document.getElementById('categories-results-info');
+                window.interestAreasResultsInfo = document.getElementById('interest-areas-results-info');
+                window.usersResultsInfo = document.getElementById('users-results-info');
+
                 // Initialize Firebase connection first
                 if (typeof initializeFirebase === 'function') {
                     try {
@@ -2921,6 +2940,78 @@
                 console.error('Error signing out:', error);
                 showMessage('שגיאה בהתנתקות', 'error');
             }
+        }
+
+        // Setup event listeners for the rejection modal
+        function setupRejectionModal() {
+            // Add click event for close button
+            document.getElementById('close-rejection-modal')?.addEventListener('click', function() {
+                document.getElementById('rejection-modal').style.display = 'none';
+            });
+            
+            // Add click event for cancel button
+            document.getElementById('cancel-rejection')?.addEventListener('click', function() {
+                document.getElementById('rejection-modal').style.display = 'none';
+            });
+            
+            // Add submit event for the form
+            document.getElementById('rejection-form')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                try {
+                    const ratingId = document.getElementById('rating-id-to-reject').value;
+                    const reason = document.getElementById('rejection-reason').value;
+                    
+                    if (!ratingId) {
+                        console.error('No rating ID provided for rejection');
+                        return;
+                    }
+                    
+                    if (!reason) {
+                        alert('נא להזין סיבת דחייה');
+                        return;
+                    }
+                    
+                    // Show loading state
+                    const submitButton = document.getElementById('confirm-rejection');
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'מעבד...';
+                    
+                    console.log('Rejecting rating:', ratingId, 'with reason:', reason);
+                    
+                    // Update rating in Firestore directly
+                    const firebaseMods = window.firebaseModules;
+                    firebaseMods.updateDoc(
+                        firebaseMods.doc(window.firestoreDB, 'ratings', ratingId), 
+                        {
+                            'moderation.status': 'rejected',
+                            'moderation.reviewedAt': firebaseMods.serverTimestamp(),
+                            'moderation.rejectionReason': reason
+                        }
+                    ).then(() => {
+                        // Close modal and reload ratings
+                        document.getElementById('rejection-modal').style.display = 'none';
+                        showMessage('הדירוג נדחה בהצלחה', 'success');
+                        
+                        // Reload ratings to update the UI
+                        if (typeof loadRatings === 'function') loadRatings();
+                        
+                        // Reset button state
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'דחה דירוג';
+                    }).catch(error => {
+                        console.error('Error rejecting rating:', error);
+                        showMessage('שגיאה בדחיית הדירוג', 'error');
+                        
+                        // Reset button state
+                        submitButton.disabled = false;
+                        submitButton.textContent = 'דחה דירוג';
+                    });
+                } catch (error) {
+                    console.error('Error in reject form submit handler:', error);
+                    alert('שגיאה בדחיית הדירוג');
+                }
+            });
         }
     </script>
 
