@@ -784,6 +784,88 @@
             animation: spin 1s linear infinite;
             margin-left: 8px;
         }
+        
+        /* Ratings filter controls */
+        .filter-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .filter-select, .filter-date {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+        }
+        
+        /* Admin table styles */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .admin-table th {
+            background-color: #f5f5f5;
+            padding: 12px 15px;
+            text-align: right;
+            font-weight: bold;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .admin-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        
+        .admin-table tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        /* Rating status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-badge.pending {
+            background-color: #ffeeba;
+            color: #856404;
+        }
+        
+        .status-badge.approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        /* Rating stars */
+        .rating-stars {
+            color: #ffc107;
+            font-size: 16px;
+            letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
@@ -814,6 +896,7 @@
                     <button class="nav-button" data-section="categories-section">קטגוריות</button>
                     <button class="nav-button" data-section="interest-areas-section">תחומי עניין</button>
                     <button class="nav-button" data-section="users-section">משתמשים</button>
+                    <button class="nav-button" data-section="ratings-section">דירוגים</button>
                 </nav>
             </div>
             
@@ -876,6 +959,58 @@
                     <div class="results-info" id="users-results-info"></div>
                     <div id="users-list" class="list-container">
                         <div class="spinner"></div>
+                    </div>
+                </div>
+                
+                <!-- Ratings Section -->
+                <div id="ratings-section" class="admin-section">
+                    <div class="header-container">
+                        <h2 class="header-title">ניהול דירוגים</h2>
+                        <div class="search-container">
+                            <input type="text" id="ratings-search" class="search-input" placeholder="חיפוש דירוגים...">
+                        </div>
+                    </div>
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label for="rating-status-filter">סטטוס:</label>
+                            <select id="rating-status-filter" class="filter-select">
+                                <option value="all">הכל</option>
+                                <option value="pending" selected>ממתינים לאישור</option>
+                                <option value="approved">מאושרים</option>
+                                <option value="rejected">נדחו</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="rating-date-from">מתאריך:</label>
+                            <input type="date" id="rating-date-from" class="filter-date">
+                        </div>
+                        <div class="filter-group">
+                            <label for="rating-date-to">עד תאריך:</label>
+                            <input type="date" id="rating-date-to" class="filter-date">
+                        </div>
+                    </div>
+                    <div class="results-info" id="ratings-results-info"></div>
+                    <div id="ratings-list" class="list-container">
+                        <div class="spinner"></div>
+                        <table id="ratings-table" class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>תאריך</th>
+                                    <th>שירות</th>
+                                    <th>דירוג</th>
+                                    <th>תגובה</th>
+                                    <th>משתמש</th>
+                                    <th>סטטוס</th>
+                                    <th>פעולות</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ratings-tbody">
+                                <!-- Ratings will be inserted here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="load-more-container" class="load-more-container">
+                        <button id="load-more-ratings" class="load-more-button">טען עוד דירוגים</button>
                     </div>
                 </div>
             </div>
@@ -2641,6 +2776,508 @@
                 }
             }
         }
+
+        async function setupEventListeners() {
+            // ... existing code ...
+            
+            // Add ratings event listeners
+            const ratingsSection = document.getElementById('ratings-section');
+            if (ratingsSection) {
+                document.getElementById('rating-status-filter')?.addEventListener('change', filterRatings);
+                document.getElementById('rating-date-from')?.addEventListener('change', filterRatings);
+                document.getElementById('rating-date-to')?.addEventListener('change', filterRatings);
+                document.getElementById('ratings-search')?.addEventListener('input', debounce(filterRatings, 500));
+                document.getElementById('load-more-ratings')?.addEventListener('click', loadMoreRatings);
+                
+                // Rejection modal
+                document.getElementById('close-rejection-modal')?.addEventListener('click', () => {
+                    document.getElementById('rejection-modal').style.display = 'none';
+                });
+                document.getElementById('cancel-rejection')?.addEventListener('click', () => {
+                    document.getElementById('rejection-modal').style.display = 'none';
+                });
+                document.getElementById('rejection-form')?.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    handleRejectRating();
+                });
+            }
+        }
+        
+        // Helper function to create a debounce function
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+        
+        // Ratings pagination variables
+        let lastRatingDoc = null;
+        let hasMoreRatings = true;
+        const ratingsPerPage = 10;
+        let currentRatings = [];
+        
+        // Ratings filter state
+        const ratingsFilter = {
+            status: 'pending',
+            dateFrom: null,
+            dateTo: null,
+            searchTerm: ''
+        };
+        
+        // Load ratings from Firebase
+        async function loadRatings(isLoadMore = false) {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                const ratingsContainer = document.getElementById('ratings-list');
+                const ratingsTable = document.getElementById('ratings-table');
+                const ratingsBody = document.getElementById('ratings-tbody');
+                const loadMoreButton = document.getElementById('load-more-ratings');
+                
+                if (!ratingsContainer || !ratingsTable || !ratingsBody) return;
+                
+                // Show loading state
+                if (!isLoadMore) {
+                    ratingsTable.style.display = 'none';
+                    ratingsContainer.querySelector('.spinner').style.display = 'block';
+                    
+                    // Reset pagination
+                    lastRatingDoc = null;
+                    currentRatings = [];
+                } else {
+                    // Show loading in button
+                    loadMoreButton.disabled = true;
+                    loadMoreButton.innerHTML = '<span class="spinner-small"></span> טוען...';
+                }
+                
+                const { collection, query, orderBy, where, limit, startAfter, getDocs } = window.firebaseModules;
+                
+                // Build query with filters
+                let ratingsQuery = collection(window.firestoreDB, 'ratings');
+                
+                // Apply filters
+                if (ratingsFilter.status !== 'all') {
+                    ratingsQuery = query(ratingsQuery, where('moderation.status', '==', ratingsFilter.status));
+                }
+                
+                if (ratingsFilter.dateFrom) {
+                    const fromDate = new Date(ratingsFilter.dateFrom);
+                    fromDate.setHours(0, 0, 0, 0);
+                    ratingsQuery = query(ratingsQuery, where('timestamp', '>=', fromDate));
+                }
+                
+                if (ratingsFilter.dateTo) {
+                    const toDate = new Date(ratingsFilter.dateTo);
+                    toDate.setHours(23, 59, 59, 999);
+                    ratingsQuery = query(ratingsQuery, where('timestamp', '<=', toDate));
+                }
+                
+                // Order by timestamp (newest first)
+                ratingsQuery = query(ratingsQuery, orderBy('timestamp', 'desc'));
+                
+                // Add pagination
+                if (lastRatingDoc && isLoadMore) {
+                    ratingsQuery = query(ratingsQuery, startAfter(lastRatingDoc), limit(ratingsPerPage));
+                } else {
+                    ratingsQuery = query(ratingsQuery, limit(ratingsPerPage));
+                }
+                
+                // Execute query
+                const snapshot = await getDocs(ratingsQuery);
+                
+                // Check if we have more ratings
+                hasMoreRatings = snapshot.docs.length === ratingsPerPage;
+                loadMoreButton.parentElement.style.display = hasMoreRatings ? 'flex' : 'none';
+                
+                // Update last visible document for pagination
+                if (snapshot.docs.length > 0) {
+                    lastRatingDoc = snapshot.docs[snapshot.docs.length - 1];
+                }
+                
+                // Process the ratings
+                const newRatings = [];
+                const ratingsToRender = [];
+                
+                for (const doc of snapshot.docs) {
+                    const rating = { id: doc.id, ...doc.data() };
+                    
+                    // If search term is provided, filter in memory
+                    if (ratingsFilter.searchTerm && !matchesSearchTerm(rating, ratingsFilter.searchTerm)) {
+                        continue;
+                    }
+                    
+                    newRatings.push(rating);
+                    
+                    // Get service information
+                    try {
+                        if (rating.serviceId) {
+                            const { getDoc, doc } = window.firebaseModules;
+                            const serviceDoc = await getDoc(doc(window.firestoreDB, 'services', rating.serviceId));
+                            if (serviceDoc.exists()) {
+                                rating.serviceName = serviceDoc.data().name;
+                            } else {
+                                rating.serviceName = `שירות לא נמצא (${rating.serviceId})`;
+                            }
+                        } else {
+                            rating.serviceName = 'לא צוין';
+                        }
+                    } catch (error) {
+                        console.error('Error fetching service:', error);
+                        rating.serviceName = 'שגיאה בטעינת שירות';
+                    }
+                    
+                    ratingsToRender.push(rating);
+                }
+                
+                // Add to existing ratings if loading more
+                if (isLoadMore) {
+                    currentRatings = [...currentRatings, ...newRatings];
+                } else {
+                    currentRatings = newRatings;
+                }
+                
+                // Render ratings
+                renderRatings(ratingsToRender, isLoadMore);
+                
+                // Update results info
+                const resultsInfo = document.getElementById('ratings-results-info');
+                if (resultsInfo) {
+                    resultsInfo.textContent = `${currentRatings.length} דירוגים ${hasMoreRatings ? '(טען עוד להצגת הכל)' : ''}`;
+                    resultsInfo.style.display = 'block';
+                }
+                
+                // Show table
+                if (!isLoadMore) {
+                    ratingsContainer.querySelector('.spinner').style.display = 'none';
+                    ratingsTable.style.display = 'table';
+                } else {
+                    // Reset load more button
+                    loadMoreButton.disabled = false;
+                    loadMoreButton.textContent = 'טען עוד דירוגים';
+                }
+            } catch (error) {
+                console.error('Error loading ratings:', error);
+                const ratingsContainer = document.getElementById('ratings-list');
+                if (ratingsContainer) {
+                    ratingsContainer.querySelector('.spinner').style.display = 'none';
+                    ratingsContainer.innerHTML = '<div class="error-message">שגיאה בטעינת דירוגים</div>';
+                }
+                
+                // Reset load more button if needed
+                const loadMoreButton = document.getElementById('load-more-ratings');
+                if (loadMoreButton) {
+                    loadMoreButton.disabled = false;
+                    loadMoreButton.textContent = 'טען עוד דירוגים';
+                }
+            }
+        }
+        
+        // Check if rating matches search term
+        function matchesSearchTerm(rating, term) {
+            if (!term) return true;
+            
+            const searchTerm = term.toLowerCase();
+            return (
+                rating.text?.toLowerCase().includes(searchTerm) ||
+                rating.serviceName?.toLowerCase().includes(searchTerm) ||
+                rating.userName?.toLowerCase().includes(searchTerm)
+            );
+        }
+        
+        // Render ratings in the table
+        function renderRatings(ratings, isAppend = false) {
+            const ratingsBody = document.getElementById('ratings-tbody');
+            if (!ratingsBody) return;
+            
+            if (ratings.length === 0 && !isAppend) {
+                ratingsBody.innerHTML = '<tr><td colspan="7" class="empty-message">אין דירוגים שעונים לקריטריוני החיפוש</td></tr>';
+                return;
+            }
+            
+            const html = ratings.map(rating => {
+                // Format date
+                const date = rating.timestamp ? new Date(rating.timestamp.seconds * 1000).toLocaleDateString('he-IL') : '-';
+                
+                // Format rating stars
+                const stars = '★'.repeat(rating.overall) + '☆'.repeat(5 - rating.overall);
+                
+                // Format status badge
+                const statusBadge = getStatusBadge(rating.moderation?.status || 'pending');
+                
+                // Format user name
+                const userName = rating.userName || 'אנונימי';
+                
+                // Format action buttons
+                const actions = getActionButtons(rating);
+                
+                return `
+                <tr data-id="${rating.id}">
+                    <td>${date}</td>
+                    <td>${rating.serviceName || '-'}</td>
+                    <td><div class="rating-stars">${stars}</div></td>
+                    <td>${rating.text || '-'}</td>
+                    <td>${userName}</td>
+                    <td>${statusBadge}</td>
+                    <td>${actions}</td>
+                </tr>
+                `;
+            }).join('');
+            
+            if (isAppend) {
+                ratingsBody.insertAdjacentHTML('beforeend', html);
+            } else {
+                ratingsBody.innerHTML = html;
+            }
+            
+            // Add event listeners to action buttons
+            addRatingActionListeners();
+        }
+        
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const statusMap = {
+                'pending': { text: 'ממתין לאישור', class: 'pending' },
+                'approved': { text: 'מאושר', class: 'approved' },
+                'rejected': { text: 'נדחה', class: 'rejected' }
+            };
+            
+            const statusInfo = statusMap[status] || statusMap.pending;
+            return `<span class="status-badge ${statusInfo.class}">${statusInfo.text}</span>`;
+        }
+        
+        // Get action buttons HTML
+        function getActionButtons(rating) {
+            const status = rating.moderation?.status || 'pending';
+            
+            if (status === 'approved') {
+                return `<button class="action-button delete-button" data-action="reject" data-id="${rating.id}">דחה</button>`;
+            } else if (status === 'rejected') {
+                return `<button class="action-button primary-button" data-action="approve" data-id="${rating.id}">אשר</button>`;
+            } else {
+                return `
+                <button class="action-button primary-button" data-action="approve" data-id="${rating.id}">אשר</button>
+                <button class="action-button delete-button" data-action="reject" data-id="${rating.id}">דחה</button>
+                `;
+            }
+        }
+        
+        // Add event listeners to rating action buttons
+        function addRatingActionListeners() {
+            const ratingRows = document.querySelectorAll('#ratings-tbody tr');
+            
+            ratingRows.forEach(row => {
+                const approveButton = row.querySelector('button[data-action="approve"]');
+                const rejectButton = row.querySelector('button[data-action="reject"]');
+                
+                if (approveButton) {
+                    approveButton.addEventListener('click', () => {
+                        const ratingId = approveButton.getAttribute('data-id');
+                        approveRating(ratingId);
+                    });
+                }
+                
+                if (rejectButton) {
+                    rejectButton.addEventListener('click', () => {
+                        const ratingId = rejectButton.getAttribute('data-id');
+                        showRejectModal(ratingId);
+                    });
+                }
+            });
+        }
+        
+        // Load more ratings
+        function loadMoreRatings() {
+            loadRatings(true);
+        }
+        
+        // Filter ratings based on criteria
+        function filterRatings() {
+            const statusFilter = document.getElementById('rating-status-filter');
+            const dateFromFilter = document.getElementById('rating-date-from');
+            const dateToFilter = document.getElementById('rating-date-to');
+            const searchFilter = document.getElementById('ratings-search');
+            
+            ratingsFilter.status = statusFilter?.value || 'all';
+            ratingsFilter.dateFrom = dateFromFilter?.value || null;
+            ratingsFilter.dateTo = dateToFilter?.value || null;
+            ratingsFilter.searchTerm = searchFilter?.value || '';
+            
+            // Reset pagination and load
+            loadRatings();
+        }
+        
+        // Show rejection modal
+        function showRejectModal(ratingId) {
+            document.getElementById('rating-id-to-reject').value = ratingId;
+            document.getElementById('rejection-reason').value = '';
+            document.getElementById('rejection-modal').style.display = 'block';
+        }
+        
+        // Handle reject rating
+        async function handleRejectRating() {
+            try {
+                const ratingId = document.getElementById('rating-id-to-reject').value;
+                const reason = document.getElementById('rejection-reason').value;
+                
+                if (!ratingId) return;
+                if (!reason) {
+                    alert('נא להזין סיבת דחייה');
+                    return;
+                }
+                
+                // Show loading state
+                const submitButton = document.getElementById('confirm-rejection');
+                submitButton.disabled = true;
+                submitButton.textContent = 'מעבד...';
+                
+                // Update rating in Firestore
+                const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
+                await updateDoc(doc(window.firestoreDB, 'ratings', ratingId), {
+                    'moderation.status': 'rejected',
+                    'moderation.reviewedAt': serverTimestamp(),
+                    'moderation.rejectionReason': reason
+                });
+                
+                // Close modal and reload ratings
+                document.getElementById('rejection-modal').style.display = 'none';
+                showMessage('הדירוג נדחה בהצלחה', 'success');
+                
+                // Reload ratings to update the UI
+                loadRatings();
+                
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.textContent = 'דחה דירוג';
+            } catch (error) {
+                console.error('Error rejecting rating:', error);
+                showMessage('שגיאה בדחיית הדירוג', 'error');
+                
+                // Reset button state
+                const submitButton = document.getElementById('confirm-rejection');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'דחה דירוג';
+                }
+            }
+        }
+        
+        // Approve rating
+        async function approveRating(ratingId) {
+            try {
+                if (!ratingId) return;
+                
+                // Show message
+                showMessage('מאשר דירוג...', 'info');
+                
+                // Update rating in Firestore
+                const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
+                await updateDoc(doc(window.firestoreDB, 'ratings', ratingId), {
+                    'moderation.status': 'approved',
+                    'moderation.reviewedAt': serverTimestamp()
+                });
+                
+                showMessage('הדירוג אושר בהצלחה', 'success');
+                
+                // Reload ratings to update the UI
+                loadRatings();
+            } catch (error) {
+                console.error('Error approving rating:', error);
+                showMessage('שגיאה באישור הדירוג', 'error');
+            }
+        }
+
+        window.onload = async function() {
+            try {
+                // ... existing code ...
+                
+                // Initialize sections
+                setupAdminSections();
+                setupEventListeners();
+                
+                // Initialize Firebase
+                await initializeFirebase();
+                
+                // Load services when page loads
+                loadServicesList();
+                
+                // ... existing code ...
+            } catch (error) {
+                console.error('Error initializing admin page:', error);
+                showMessage('שגיאה באתחול העמוד. אנא רענן את הדף ונסה שוב.', 'error');
+            }
+        }
+        
+        // Show section and load data if needed
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.admin-section');
+            sections.forEach(section => section.style.display = 'none');
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.nav-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected section
+            const selectedSection = document.getElementById(sectionId);
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+                
+                // Add active class to the corresponding button
+                const button = document.querySelector(`.nav-button[data-section="${sectionId}"]`);
+                if (button) button.classList.add('active');
+                
+                // Load data based on section
+                if (sectionId === 'services-section') {
+                    loadServicesList();
+                } else if (sectionId === 'categories-section') {
+                    loadCategories();
+                } else if (sectionId === 'interest-areas-section') {
+                    loadInterestAreas();
+                } else if (sectionId === 'users-section') {
+                    loadUsers();
+                } else if (sectionId === 'ratings-section') {
+                    loadRatings();
+                }
+            }
+        }
+        
+        // Setup admin sections and navigation
+        function setupAdminSections() {
+            // Set default section
+            showSection('services-section');
+            
+            // Add event listeners to navigation buttons
+            const navButtons = document.querySelectorAll('.nav-button');
+            navButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    showSection(sectionId);
+                });
+            });
+        }
     </script>
+
+    <!-- Ratings Rejection Modal -->
+    <div id="rejection-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">דחיית דירוג</h3>
+                <button class="close-modal" id="close-rejection-modal">&times;</button>
+            </div>
+            <form id="rejection-form">
+                <input type="hidden" id="rating-id-to-reject">
+                <div class="form-group">
+                    <label for="rejection-reason" class="form-label">סיבת דחייה</label>
+                    <textarea id="rejection-reason" class="form-textarea" required placeholder="פרט את סיבת הדחייה של הדירוג..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" id="cancel-rejection">ביטול</button>
+                    <button type="submit" class="save-button" id="confirm-rejection">דחה דירוג</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html> 
