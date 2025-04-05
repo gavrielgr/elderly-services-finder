@@ -2392,11 +2392,11 @@
                     updatedAt: window.firebaseModules.serverTimestamp()
                 };
                 
-                // Add or update interest area in Firestore
+                // Add or update interest area in Firestore - using correct collection name 'interest-areas'
                 if (interestAreaId) {
                     // Update existing interest area
                     await window.firebaseModules.updateDoc(
-                        window.firebaseModules.doc(window.firestoreDB, 'interestAreas', interestAreaId),
+                        window.firebaseModules.doc(window.firestoreDB, 'interest-areas', interestAreaId),
                         interestAreaData
                     );
                     showMessage('תחום העניין עודכן בהצלחה', 'success');
@@ -2404,7 +2404,7 @@
                     // Add new interest area
                     interestAreaData.createdAt = window.firebaseModules.serverTimestamp();
                     const docRef = await window.firebaseModules.addDoc(
-                        window.firebaseModules.collection(window.firestoreDB, 'interestAreas'),
+                        window.firebaseModules.collection(window.firestoreDB, 'interest-areas'),
                         interestAreaData
                     );
                     showMessage('תחום העניין נוצר בהצלחה', 'success');
@@ -2424,7 +2424,7 @@
             try {
                 if (confirm('האם אתה בטוח שברצונך למחוק את תחום העניין הזה?')) {
                     await window.firebaseModules.deleteDoc(
-                        window.firebaseModules.doc(window.firestoreDB, 'interestAreas', id)
+                        window.firebaseModules.doc(window.firestoreDB, 'interest-areas', id)
                     );
                     showMessage('תחום העניין נמחק בהצלחה', 'success');
                     loadInterestAreas();
@@ -2763,9 +2763,9 @@
                 const { collection, getDocs, orderBy, query } = window.firebaseModules;
                 
                 try {
-                    // Get all interest areas
+                    // Get all interest areas - using the correct collection name from firestore rules ('interest-areas')
                     const interestAreasQuery = query(
-                        collection(window.firestoreDB, 'interestAreas'),
+                        collection(window.firestoreDB, 'interest-areas'),
                         orderBy('name')
                     );
                     const interestAreasSnapshot = await getDocs(interestAreasQuery);
@@ -2788,6 +2788,7 @@
                             <div class="error-message">
                                 <p>אין הרשאות לטעון תחומי עניין</p>
                                 <p>מנהל המערכת צריך להעניק לך הרשאות גישה לקולקציה זו</p>
+                                <p><small>Collection name: 'interest-areas'</small></p>
                             </div>
                         `;
                     }
