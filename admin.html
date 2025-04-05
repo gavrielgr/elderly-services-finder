@@ -3188,25 +3188,25 @@
             }
         }
 
-        window.onload = async function() {
-            try {
-                // ... existing code ...
-                
-                // Initialize sections
-                setupAdminSections();
-                setupEventListeners();
-                
-                // Initialize Firebase
-                await initializeFirebase();
-                
-                // Load services when page loads
-                loadServicesList();
-                
-                // ... existing code ...
-            } catch (error) {
-                console.error('Error initializing admin page:', error);
-                showMessage('שגיאה באתחול העמוד. אנא רענן את הדף ונסה שוב.', 'error');
-            }
+        // Setup admin sections and navigation
+        function setupAdminSections() {
+            // Set default section
+            showSection('services-section');
+            
+            // Add event listeners to navigation buttons
+            const navButtons = document.querySelectorAll('.nav-button');
+            navButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    showSection(sectionId);
+                });
+            });
+        }
+
+        // Load services
+        async function loadServicesList() {
+            console.log('Loading services list...');
+            loadServices();
         }
         
         // Show section and load data if needed
@@ -3229,33 +3229,56 @@
                 if (button) button.classList.add('active');
                 
                 // Load data based on section
-                if (sectionId === 'services-section') {
-                    loadServicesList();
-                } else if (sectionId === 'categories-section') {
+                if (sectionId === 'services-section' && typeof loadServices === 'function') {
+                    loadServices();
+                } else if (sectionId === 'categories-section' && typeof loadCategories === 'function') {
                     loadCategories();
-                } else if (sectionId === 'interest-areas-section') {
+                } else if (sectionId === 'interest-areas-section' && typeof loadInterestAreas === 'function') {
                     loadInterestAreas();
-                } else if (sectionId === 'users-section') {
+                } else if (sectionId === 'users-section' && typeof loadUsers === 'function') {
                     loadUsers();
-                } else if (sectionId === 'ratings-section') {
+                } else if (sectionId === 'ratings-section' && typeof loadRatings === 'function') {
                     loadRatings();
                 }
             }
         }
-        
-        // Setup admin sections and navigation
-        function setupAdminSections() {
-            // Set default section
-            showSection('services-section');
-            
-            // Add event listeners to navigation buttons
-            const navButtons = document.querySelectorAll('.nav-button');
-            navButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const sectionId = this.getAttribute('data-section');
-                    showSection(sectionId);
-                });
-            });
+
+        window.onload = async function() {
+            try {
+                console.log('Initializing admin page...');
+                
+                // Skip initialization if already done via admin.js
+                if (window.adminUI) {
+                    console.log('Admin UI already initialized from admin.js');
+                    return;
+                }
+                
+                // Wait for any external scripts to load first
+                if (typeof initializeFirebase !== 'function') {
+                    console.log('Waiting for scripts to load...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                // Initialize Firebase first
+                if (typeof initializeFirebase === 'function') {
+                    await initializeFirebase();
+                } else {
+                    console.error('Firebase initialization function not found');
+                }
+                
+                // Setup event listeners
+                if (typeof setupEventListeners === 'function') {
+                    setupEventListeners();
+                }
+                
+                // Initialize sections last
+                setupAdminSections();
+                
+                console.log('Admin page initialized successfully');
+            } catch (error) {
+                console.error('Error initializing admin page:', error);
+                showMessage('שגיאה באתחול העמוד. אנא רענן את הדף ונסה שוב.', 'error');
+            }
         }
     </script>
 
