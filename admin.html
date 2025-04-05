@@ -542,6 +542,24 @@
             color: white;
         }
         
+        /* Status dot indicator */
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+        
+        .status-dot.active {
+            background-color: #4caf50;
+        }
+        
+        .status-dot.inactive {
+            background-color: #f44336;
+        }
+        
         /* Status toggle switch */
         .status-toggle {
             display: flex;
@@ -1243,11 +1261,21 @@
                 
                 allServices = [];
                 servicesSnapshot.forEach(doc => {
+                    const serviceData = doc.data();
+                    
+                    // Ensure active property exists (set default if missing)
+                    if (serviceData.active === undefined) {
+                        serviceData.active = true;
+                    }
+                    
                     allServices.push({
                         id: doc.id,
-                        ...doc.data()
+                        ...serviceData
                     });
                 });
+                
+                console.log('Loaded services:', allServices);
+                console.log('Categories:', allCategories);
                 
                 renderServices();
             } catch (error) {
@@ -1354,9 +1382,19 @@
                     servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
                 } else {
                     const html = allServices.map(service => {
-                        // Find category name
-                        const category = allCategories.find(c => c.id === service.category);
+                        // Add debugging info
+                        console.log('Service being rendered:', service);
+                        console.log('Service category:', service.category);
+                        
+                        // Find category name - use loose comparison or String() to handle type mismatches
+                        const category = allCategories.find(c => 
+                            String(c.id) === String(service.category)
+                        );
+                        console.log('Found category:', category);
                         const categoryName = category ? category.name : 'ללא קטגוריה';
+                        
+                        // Default active to true if not explicitly set to false
+                        const isActive = service.active !== false;
                         
                         return `
                         <div class="admin-list-item">
@@ -1364,8 +1402,8 @@
                                 <div class="item-main">
                                     <div class="item-name">${service.name}</div>
                                     <div class="item-info">
-                                        <span class="status-dot ${service.active ? 'active' : 'inactive'}"></span>
-                                        <span>${service.active ? 'פעיל' : 'לא פעיל'}</span>
+                                        <span class="status-dot ${isActive ? 'active' : 'inactive'}"></span>
+                                        <span>${isActive ? 'פעיל' : 'לא פעיל'}</span>
                                         <span class="category-badge">${categoryName}</span>
                                     </div>
                                 </div>
@@ -1538,7 +1576,7 @@
                 // Set active status if available
                 const activeCheckbox = document.getElementById('service-active');
                 if (activeCheckbox) {
-                    activeCheckbox.checked = service.active !== false; // Default to true if not set
+                    activeCheckbox.checked = service.active !== false; // Default to true if not set to false
                 }
                 
                 document.getElementById('service-modal-title').textContent = 'עריכת שירות';
