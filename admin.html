@@ -133,7 +133,6 @@
         /* Section styles */
         .admin-section {
             display: none;
-            margin-bottom: 20px;
         }
         
         .admin-section.active {
@@ -866,6 +865,28 @@
             font-size: 16px;
             letter-spacing: 2px;
         }
+
+        /* Side navigation styles */
+        .nav-button {
+            cursor: pointer;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            background-color: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            text-align: right;
+            width: 100%;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-button:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .nav-button.active {
+            background-color: var(--primary-color, #01b3a7);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -892,11 +913,11 @@
         <main class="admin-main">
             <div class="admin-sidebar">
                 <nav class="admin-nav">
-                    <button class="nav-button active" data-section="services-section">שירותים</button>
-                    <button class="nav-button" data-section="categories-section">קטגוריות</button>
-                    <button class="nav-button" data-section="interest-areas-section">תחומי עניין</button>
-                    <button class="nav-button" data-section="users-section">משתמשים</button>
-                    <button class="nav-button" data-section="ratings-section">דירוגים</button>
+                    <button class="nav-button active" data-section="services-section" onclick="showSection('services-section')">שירותים</button>
+                    <button class="nav-button" data-section="categories-section" onclick="showSection('categories-section')">קטגוריות</button>
+                    <button class="nav-button" data-section="interest-areas-section" onclick="showSection('interest-areas-section')">תחומי עניין</button>
+                    <button class="nav-button" data-section="users-section" onclick="showSection('users-section')">משתמשים</button>
+                    <button class="nav-button" data-section="ratings-section" onclick="showSection('ratings-section')">דירוגים</button>
                 </nav>
             </div>
             
@@ -1412,20 +1433,10 @@
             
             navButtons.forEach(button => {
                 button.addEventListener('click', () => {
-                    const target = button.getAttribute('data-section');
-                    
-                    // Update active button
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    
-                    // Show target section, hide others
-                    sections.forEach(section => {
-                        if (section.id === target) {
-                            section.classList.add('active');
-                        } else {
-                            section.classList.remove('active');
-                        }
-                    });
+                    const targetSectionId = button.getAttribute('data-section');
+                    if (targetSectionId) {
+                        showSection(targetSectionId);
+                    }
                 });
             });
             
@@ -1991,9 +2002,14 @@
 
         // Show section and load data if needed
         function showSection(sectionId) {
+            console.log('Showing section:', sectionId);
+            
             // Hide all sections
             const sections = document.querySelectorAll('.admin-section');
-            sections.forEach(section => section.style.display = 'none');
+            sections.forEach(section => {
+                section.style.display = 'none';
+                section.classList.remove('active');
+            });
             
             // Remove active class from all buttons
             const buttons = document.querySelectorAll('.nav-button');
@@ -2003,6 +2019,7 @@
             const selectedSection = document.getElementById(sectionId);
             if (selectedSection) {
                 selectedSection.style.display = 'block';
+                selectedSection.classList.add('active');
                 
                 // Add active class to the corresponding button
                 const button = document.querySelector(`.nav-button[data-section="${sectionId}"]`);
@@ -2175,6 +2192,7 @@
             window.handleDocumentClick = handleDocumentClick;
             window.showMessage = showMessage;
             window.handleLogout = handleLogout;
+            window.showSection = showSection;
         }
 
         // Edit a service based on its ID
