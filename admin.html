@@ -1017,10 +1017,7 @@
                             showAdmin();
                             
                             // Set up admin UI and load data
-                            loadServices();
-                            loadCategories();
-                            loadInterestAreas();
-                            loadUsers();
+                            loadAllData();
                         } catch (error) {
                             console.error('Error checking user permissions:', error);
                             showError('שגיאה באימות הרשאות. נא לנסות שוב מאוחר יותר.');
@@ -1163,10 +1160,7 @@
             const refreshButton = document.getElementById('refresh-data-button');
             if (refreshButton) {
                 refreshButton.addEventListener('click', () => {
-                    loadServices();
-                    loadCategories();
-                    loadInterestAreas();
-                    loadUsers();
+                    loadAllData();
                     showMessage('הנתונים רועננו בהצלחה', 'success');
                 });
             }
@@ -1245,6 +1239,24 @@
             } catch (error) {
                 console.error('Error signing out:', error);
                 showMessage('שגיאה בהתנתקות', 'error');
+            }
+        }
+        
+        // Set up admin UI and load data with proper dependencies
+        async function loadAllData() {
+            try {
+                // Load categories first
+                await loadCategories();
+                // Then load services (which depend on categories)
+                await loadServices();
+                // Load remaining data
+                await Promise.all([
+                    loadInterestAreas(),
+                    loadUsers()
+                ]);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showMessage('שגיאה בטעינת נתונים', 'error');
             }
         }
         
@@ -1382,16 +1394,21 @@
                     servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
                 } else {
                     const html = allServices.map(service => {
-                        // Add debugging info
-                        console.log('Service being rendered:', service);
-                        console.log('Service category:', service.category);
-                        
-                        // Find category name - use loose comparison or String() to handle type mismatches
+                        // Find category name
                         const category = allCategories.find(c => 
                             String(c.id) === String(service.category)
                         );
-                        console.log('Found category:', category);
-                        const categoryName = category ? category.name : 'ללא קטגוריה';
+
+                        // Use actual category name from service if category object not found
+                        let categoryName = 'ללא קטגוריה';
+                        if (category) {
+                            categoryName = category.name;
+                        } else if (service.category) {
+                            // If we have a category ID but no matching object, display the ID in a readable form
+                            categoryName = service.category.replace(/-/g, ' ');
+                            // Capitalize first letter of each word
+                            categoryName = categoryName.replace(/\b\w/g, l => l.toUpperCase());
+                        }
                         
                         // Default active to true if not explicitly set to false
                         const isActive = service.active !== false;
