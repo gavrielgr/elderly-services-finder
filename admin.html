@@ -1642,7 +1642,8 @@
                 // Show loading state
                 if (!isLoadMore) {
                     ratingsTable.style.display = 'none';
-                    ratingsContainer.querySelector('.spinner').style.display = 'block';
+                    const spinner = ratingsContainer.querySelector('.spinner');
+                    if (spinner) spinner.style.display = 'block';
                     
                     // Reset pagination
                     lastRatingDoc = null;
@@ -1657,112 +1658,146 @@
                 
                 // Build query with filters
                 let ratingsQuery = collection(window.firestoreDB, 'ratings');
+                let queryConstraints = [];
                 
                 // Apply filters
                 if (ratingsFilter.status !== 'all') {
-                    ratingsQuery = query(ratingsQuery, where('moderation.status', '==', ratingsFilter.status));
+                    queryConstraints.push(where('moderation.status', '==', ratingsFilter.status));
                 }
                 
                 if (ratingsFilter.dateFrom) {
                     const fromDate = new Date(ratingsFilter.dateFrom);
                     fromDate.setHours(0, 0, 0, 0);
-                    ratingsQuery = query(ratingsQuery, where('timestamp', '>=', fromDate));
+                    queryConstraints.push(where('timestamp', '>=', fromDate));
                 }
                 
                 if (ratingsFilter.dateTo) {
                     const toDate = new Date(ratingsFilter.dateTo);
                     toDate.setHours(23, 59, 59, 999);
-                    ratingsQuery = query(ratingsQuery, where('timestamp', '<=', toDate));
+                    queryConstraints.push(where('timestamp', '<=', toDate));
                 }
                 
                 // Order by timestamp (newest first)
-                ratingsQuery = query(ratingsQuery, orderBy('timestamp', 'desc'));
+                queryConstraints.push(orderBy('timestamp', 'desc'));
                 
                 // Add pagination
                 if (lastRatingDoc && isLoadMore) {
-                    ratingsQuery = query(ratingsQuery, startAfter(lastRatingDoc), limit(ratingsPerPage));
+                    queryConstraints.push(startAfter(lastRatingDoc), limit(ratingsPerPage));
                 } else {
-                    ratingsQuery = query(ratingsQuery, limit(ratingsPerPage));
+                    queryConstraints.push(limit(ratingsPerPage));
                 }
                 
                 // Execute query
-                const snapshot = await getDocs(ratingsQuery);
-                
-                // Check if we have more ratings
-                hasMoreRatings = snapshot.docs.length === ratingsPerPage;
-                loadMoreButton.parentElement.style.display = hasMoreRatings ? 'flex' : 'none';
-                
-                // Update last visible document for pagination
-                if (snapshot.docs.length > 0) {
-                    lastRatingDoc = snapshot.docs[snapshot.docs.length - 1];
-                }
-                
-                // Process the ratings
-                const newRatings = [];
-                const ratingsToRender = [];
-                
-                for (const doc of snapshot.docs) {
-                    const rating = { id: doc.id, ...doc.data() };
+                try {
+                    ratingsQuery = query(ratingsQuery, ...queryConstraints);
+                    const snapshot = await getDocs(ratingsQuery);
                     
-                    // If search term is provided, filter in memory
-                    if (ratingsFilter.searchTerm && !matchesSearchTerm(rating, ratingsFilter.searchTerm)) {
-                        continue;
+                    // Check if we have more ratings
+                    hasMoreRatings = snapshot.docs.length === ratingsPerPage;
+                    if (loadMoreButton && loadMoreButton.parentElement) {
+                        loadMoreButton.parentElement.style.display = hasMoreRatings ? 'flex' : 'none';
                     }
                     
-                    newRatings.push(rating);
+                    // Update last visible document for pagination
+                    if (snapshot.docs.length > 0) {
+                        lastRatingDoc = snapshot.docs[snapshot.docs.length - 1];
+                    }
                     
-                    // Get service information
-                    try {
-                        if (rating.serviceId) {
-                            const { getDoc, doc } = window.firebaseModules;
-                            const serviceDoc = await getDoc(doc(window.firestoreDB, 'services', rating.serviceId));
-                            if (serviceDoc.exists()) {
-                                rating.serviceName = serviceDoc.data().name;
-                            } else {
-                                rating.serviceName = `שירות לא נמצא (${rating.serviceId})`;
-                            }
-                        } else {
-                            rating.serviceName = 'לא צוין';
+                    // Process the ratings
+                    const newRatings = [];
+                    const ratingsToRender = [];
+                    
+                    for (const doc of snapshot.docs) {
+                        const rating = { id: doc.id, ...doc.data() };
+                        
+                        // If search term is provided, filter in memory
+                        if (ratingsFilter.searchTerm && !matchesSearchTerm(rating, ratingsFilter.searchTerm)) {
+                            continue;
                         }
-                    } catch (error) {
-                        console.error('Error fetching service:', error);
-                        rating.serviceName = 'שגיאה בטעינת שירות';
+                        
+                        newRatings.push(rating);
+                        
+                        // Get service information
+                        try {
+                            if (rating.serviceId) {
+                                const { getDoc, doc } = window.firebaseModules;
+                                const serviceDoc = await getDoc(doc(window.firestoreDB, 'services', rating.serviceId));
+                                if (serviceDoc.exists()) {
+                                    rating.serviceName = serviceDoc.data().name;
+                                } else {
+                                    rating.serviceName = `שירות לא נמצא (${rating.serviceId})`;
+                                }
+                            } else {
+                                rating.serviceName = 'לא צוין';
+                            }
+                        } catch (error) {
+                            console.error('Error fetching service:', error);
+                            rating.serviceName = 'שגיאה בטעינת שירות';
+                        }
+                        
+                        ratingsToRender.push(rating);
                     }
                     
-                    ratingsToRender.push(rating);
-                }
-                
-                // Add to existing ratings if loading more
-                if (isLoadMore) {
-                    currentRatings = [...currentRatings, ...newRatings];
-                } else {
-                    currentRatings = newRatings;
-                }
-                
-                // Render ratings
-                renderRatings(ratingsToRender, isLoadMore);
-                
-                // Update results info
-                const resultsInfo = document.getElementById('ratings-results-info');
-                if (resultsInfo) {
-                    resultsInfo.textContent = `${currentRatings.length} דירוגים ${hasMoreRatings ? '(טען עוד להצגת הכל)' : ''}`;
-                    resultsInfo.style.display = 'block';
-                }
-                
-                // Show table
-                if (!isLoadMore) {
-                    ratingsContainer.querySelector('.spinner').style.display = 'none';
-                    ratingsTable.style.display = 'table';
-                } else {
-                    // Reset load more button
-                    loadMoreButton.disabled = false;
-                    loadMoreButton.textContent = 'טען עוד דירוגים';
+                    // Add to existing ratings if loading more
+                    if (isLoadMore) {
+                        currentRatings = [...currentRatings, ...newRatings];
+                    } else {
+                        currentRatings = newRatings;
+                    }
+                    
+                    // Render ratings
+                    renderRatings(ratingsToRender, isLoadMore);
+                    
+                    // Update results info
+                    const resultsInfo = document.getElementById('ratings-results-info');
+                    if (resultsInfo) {
+                        resultsInfo.textContent = `${currentRatings.length} דירוגים ${hasMoreRatings ? '(טען עוד להצגת הכל)' : ''}`;
+                        resultsInfo.style.display = 'block';
+                    }
+                    
+                    // Show table
+                    if (!isLoadMore) {
+                        const spinner = ratingsContainer.querySelector('.spinner');
+                        if (spinner) spinner.style.display = 'none';
+                        ratingsTable.style.display = 'table';
+                    } else {
+                        // Reset load more button
+                        loadMoreButton.disabled = false;
+                        loadMoreButton.textContent = 'טען עוד דירוגים';
+                    }
+                } catch (queryError) {
+                    // Check if this is an index error
+                    if (queryError.message && queryError.message.includes('requires an index')) {
+                        // Extract the index creation URL
+                        const indexUrlMatch = queryError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+                        const indexUrl = indexUrlMatch ? indexUrlMatch[0] : null;
+                        
+                        console.error('Index error. Create the required index:', indexUrl);
+                        
+                        // Display a more helpful error message
+                        const errorMessage = `
+                            <div class="error-message">
+                                <p>נדרש אינדקס בפיירבייס כדי לטעון את הדירוגים.</p>
+                                ${indexUrl ? `<p>אנא <a href="${indexUrl}" target="_blank">לחץ כאן</a> כדי ליצור את האינדקס הנדרש, ולאחר מכן רענן את העמוד.</p>` : ''}
+                            </div>
+                        `;
+                        
+                        // Show error message
+                        if (ratingsContainer) {
+                            const spinner = ratingsContainer.querySelector('.spinner');
+                            if (spinner) spinner.style.display = 'none';
+                            ratingsContainer.innerHTML = errorMessage;
+                        }
+                    } else {
+                        throw queryError; // Re-throw for general error handling
+                    }
                 }
             } catch (error) {
                 console.error('Error loading ratings:', error);
                 const ratingsContainer = document.getElementById('ratings-list');
                 if (ratingsContainer) {
-                    ratingsContainer.querySelector('.spinner').style.display = 'none';
+                    const spinner = ratingsContainer.querySelector('.spinner');
+                    if (spinner) spinner.style.display = 'none';
                     ratingsContainer.innerHTML = '<div class="error-message">שגיאה בטעינת דירוגים</div>';
                 }
                 
@@ -2107,6 +2142,11 @@
                 submitButton.disabled = true;
                 submitButton.textContent = 'מעבד...';
                 
+                // Get serviceId from the rating before updating
+                const { doc: docRef, getDoc: getDocument } = window.firebaseModules;
+                const ratingDoc = await getDocument(docRef(window.firestoreDB, 'ratings', ratingId));
+                const serviceId = ratingDoc.exists() ? ratingDoc.data().serviceId : null;
+                
                 // Update rating in Firestore
                 const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
                 await updateDoc(doc(window.firestoreDB, 'ratings', ratingId), {
@@ -2114,6 +2154,11 @@
                     'moderation.reviewedAt': serverTimestamp(),
                     'moderation.rejectionReason': reason
                 });
+                
+                // Update service stats if serviceId is available
+                if (serviceId) {
+                    await updateServiceStats(serviceId);
+                }
                 
                 // Close modal and reload ratings
                 document.getElementById('rejection-modal').style.display = 'none';
@@ -2146,12 +2191,22 @@
                 // Show message
                 showMessage('מאשר דירוג...', 'info');
                 
+                // Get serviceId from the rating before updating
+                const { doc: docRef, getDoc: getDocument } = window.firebaseModules;
+                const ratingDoc = await getDocument(docRef(window.firestoreDB, 'ratings', ratingId));
+                const serviceId = ratingDoc.exists() ? ratingDoc.data().serviceId : null;
+                
                 // Update rating in Firestore
                 const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
                 await updateDoc(doc(window.firestoreDB, 'ratings', ratingId), {
                     'moderation.status': 'approved',
                     'moderation.reviewedAt': serverTimestamp()
                 });
+                
+                // Update service stats if serviceId is available
+                if (serviceId) {
+                    await updateServiceStats(serviceId);
+                }
                 
                 showMessage('הדירוג אושר בהצלחה', 'success');
                 
@@ -2160,6 +2215,72 @@
             } catch (error) {
                 console.error('Error approving rating:', error);
                 showMessage('שגיאה באישור הדירוג', 'error');
+            }
+        }
+        
+        // Update service stats based on approved ratings
+        async function updateServiceStats(serviceId) {
+            try {
+                if (!serviceId) return;
+                
+                const { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } = window.firebaseModules;
+                
+                // Get all approved ratings for this service
+                const ratingsQuery = query(
+                    collection(window.firestoreDB, 'ratings'),
+                    where('serviceId', '==', serviceId),
+                    where('moderation.status', '==', 'approved')
+                );
+                
+                const snapshot = await getDocs(ratingsQuery);
+                
+                // Calculate statistics
+                let totalRating = 0;
+                let count = 0;
+                const categoryTotals = {};
+                
+                snapshot.forEach(doc => {
+                    const rating = doc.data();
+                    totalRating += rating.overall;
+                    count++;
+                    
+                    // Calculate category averages if available
+                    Object.entries(rating.categories || {}).forEach(([category, value]) => {
+                        categoryTotals[category] = categoryTotals[category] || { total: 0, count: 0 };
+                        categoryTotals[category].total += value;
+                        categoryTotals[category].count++;
+                    });
+                });
+                
+                const averageRating = count > 0 ? totalRating / count : 0;
+                const categoryAverages = {};
+                
+                Object.entries(categoryTotals).forEach(([category, { total, count }]) => {
+                    categoryAverages[category] = count > 0 ? total / count : 0;
+                });
+                
+                // Update service document
+                const serviceRef = doc(window.firestoreDB, 'services', serviceId);
+                await updateDoc(serviceRef, {
+                    // Update with both field paths for consistency
+                    'stats.averageRating': averageRating,
+                    'stats.ratings': count,
+                    
+                    // Keep backward compatibility with existing field paths
+                    'ratings.average': averageRating,
+                    'ratings.count': count,
+                    'ratings.categoryAverages': categoryAverages,
+                    'ratings.lastUpdated': serverTimestamp(),
+                    
+                    // Update timestamps
+                    updatedAt: serverTimestamp()
+                });
+                
+                console.log(`Updated service stats for ${serviceId}: ${count} ratings, average ${averageRating.toFixed(1)}`);
+                
+            } catch (error) {
+                console.error('Error updating service stats:', error);
+                throw error;
             }
         }
 

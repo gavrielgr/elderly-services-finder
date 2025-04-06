@@ -54,6 +54,12 @@ export class ModalManager {
             return;
         }
         
+        // Set the modal title
+        const modalTitle = document.getElementById('modal-title');
+        if (modalTitle) {
+            modalTitle.textContent = service.name;
+        }
+        
         // Check if the service needs to be refreshed (implement versioned cache)
         const needsRefresh = await this.uiManager.dataService.checkServiceVersion(service.id);
         if (needsRefresh) {
@@ -63,6 +69,10 @@ export class ModalManager {
             if (updatedService) {
                 this.currentService = updatedService;
                 service = updatedService;
+                // Update title if service was refreshed
+                if (modalTitle) {
+                    modalTitle.textContent = updatedService.name;
+                }
             }
         }
         
@@ -90,7 +100,6 @@ export class ModalManager {
 
         // יצירת HTML עבור פרטי השירות
         let detailsHTML = `
-            <h2 class="service-details-name">${service.name}</h2>
             <div class="service-category">${categoryName}</div>
             ${service.description ? `<p class="service-details-description">${service.description}</p>` : ''}
         `;

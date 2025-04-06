@@ -18,22 +18,58 @@
     max-width: 500px;
     border-radius: 12px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    padding: 1.5rem;
+    padding: 0;
     max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    z-index: 10;
+}
+
+.modal-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-color);
+}
+
+.modal-body {
+    padding: 1rem 1.5rem;
     overflow-y: auto;
+    flex: 1;
 }
 
 .close-modal {
-    position: absolute;
-    left: 1rem;
-    top: 1rem;
     font-size: 1.5rem;
     cursor: pointer;
+    position: static;
 }
 
 .service-name {
     font-size: 1.5rem;
     font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.card-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+}
+
+.service-details-name {
     margin-bottom: 0.5rem;
 }
 
@@ -96,9 +132,11 @@
 .modal-actions {
     display: flex;
     justify-content: space-around;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
+    padding: 1rem 1.5rem;
     border-top: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    position: sticky;
+    bottom: 0;
 }
 
 .action-button {
@@ -116,4 +154,33 @@
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
+}
+
+/* Responsive styles */
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 5% auto;
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+    }
+
+    .action-button {
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+
+/* Make sure the header sticks properly in Safari */
+@supports (-webkit-touch-callout: none) {
+    .modal-header {
+        position: -webkit-sticky;
+    }
+    
+    .modal-actions {
+        position: -webkit-sticky;
+    }
 }
