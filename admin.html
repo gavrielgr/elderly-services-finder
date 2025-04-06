@@ -1440,6 +1440,40 @@
                 });
             });
             
+            // Setup search functionality for all sections
+            const servicesSearch = document.getElementById('services-search');
+            const categoriesSearch = document.getElementById('categories-search');
+            const interestAreasSearch = document.getElementById('interest-areas-search');
+            const usersSearch = document.getElementById('users-search');
+            
+            // Setup services search
+            if (servicesSearch) {
+                servicesSearch.addEventListener('input', debounce(function() {
+                    filterServices(this.value.trim().toLowerCase());
+                }, 300));
+            }
+            
+            // Setup categories search
+            if (categoriesSearch) {
+                categoriesSearch.addEventListener('input', debounce(function() {
+                    filterCategories(this.value.trim().toLowerCase());
+                }, 300));
+            }
+            
+            // Setup interest areas search
+            if (interestAreasSearch) {
+                interestAreasSearch.addEventListener('input', debounce(function() {
+                    filterInterestAreas(this.value.trim().toLowerCase());
+                }, 300));
+            }
+            
+            // Setup users search
+            if (usersSearch) {
+                usersSearch.addEventListener('input', debounce(function() {
+                    filterUsers(this.value.trim().toLowerCase());
+                }, 300));
+            }
+            
             // Add event listeners for add new buttons
             const addServiceButton = document.getElementById('add-service');
             if (addServiceButton) {
@@ -1903,6 +1937,150 @@
             
             // Reset pagination and load
             loadRatings();
+        }
+        
+        // Filter services based on search term
+        function filterServices(searchTerm) {
+            if (!allServices) return;
+            
+            if (!searchTerm) {
+                // If no search term, show all services
+                renderServices();
+                return;
+            }
+            
+            // Filter services based on search term
+            const filteredServices = allServices.filter(service => 
+                service.name?.toLowerCase().includes(searchTerm) || 
+                service.description?.toLowerCase().includes(searchTerm)
+            );
+            
+            // Save original services, update allServices with filtered results
+            const originalServices = [...allServices];
+            allServices = filteredServices;
+            
+            // Render filtered services
+            renderServices();
+            
+            // Update results info
+            if (servicesResultsInfo) {
+                if (filteredServices.length > 0) {
+                    servicesResultsInfo.textContent = `${filteredServices.length} שירותים תואמים לחיפוש "${searchTerm}"`;
+                } else {
+                    servicesResultsInfo.textContent = `אין שירותים תואמים לחיפוש "${searchTerm}"`;
+                }
+            }
+            
+            // Restore original services
+            allServices = originalServices;
+        }
+        
+        // Filter categories based on search term
+        function filterCategories(searchTerm) {
+            if (!allCategories) return;
+            
+            if (!searchTerm) {
+                // If no search term, show all categories
+                renderCategories();
+                return;
+            }
+            
+            // Filter categories based on search term
+            const filteredCategories = allCategories.filter(category => 
+                category.name?.toLowerCase().includes(searchTerm) || 
+                category.description?.toLowerCase().includes(searchTerm)
+            );
+            
+            // Save original categories, update allCategories with filtered results
+            const originalCategories = [...allCategories];
+            allCategories = filteredCategories;
+            
+            // Render filtered categories
+            renderCategories();
+            
+            // Update results info
+            if (categoriesResultsInfo) {
+                if (filteredCategories.length > 0) {
+                    categoriesResultsInfo.textContent = `${filteredCategories.length} קטגוריות תואמות לחיפוש "${searchTerm}"`;
+                } else {
+                    categoriesResultsInfo.textContent = `אין קטגוריות תואמות לחיפוש "${searchTerm}"`;
+                }
+            }
+            
+            // Restore original categories
+            allCategories = originalCategories;
+        }
+        
+        // Filter interest areas based on search term
+        function filterInterestAreas(searchTerm) {
+            if (!allInterestAreas) return;
+            
+            if (!searchTerm) {
+                // If no search term, show all interest areas
+                renderInterestAreas();
+                return;
+            }
+            
+            // Filter interest areas based on search term
+            const filteredInterestAreas = allInterestAreas.filter(interestArea => 
+                interestArea.name?.toLowerCase().includes(searchTerm) || 
+                interestArea.description?.toLowerCase().includes(searchTerm)
+            );
+            
+            // Save original interest areas, update allInterestAreas with filtered results
+            const originalInterestAreas = [...allInterestAreas];
+            allInterestAreas = filteredInterestAreas;
+            
+            // Render filtered interest areas
+            renderInterestAreas();
+            
+            // Update results info
+            if (interestAreasResultsInfo) {
+                if (filteredInterestAreas.length > 0) {
+                    interestAreasResultsInfo.textContent = `${filteredInterestAreas.length} תחומי עניין תואמים לחיפוש "${searchTerm}"`;
+                } else {
+                    interestAreasResultsInfo.textContent = `אין תחומי עניין תואמים לחיפוש "${searchTerm}"`;
+                }
+            }
+            
+            // Restore original interest areas
+            allInterestAreas = originalInterestAreas;
+        }
+        
+        // Filter users based on search term
+        function filterUsers(searchTerm) {
+            if (!allUsers) return;
+            
+            if (!searchTerm) {
+                // If no search term, show all users
+                renderUsers();
+                return;
+            }
+            
+            // Filter users based on search term
+            const filteredUsers = allUsers.filter(user => 
+                user.name?.toLowerCase().includes(searchTerm) || 
+                user.email?.toLowerCase().includes(searchTerm)
+            );
+            
+            // Save original users, update allUsers with filtered results
+            const originalUsers = [...allUsers];
+            allUsers = filteredUsers;
+            
+            // Render filtered users
+            renderUsers();
+            
+            // Update results info
+            if (usersResultsInfo) {
+                if (filteredUsers.length > 0) {
+                    usersResultsInfo.textContent = `${filteredUsers.length} משתמשים תואמים לחיפוש "${searchTerm}"`;
+                } else {
+                    usersResultsInfo.textContent = `אין משתמשים תואמים לחיפוש "${searchTerm}"`;
+                }
+            }
+            
+            // Restore original users
+            allUsers = originalUsers;
         }
         
         // Show rejection modal
