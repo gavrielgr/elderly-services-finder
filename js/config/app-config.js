@@ -21,5 +21,11 @@ export const getApiBaseUrl = () => {
   return '';
 };
 
+// Create a default export with all functions
+export default {
+  isLocalEnvironment,
+  getApiBaseUrl
+};
+
 // Application Version (from package.json) - MOVED TO constants.js
 // export const APP_VERSION = '1.99.96'; 

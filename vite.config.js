@@ -53,6 +53,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    
+    // Define a separate entry point for auth library
+    lib: {
+      entry: resolve(__dirname, 'js/auth-bundle.js'),
+      name: 'auth',
+      fileName: 'js/auth-bundle'
+    },
+    
     rollupOptions: {
       input: {
         main: 'index.html',
