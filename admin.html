@@ -2510,40 +2510,151 @@
         }
 
         // Edit a service based on its ID
-        function editService(id) {
+        async function editService(id) { // Added async
             // Find the service in the array
             const service = allServices.find(s => s.id === id);
             console.log('Editing service:', service);
             
             if (service) {
-                // Set service ID and make it visible
+                // Populate basic fields
                 document.getElementById('service-id').value = id;
-                const idDisplay = document.getElementById('service-id-display');
-                if (idDisplay) idDisplay.style.display = 'block';
-                
-                // Set Firebase ID in the visible field
                 document.getElementById('service-id-visible').value = id;
-                
-                // Populate form fields
+                document.getElementById('service-id-display').style.display = 'block';
                 document.getElementById('service-name').value = service.name || '';
                 document.getElementById('service-description').value = service.description || '';
                 
                 // Set category dropdown
                 const categorySelect = document.getElementById('service-category');
-                if (service.category) {
-                    categorySelect.value = service.category;
-                } else {
-                    categorySelect.value = '';
-                }
-                
+                // Ensure categories are loaded before setting value
+                if (allCategories.length === 0) await loadCategories(); // Load if not already loaded
+                categorySelect.innerHTML = '<option value="">בחר קטגוריה</option>';
+                allCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categorySelect.appendChild(option);
+                });
+                categorySelect.value = service.category || service.categoryId || '';
+
                 // Set active status
                 const activeCheckbox = document.getElementById('service-active');
                 if (activeCheckbox) {
                     activeCheckbox.checked = service.active !== false; // Default to true if not specified
                 }
+
+                // START ADDITION: Populate Contact Info
+                const phonesContainer = document.getElementById('phone-inputs-container');
+                const emailsContainer = document.getElementById('email-inputs-container');
+                const websitesContainer = document.getElementById('website-inputs-container');
+
+                // Clear existing dynamic inputs
+                if (phonesContainer) phonesContainer.innerHTML = '';
+                if (emailsContainer) emailsContainer.innerHTML = '';
+                if (websitesContainer) websitesContainer.innerHTML = '';
                 
+                let phones = [];
+                let emails = [];
+                let websites = [];
+
+                // Extract contact info (handle various structures)
+                if (service.contact) {
+                    phones = service.contact.phone || service.contact.phones || [];
+                    emails = service.contact.email || service.contact.emails || [];
+                    websites = service.contact.website || service.contact.websites || [];
+                } else {
+                    // Fallback for older structures (if needed)
+                    if (service.phone) phones = Array.isArray(service.phone) ? service.phone : [service.phone];
+                    if (service.email) emails = Array.isArray(service.email) ? service.email : [service.email];
+                    if (service.website) websites = Array.isArray(service.website) ? service.website : [service.website];
+                }
+                
+                // Populate phone inputs
+                if (phones.length > 0) {
+                    phones.forEach(phone => {
+                        const number = typeof phone === 'object' ? phone.number : phone;
+                        if (number) addPhoneInput(number);
+                    });
+                } else {
+                    addPhoneInput(); // Add one empty input if none exist
+                }
+                
+                // Populate email inputs
+                if (emails.length > 0) {
+                    emails.forEach(email => {
+                        const address = typeof email === 'object' ? email.address : email;
+                        if (address) addEmailInput(address);
+                    });
+                } else {
+                    addEmailInput(); // Add one empty input if none exist
+                }
+
+                // Populate website inputs
+                if (websites.length > 0) {
+                    websites.forEach(website => {
+                        const url = typeof website === 'object' ? website.url : website;
+                        if (url) addWebsiteInput(url);
+                    });
+                } else {
+                    addWebsiteInput(); // Add one empty input if none exist
+                }
+                
+                // Populate Address and City
+                document.getElementById('service-address').value = service.address || service.contact?.address || '';
+                document.getElementById('service-city').value = service.city || service.contact?.city || '';
+                // END ADDITION: Populate Contact Info
+                
+                // START ADDITION: Populate Interest Areas
+                const interestAreasContainer = document.getElementById('service-interest-areas-container');
+                interestAreasContainer.innerHTML = ''; // Clear previous checkboxes
+                
+                // Ensure interest areas are loaded
+                if (allInterestAreas.length === 0) await loadInterestAreas();
+                
+                let selectedAreaIds = [];
+                // Fetch selected areas if not directly on the service object (using service-interest-areas collection)
+                try {
+                     const { collection, query, where, getDocs } = window.firebaseModules;
+                     const serviceAreasSnapshot = await getDocs(query(
+                        collection(window.firestoreDB, 'service-interest-areas'),
+                        where('serviceId', '==', id)
+                     ));
+                     selectedAreaIds = serviceAreasSnapshot.docs.map(doc => doc.data().interestAreaId);
+                } catch (error) {
+                     console.error('Error fetching service interest areas:', error);
+                     // Handle case where service.interestAreas might be an array on the object itself (older structure?)
+                     if (Array.isArray(service.interestAreas)) {
+                        selectedAreaIds = service.interestAreas;
+                     }
+                }
+                
+                if (allInterestAreas.length > 0) {
+                    allInterestAreas.forEach(area => {
+                        const div = document.createElement('div');
+                        div.className = 'form-check';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.className = 'form-check-input interest-area-checkbox';
+                        input.value = area.id;
+                        input.id = `interest-area-${area.id}`;
+                        input.checked = selectedAreaIds.includes(area.id);
+                        
+                        const label = document.createElement('label');
+                        label.className = 'form-check-label';
+                        label.htmlFor = input.id;
+                        label.textContent = area.name;
+                        
+                        div.appendChild(input);
+                        div.appendChild(label);
+                        interestAreasContainer.appendChild(div);
+                    });
+                } else {
+                    interestAreasContainer.innerHTML = '<span>אין תחומי עניין זמינים.</span>';
+                }
+                // END ADDITION: Populate Interest Areas
+
                 // Show the modal
-                document.getElementById('service-modal').style.display = 'block';
+                document.getElementById('service-modal').style.display = 'flex';
             } else {
                 showMessage('שירות לא נמצא', 'error');
             }
@@ -2552,51 +2663,141 @@
         // Save a service
         async function saveService(form) {
             try {
+                // Get the form element, even if not passed as argument
+                const serviceForm = form || document.getElementById('service-form');
+                if (!serviceForm) {
+                    console.error('Service form not found');
+                    showMessage('שגיאה: טופס שירות לא נמצא', 'error');
+                    return;
+                }
+
                 // Get basic information
-                const serviceId = form.querySelector('#service-id').value;
-                const serviceName = form.querySelector('#service-name').value;
-                const serviceDescription = form.querySelector('#service-description').value;
-                const serviceCategory = form.querySelector('#service-category').value;
-                const serviceActive = form.querySelector('#service-active').checked;
+                const serviceId = serviceForm.querySelector('#service-id').value;
+                const serviceName = serviceForm.querySelector('#service-name').value;
+                const serviceDescription = serviceForm.querySelector('#service-description').value;
+                const serviceCategory = serviceForm.querySelector('#service-category').value;
+                const serviceActive = serviceForm.querySelector('#service-active').checked;
+                const serviceAddress = serviceForm.querySelector('#service-address').value;
+                const serviceCity = serviceForm.querySelector('#service-city').value;
+
+                // START ADDITION: Collect Contact Info
+                const phoneInputs = serviceForm.querySelectorAll('#phone-inputs-container .phone-input');
+                const emailInputs = serviceForm.querySelectorAll('#email-inputs-container .email-input');
+                const websiteInputs = serviceForm.querySelectorAll('#website-inputs-container .website-input');
+
+                const phones = Array.from(phoneInputs).map(input => input.value.trim()).filter(Boolean);
+                const emails = Array.from(emailInputs).map(input => input.value.trim()).filter(Boolean);
+                const websites = Array.from(websiteInputs).map(input => input.value.trim()).filter(Boolean);
+                // END ADDITION
+
+                // START ADDITION: Collect Selected Interest Areas
+                const interestAreaCheckboxes = serviceForm.querySelectorAll('.interest-area-checkbox:checked');
+                const selectedInterestAreaIds = Array.from(interestAreaCheckboxes).map(cb => cb.value);
+                // END ADDITION
                 
                 // Create service object
                 const serviceData = {
                     name: serviceName,
                     description: serviceDescription,
-                    category: serviceCategory,
+                    category: serviceCategory, // Keep using category field
                     active: serviceActive,
+                    address: serviceAddress, // Add address
+                    city: serviceCity,       // Add city
+                    // Structure contact info according to newer standard (array of objects)
+                    contact: {
+                        phone: phones.map(p => ({ number: p, description: '' })), // Add empty description for now
+                        email: emails.map(e => ({ address: e, description: '' })), // Add empty description for now
+                        website: websites.map(w => ({ url: w, description: '' })) // Add empty description for now
+                    },
+                    // We will handle interest areas separately using the junction collection
                     updatedAt: window.firebaseModules.serverTimestamp()
                 };
                 
-                // Add or update service in Firestore
                 if (serviceId) {
                     // Update existing service
+                    console.log('Updating service:', serviceId, serviceData);
                     await window.firebaseModules.updateDoc(
                         window.firebaseModules.doc(window.firestoreDB, 'services', serviceId),
                         serviceData
                     );
+                    // START ADDITION: Update interest areas junction collection
+                    await updateServiceInterestAreas(serviceId, selectedInterestAreaIds);
+                    // END ADDITION
                     showMessage('השירות עודכן בהצלחה', 'success');
                 } else {
                     // Add new service
                     serviceData.createdAt = window.firebaseModules.serverTimestamp();
+                    console.log('Adding new service:', serviceData);
                     const docRef = await window.firebaseModules.addDoc(
                         window.firebaseModules.collection(window.firestoreDB, 'services'),
                         serviceData
                     );
+                    // START ADDITION: Add interest areas to junction collection for new service
+                    await updateServiceInterestAreas(docRef.id, selectedInterestAreaIds);
+                    // END ADDITION
                     showMessage('השירות נוצר בהצלחה', 'success');
                 }
                 
                 // Close the modal and refresh the list
                 document.getElementById('service-modal').style.display = 'none';
-                loadServices();
+                loadServices(); // Reload services list
+                // Optionally reload categories and interest areas if they could have changed
+                // loadCategories();
+                // loadInterestAreas();
             } catch (error) {
                 console.error('Error saving service:', error);
                 showMessage('שגיאה בשמירת השירות', 'error');
             }
         }
-        
-        // Delete a service
-        async function deleteService(id) {
+
+        // START ADDITION: Function to update service-interest-areas junction collection
+        async function updateServiceInterestAreas(serviceId, newAreaIds) {
+            if (!serviceId) return;
+            const { collection, query, where, getDocs, writeBatch, doc } = window.firebaseModules;
+            const batch = writeBatch(window.firestoreDB);
+
+            // 1. Get current associations for this service
+            const currentLinksQuery = query(
+                collection(window.firestoreDB, 'service-interest-areas'),
+                where('serviceId', '==', serviceId)
+            );
+            const currentLinksSnapshot = await getDocs(currentLinksQuery);
+            const currentAreaIds = new Set(currentLinksSnapshot.docs.map(d => d.data().interestAreaId));
+            const currentLinkDocs = {}; // Map areaId to docId for deletion
+            currentLinksSnapshot.forEach(d => {
+                 currentLinkDocs[d.data().interestAreaId] = d.id;
+            });
+
+            // 2. Determine which links to delete
+            currentAreaIds.forEach(areaId => {
+                 if (!newAreaIds.includes(areaId)) {
+                      // Delete link
+                      const docIdToDelete = currentLinkDocs[areaId];
+                      if (docIdToDelete) {
+                          console.log('Deleting link:', serviceId, areaId);
+                          batch.delete(doc(window.firestoreDB, 'service-interest-areas', docIdToDelete));
+                      }
+                 }
+            });
+
+            // 3. Determine which links to add
+            newAreaIds.forEach(areaId => {
+                 if (!currentAreaIds.has(areaId)) {
+                      // Add link
+                      console.log('Adding link:', serviceId, areaId);
+                      const newLinkRef = doc(collection(window.firestoreDB, 'service-interest-areas'));
+                      batch.set(newLinkRef, { serviceId: serviceId, interestAreaId: areaId });
+                 }
+            });
+
+            // 4. Commit the batch
+            await batch.commit();
+            console.log('Service interest areas updated successfully for service:', serviceId);
+        }
+        // END ADDITION
+         
+         // Delete a service
+         async function deleteService(id) {
             try {
                 if (confirm('האם אתה בטוח שברצונך למחוק את השירות הזה?')) {
                     await window.firebaseModules.deleteDoc(
@@ -3350,6 +3551,98 @@
                 }
             });
         }
+
+        // Helper function to create a debounce function
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // START ADDITION: Helper functions for dynamic contact inputs
+        function addInputGroup(containerId, inputType, placeholder, className) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'input-group';
+
+            const input = document.createElement('input');
+            input.type = inputType;
+            input.className = `form-input ${className}`;
+            input.placeholder = placeholder;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-input-btn';
+            removeBtn.textContent = '-';
+            removeBtn.onclick = function() { removeInputGroup(this); };
+
+            inputGroup.appendChild(input);
+            inputGroup.appendChild(removeBtn);
+            container.appendChild(inputGroup);
+
+            // Ensure at least one input group remains, hide its remove button
+            updateRemoveButtons(containerId);
+        }
+
+        function removeInputGroup(button) {
+            const inputGroup = button.closest('.input-group');
+            const container = inputGroup.parentElement;
+            if (inputGroup) {
+                inputGroup.remove();
+            }
+            // Ensure at least one input group remains, hide its remove button
+            updateRemoveButtons(container.id);
+        }
+
+        function updateRemoveButtons(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const groups = container.querySelectorAll('.input-group');
+            groups.forEach((group, index) => {
+                const removeBtn = group.querySelector('.remove-input-btn');
+                if (removeBtn) {
+                    // Hide remove button if it's the only input left
+                    removeBtn.style.display = groups.length > 1 ? 'flex' : 'none';
+                }
+            });
+            // If no groups left after removal, add a default one
+            if (groups.length === 0) {
+                 if (containerId === 'phone-inputs-container') addPhoneInput();
+                 else if (containerId === 'email-inputs-container') addEmailInput();
+                 else if (containerId === 'website-inputs-container') addWebsiteInput();
+            }
+        }
+
+        function addPhoneInput(number = '') {
+            addInputGroup('phone-inputs-container', 'text', 'מספר טלפון', 'phone-input');
+            const inputs = document.querySelectorAll('#phone-inputs-container .phone-input');
+            if (inputs.length > 0) inputs[inputs.length - 1].value = number; // Set value for the new input
+        }
+
+        function addEmailInput(address = '') {
+            addInputGroup('email-inputs-container', 'email', 'כתובת אימייל', 'email-input');
+            const inputs = document.querySelectorAll('#email-inputs-container .email-input');
+            if (inputs.length > 0) inputs[inputs.length - 1].value = address; // Set value for the new input
+        }
+
+        function addWebsiteInput(url = '') {
+            addInputGroup('website-inputs-container', 'url', 'כתובת אתר', 'website-input');
+            const inputs = document.querySelectorAll('#website-inputs-container .website-input');
+            if (inputs.length > 0) inputs[inputs.length - 1].value = url; // Set value for the new input
+        }
+
+        // Setup event listeners for the initial 'Add' buttons
+        document.getElementById('add-phone-btn')?.addEventListener('click', () => addPhoneInput());
+        document.getElementById('add-email-btn')?.addEventListener('click', () => addEmailInput());
+        document.getElementById('add-website-btn')?.addEventListener('click', () => addWebsiteInput());
+        // END ADDITION
+
+        // Ratings pagination variables
+        // ... existing code ...
     </script>
 
     <!-- Ratings Rejection Modal -->
