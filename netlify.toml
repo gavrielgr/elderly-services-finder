@@ -22,6 +22,14 @@
     Cache-Control = "no-cache"
 
 [[headers]]
+  for = "/_tests/*"
+  [headers.values]
+    Content-Type = "text/html"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+[[headers]]
   for = "/assets/*.js"
   [headers.values]
     Content-Type = "application/javascript"
@@ -113,6 +121,13 @@
   status = 200
   force = true
 
+# Direct access to test files in _tests directory
+[[redirects]]
+  from = "/_tests/*"
+  to = "/_tests/:splat"
+  status = 200
+  force = true
+
 # Explicit redirects for Firebase diagnostic pages
 [[redirects]]
   from = "/firebase-diagnostic.html"
@@ -135,6 +150,25 @@
 [[redirects]]
   from = "/fb_test_20250420.html"
   to = "/fb_test_20250420.html"
+  status = 200
+  force = true
+
+# Clean URLs for test pages (following the login/admin pattern)
+[[redirects]]
+  from = "/firebase-test"
+  to = "/firebase-test.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/fb-test"
+  to = "/fb_test_20250420.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/diag"
+  to = "/firebase-diagnostic.html"
   status = 200
   force = true
 

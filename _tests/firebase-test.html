@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase Test in _tests folder</title>
+  <style>
+    body { font-family: Arial; margin: 20px; max-width: 800px; }
+    button { padding: 8px 16px; margin: 5px; }
+    pre { background: #f4f4f4; padding: 10px; overflow: auto; }
+    #output { border: 1px solid #ddd; padding: 10px; margin-top: 20px; min-height: 200px; }
+  </style>
+</head>
+<body>
+  <h1>Firebase Test Page</h1>
+  <p>This page is located in the _tests directory to bypass SPA redirects</p>
+  
+  <button onclick="runTest()">Run Firebase Test</button>
+  <div id="output"></div>
+
+  <script>
+    // Simple logging function
+    function log(message) {
+      const output = document.getElementById('output');
+      const entry = document.createElement('div');
+      
+      if (typeof message === 'object') {
+        entry.innerHTML = `<pre>${JSON.stringify(message, null, 2)}</pre>`;
+      } else {
+        entry.textContent = message;
+      }
+      
+      output.appendChild(entry);
+      console.log(message);
+    }
+
+    // Test function
+    async function runTest() {
+      log('Starting Firebase test...');
+      
+      try {
+        // Step 1: Test API endpoint
+        log('Testing API endpoint...');
+        const configResponse = await fetch('/api/config');
+        
+        if (!configResponse.ok) {
+          throw new Error(`API endpoint returned ${configResponse.status}: ${configResponse.statusText}`);
+        }
+        
+        const config = await configResponse.json();
+        log('API endpoint working! Config received.');
+        
+        // Step 2: Load Firebase scripts dynamically
+        log('Loading Firebase scripts...');
+        
+        // Load Firebase App
+        const appScript = document.createElement('script');
+        appScript.src = 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
+        appScript.type = 'module';
+        document.head.appendChild(appScript);
+        
+        // Load Firestore
+        const firestoreScript = document.createElement('script');
+        firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+        firestoreScript.type = 'module';
+        document.head.appendChild(firestoreScript);
+        
+        log('Scripts loaded successfully!');
+        log('Test completed - check console for full details');
+        
+      } catch (error) {
+        log(`ERROR: ${error.message}`);
+        console.error(error);
+      }
+    }
+    
+    // Initial log
+    log('Test page loaded. Click the button to run the test.');
+  </script>
+</body>
+</html> 
