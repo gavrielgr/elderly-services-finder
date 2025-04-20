@@ -4,12 +4,16 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth
 import { getApiBaseUrl } from './app-config.js';
 
 // Initialize Firebase with config from server
-let app, db, auth;
+// Using let for mutable variables that will be initialized
+let firebaseApp = null;
+let firebaseDb = null;
+let firebaseAuth = null;
 
 // Async function to initialize Firebase
 export async function initializeFirebase() {
-  if (app) {
-    return { app, db, auth }; // Already initialized
+  if (firebaseApp) {
+    console.log('Firebase already initialized, returning existing instances');
+    return { app: firebaseApp, db: firebaseDb, auth: firebaseAuth }; // Already initialized
   }
   
   try {
@@ -29,21 +33,21 @@ export async function initializeFirebase() {
     
     // Initialize Firebase with server-provided config
     // This does NOT require authentication - anyone can initialize and read public data
-    app = initializeApp(firebaseConfig);
+    firebaseApp = initializeApp(firebaseConfig);
     
     // Initialize Firestore and Auth using the Firebase app
-    db = getFirestore(app);
-    auth = getAuth(app);
+    firebaseDb = getFirestore(firebaseApp);
+    firebaseAuth = getAuth(firebaseApp);
     
     // Also add to window for direct access in debugging
     if (typeof window !== 'undefined') {
-      window._firebaseApp = app;
-      window._firebaseDb = db;
-      window._firebaseAuth = auth;
+      window._firebaseApp = firebaseApp;
+      window._firebaseDb = firebaseDb;
+      window._firebaseAuth = firebaseAuth;
     }
     
     console.log('Firebase initialized successfully');
-    return { app, db, auth };
+    return { app: firebaseApp, db: firebaseDb, auth: firebaseAuth };
   } catch (error) {
     console.error('Error initializing Firebase:', error);
     throw error;
@@ -52,8 +56,18 @@ export async function initializeFirebase() {
 
 // Helper function to get the Firebase app instance
 export function getFirebaseApp() {
-  return app;
+  return firebaseApp;
 }
 
-// Export empty instances initially - must call initializeFirebase() first
-export { app, db, auth }; 
+// Helper function to get the Firestore instance 
+export function getFirebaseDb() {
+  return firebaseDb;
+}
+
+// Helper function to get the Auth instance
+export function getFirebaseAuth() {
+  return firebaseAuth;
+}
+
+// Export named instances - they will be null until initializeFirebase() is called
+export { firebaseApp as app, firebaseDb as db, firebaseAuth as auth }; 

@@ -2,11 +2,11 @@ import { fetchFromAPI } from '../config/api.js';
 import { saveToIndexedDB, getFromIndexedDB } from './storageService.js';
 import { ALL_SERVICES_KEY } from '../config/constants.js';
 // Add Firebase imports
-import { initializeFirebase } from '../config/firebase.js';
+import { initializeFirebase, db as firebaseDb } from '../config/firebase.js';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 
-// Variable to hold the db instance
-let db;
+// Local db reference that will be set after initialization
+let db = null;
 
 export class DataService {
     constructor() {
@@ -15,6 +15,23 @@ export class DataService {
         this.lastUpdateCheck = null;
         this.UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
         this.refreshPromise = null; // למניעת קריאות מקבילות
+        
+        // Initialize Firebase when the service is created
+        this.initializeFirebaseDb();
+    }
+    
+    // Helper method to initialize Firebase
+    async initializeFirebaseDb() {
+        try {
+            // Only initialize if not already initialized
+            if (!db) {
+                console.log('Initializing Firebase in DataService');
+                const { db: firestore } = await initializeFirebase();
+                db = firestore;
+            }
+        } catch (error) {
+            console.error('Failed to initialize Firebase in DataService:', error);
+        }
     }
 
     async refreshData(forceRefresh = false) {
@@ -209,11 +226,14 @@ export class DataService {
             return null;
         }
 
-        // Initialize DB instance if not already done
+        // Ensure Firebase is initialized
         if (!db) {
             try {
-                const firebaseApp = await initializeFirebase();
-                db = firebaseApp.db; // Assuming initializeFirebase returns { db }
+                await this.initializeFirebaseDb();
+                if (!db) {
+                    console.warn("Firebase db still not available after initialization attempt");
+                    forceRefresh = false; // Fallback to cache
+                }
             } catch (error) {
                 console.error("Failed to initialize Firebase in getServiceById:", error);
                 // Fallback to cache if DB init fails

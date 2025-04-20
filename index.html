@@ -187,10 +187,13 @@
     
 
     <!-- Scripts -->
+    <!-- Load Firebase first -->
     <script type="module" src="js/config/firebase.js"></script>
+    <!-- Then load main.js which uses Firebase -->
     <script type="module" src="js/main.js"></script>
+    <!-- Other scripts that depend on Firebase initialization -->
     <script type="module">
-        // Wait for UIManager to be initialized
+        // Code to execute after UIManager is ready
         window.addEventListener('uiManagerReady', () => {
             // Handle refresh button click
             document.getElementById('refresh-button').addEventListener('click', async () => {
@@ -213,7 +216,7 @@
                 window.uiManager.updateLastUpdatedText(timestamp);
             });
             
-            // Initialize auth buttons
+            // Initialize auth buttons - make sure this happens after Firebase init
             import('./js/components/AuthButtons.js').then(module => {
                 module.createAuthButtons('auth-container');
             }).catch(error => {
@@ -231,7 +234,7 @@
         </div>
     </footer>
     
-    <!-- Main application script -->
+    <!-- Main application script - load after all the modules -->
     <script src="app.js" type="module"></script>
 </body>
 </html>
