@@ -1,5 +1,5 @@
 import { collection, getDocs, doc, getDoc, updateDoc, addDoc, deleteDoc, Timestamp, writeBatch, setDoc, query, where } from 'firebase/firestore';
-import { db } from '../config/firebase.js';
+import { initializeFirebase } from '../config/firebase.js';
 import { showStatus } from './ui.js';
 import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
 import { ADMIN_CACHE_KEYS } from './services.js';
@@ -55,7 +55,8 @@ async function loadCategories() {
     try {
         // נסה לטעון מהמטמון תחילה
         const cachedCategories = await getFromIndexedDB(ADMIN_CACHE_KEYS.CATEGORIES);
-        if (cachedCategories) {
+        if (cachedCategories && cachedCategories.length > 0) {
+            console.log('Using cached categories:', cachedCategories.length);
             categories = cachedCategories;
             
             // עדכן את ה-dropdown
@@ -67,8 +68,19 @@ async function loadCategories() {
             return;
         }
 
+        console.log('No valid cached categories, fetching from Firebase...');
+        
+        // Initialize Firebase directly
+        const { db } = await initializeFirebase();
+        if (!db) {
+            throw new Error('Failed to initialize Firebase');
+        }
+        
+        console.log('Firebase initialized for categories fetch');
         const snapshot = await getDocs(collection(db, 'categories'));
         categories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        console.log(`Fetched ${categories.length} categories from Firebase`);
         
         // עדכן את ה-dropdown
         const categorySelect = document.getElementById('serviceCategory');
@@ -90,7 +102,8 @@ async function loadInterestAreas() {
     try {
         // נסה לטעון מהמטמון תחילה
         const cachedAreas = await getFromIndexedDB(ADMIN_CACHE_KEYS.INTEREST_AREAS);
-        if (cachedAreas) {
+        if (cachedAreas && cachedAreas.length > 0) {
+            console.log('Using cached interest areas:', cachedAreas.length);
             interestAreas = cachedAreas;
             
             // עדכן את ה-dropdown
@@ -101,8 +114,19 @@ async function loadInterestAreas() {
             return;
         }
 
+        console.log('No valid cached interest areas, fetching from Firebase...');
+        
+        // Initialize Firebase directly
+        const { db } = await initializeFirebase();
+        if (!db) {
+            throw new Error('Failed to initialize Firebase');
+        }
+        
+        console.log('Firebase initialized for interest areas fetch');
         const snapshot = await getDocs(collection(db, 'interest-areas'));
         interestAreas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        console.log(`Fetched ${interestAreas.length} interest areas from Firebase`);
         
         // עדכן את ה-dropdown
         const areasSelect = document.getElementById('serviceInterestAreas');
@@ -121,6 +145,14 @@ async function loadInterestAreas() {
 // Load service data with optimized queries
 async function loadService(id) {
     try {
+        // Initialize Firebase directly
+        const { db } = await initializeFirebase();
+        if (!db) {
+            throw new Error('Failed to initialize Firebase');
+        }
+        
+        console.log(`Firebase initialized for service ${id} fetch`);
+        
         const [serviceDoc, serviceAreasSnapshot] = await Promise.all([
             getDoc(doc(db, 'services', id)),
             getDocs(query(
@@ -135,42 +167,147 @@ async function loadService(id) {
         }
 
         const service = serviceDoc.data();
+        console.log('Loaded service data (raw):', JSON.stringify(service, null, 2));
         const selectedAreas = serviceAreasSnapshot.docs.map(doc => doc.data().interestAreaId);
         
+        // Helper function to safely set form field values
+        const setFieldValue = (id, value) => {
+            const field = document.getElementById(id);
+            if (field) {
+                field.value = value || '';
+                return true;
+            } else {
+                console.warn(`Field ${id} not found in the form`);
+                return false;
+            }
+        };
+        
         // מילוי הטופס
-        document.getElementById('serviceId').value = serviceDoc.id;
-        document.getElementById('serviceName').value = service.name || '';
-        document.getElementById('serviceDescription').value = service.description || '';
-        document.getElementById('serviceCategory').value = service.category || '';
+        setFieldValue('serviceId', serviceDoc.id);
+        setFieldValue('serviceName', service.name || '');
+        setFieldValue('serviceDescription', service.description || '');
+        
+        // Handle both category and categoryId fields
+        const categoryValue = service.category || service.categoryId || '';
+        console.log('Setting category value:', categoryValue);
+        setFieldValue('serviceCategory', categoryValue);
+        
+        // Handle tags field
+        const tags = service.tags || [];
+        if (Array.isArray(tags)) {
+            setFieldValue('serviceTags', tags.join(', '));
+            console.log('Setting tags:', tags.join(', '));
+        } else if (typeof tags === 'string') {
+            setFieldValue('serviceTags', tags);
+            console.log('Setting tags string:', tags);
+        }
         
         // סימון תחומי עניין נבחרים
         const areasSelect = document.getElementById('serviceInterestAreas');
-        Array.from(areasSelect.options).forEach(option => {
-            option.selected = selectedAreas.includes(option.value);
-        });
+        if (areasSelect) {
+            Array.from(areasSelect.options).forEach(option => {
+                option.selected = selectedAreas.includes(option.value);
+            });
+            console.log('Set selected interest areas:', selectedAreas);
+        } else {
+            console.warn('Interest areas select element not found');
+        }
         
-        // טיפול בפרטי קשר
-        const phones = service.contact?.phone || [];
-        const emails = service.contact?.email || [];
-        const websites = service.contact?.website || [];
+        // טיפול בפרטי קשר - check for different possible structures
+        console.log('Contact field in service:', service.contact);
+        
+        let phones = [];
+        let emails = [];
+        let websites = [];
+        
+        // Try to extract contact info from different possible structures
+        if (service.contact) {
+            phones = service.contact.phone || service.contact.phones || [];
+            emails = service.contact.email || service.contact.emails || [];
+            websites = service.contact.website || service.contact.websites || [];
+        } else if (service.phones) {
+            // Alternative structure
+            phones = service.phones;
+        } else if (service.emails) {
+            emails = service.emails;
+        } else if (service.websites) {
+            websites = service.websites;
+        }
+        
+        console.log('Contact details extracted:', { 
+            phonesCount: phones.length, 
+            emailsCount: emails.length, 
+            websitesCount: websites.length 
+        });
+        console.log('Phone details:', phones);
+        console.log('Email details:', emails);
+        console.log('Website details:', websites);
         
         // ניקוי ערכים קיימים
-        document.getElementById('phonesContainer').innerHTML = '';
-        document.getElementById('emailsContainer').innerHTML = '';
-        document.getElementById('websitesContainer').innerHTML = '';
+        const phonesContainer = document.getElementById('phonesContainer');
+        const emailsContainer = document.getElementById('emailsContainer');
+        const websitesContainer = document.getElementById('websitesContainer');
+        
+        if (!phonesContainer || !emailsContainer || !websitesContainer) {
+            console.error('One or more contact containers not found in the DOM');
+            console.log('Available elements:', {
+                phonesContainer: !!phonesContainer,
+                emailsContainer: !!emailsContainer,
+                websitesContainer: !!websitesContainer
+            });
+        }
+        
+        if (phonesContainer) phonesContainer.innerHTML = '';
+        if (emailsContainer) emailsContainer.innerHTML = '';
+        if (websitesContainer) websitesContainer.innerHTML = '';
         
         // הוספת שדות קשר
-        phones.forEach(phone => addPhoneEntry(phone.number, phone.description));
-        if (phones.length === 0) addPhoneEntry();
+        if (Array.isArray(phones)) {
+            phones.forEach(phone => {
+                // Handle different possible phone object structures
+                const number = phone.number || phone.value || (typeof phone === 'string' ? phone : '');
+                const description = phone.description || '';
+                console.log('Adding phone:', number, description);
+                if (number) addPhoneEntry(number, description);
+            });
+        }
+        if (phones.length === 0 && phonesContainer) {
+            console.log('No phones found, adding empty phone entry');
+            addPhoneEntry();
+        }
         
-        emails.forEach(email => addEmailEntry(email.address, email.description));
-        if (emails.length === 0) addEmailEntry();
+        if (Array.isArray(emails)) {
+            emails.forEach(email => {
+                // Handle different possible email object structures
+                const address = email.address || email.value || (typeof email === 'string' ? email : '');
+                const description = email.description || '';
+                console.log('Adding email:', address, description);
+                if (address) addEmailEntry(address, description);
+            });
+        }
+        if (emails.length === 0 && emailsContainer) {
+            console.log('No emails found, adding empty email entry');
+            addEmailEntry();
+        }
         
-        websites.forEach(website => addWebsiteEntry(website.url, website.description));
-        if (websites.length === 0) addWebsiteEntry();
+        if (Array.isArray(websites)) {
+            websites.forEach(website => {
+                // Handle different possible website object structures
+                const url = website.url || website.value || (typeof website === 'string' ? website : '');
+                const description = website.description || '';
+                console.log('Adding website:', url, description);
+                if (url) addWebsiteEntry(url, description);
+            });
+        }
+        if (websites.length === 0 && websitesContainer) {
+            console.log('No websites found, adding empty website entry');
+            addWebsiteEntry();
+        }
         
-        document.getElementById('serviceCity').value = service.city || '';
-        document.getElementById('serviceAddress').value = service.address || '';
+        setFieldValue('serviceCity', service.city || '');
+        setFieldValue('serviceAddress', service.address || '');
+        
+        console.log('Form population complete');
     } catch (error) {
         console.error('Error loading service:', error);
         showStatus('שגיאה בטעינת פרטי השירות', 'error');
@@ -180,6 +317,26 @@ async function loadService(id) {
 // Initialize page with optimized loading
 async function initializePage() {
     try {
+        // Initialize Firebase first
+        await initializeFirebase();
+        console.log('Firebase initialized in page initialization');
+        
+        // Log all available form elements for debugging
+        const formElements = {
+            serviceId: !!document.getElementById('serviceId'),
+            serviceName: !!document.getElementById('serviceName'),
+            serviceDescription: !!document.getElementById('serviceDescription'),
+            serviceCategory: !!document.getElementById('serviceCategory'),
+            serviceInterestAreas: !!document.getElementById('serviceInterestAreas'),
+            phonesContainer: !!document.getElementById('phonesContainer'),
+            emailsContainer: !!document.getElementById('emailsContainer'),
+            websitesContainer: !!document.getElementById('websitesContainer'),
+            serviceTags: !!document.getElementById('serviceTags'),
+            serviceCity: !!document.getElementById('serviceCity'),
+            serviceAddress: !!document.getElementById('serviceAddress')
+        };
+        console.log('Available form elements:', formElements);
+        
         // טען קטגוריות ותחומי עניין במקביל
         await Promise.all([loadCategories(), loadInterestAreas()]);
         
@@ -218,38 +375,66 @@ window.saveService = async function() {
 
     try {
         // Show loading state
-        saveButton.disabled = true;
-        const originalContent = saveButton.innerHTML;
-        saveButton.innerHTML = `
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            שומר...
-        `;
+        if (saveButton) {
+            saveButton.disabled = true;
+            const originalContent = saveButton.innerHTML;
+            saveButton.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                שומר...
+            `;
+        }
 
-        const serviceId = document.getElementById('serviceId').value;
+        // Initialize Firebase directly
+        const { db } = await initializeFirebase();
+        if (!db) {
+            throw new Error('Failed to initialize Firebase for saving');
+        }
+        
+        console.log('Firebase initialized for service save');
+
+        // Helper function to safely get field values
+        const getFieldValue = (id, defaultValue = '') => {
+            const field = document.getElementById(id);
+            return field ? field.value : defaultValue;
+        };
+
+        const serviceId = getFieldValue('serviceId');
+        
+        // Process tags from comma-separated string to array
+        let tags = [];
+        const tagsValue = getFieldValue('serviceTags');
+        if (tagsValue) {
+            tags = tagsValue.split(',').map(tag => tag.trim()).filter(tag => tag);
+            console.log('Processed tags:', tags);
+        }
+        
         const serviceData = {
-            name: document.getElementById('serviceName').value,
-            description: document.getElementById('serviceDescription').value,
-            category: document.getElementById('serviceCategory').value,
+            name: getFieldValue('serviceName'),
+            description: getFieldValue('serviceDescription'),
+            category: getFieldValue('serviceCategory'),
+            tags: tags,
             contact: {
                 phone: Array.from(document.querySelectorAll('#phonesContainer .phone-number')).map(input => ({
                     number: input.value.trim(),
-                    description: input.nextElementSibling.value.trim()
+                    description: input.nextElementSibling ? input.nextElementSibling.value.trim() : ''
                 })).filter(p => p.number),
                 email: Array.from(document.querySelectorAll('#emailsContainer .email-address')).map(input => ({
                     address: input.value.trim(),
-                    description: input.nextElementSibling.value.trim()
+                    description: input.nextElementSibling ? input.nextElementSibling.value.trim() : ''
                 })).filter(e => e.address),
                 website: Array.from(document.querySelectorAll('#websitesContainer .website-url')).map(input => ({
                     url: input.value.trim(),
-                    description: input.nextElementSibling.value.trim()
+                    description: input.nextElementSibling ? input.nextElementSibling.value.trim() : ''
                 })).filter(w => w.url)
             },
-            city: document.getElementById('serviceCity').value,
-            address: document.getElementById('serviceAddress').value,
+            city: getFieldValue('serviceCity'),
+            address: getFieldValue('serviceAddress'),
             metadata: {
                 updated: new Date().toISOString()
             }
         };
+
+        console.log('Saving service data:', serviceData);
 
         const selectedInterestAreas = Array.from(document.getElementById('serviceInterestAreas').selectedOptions).map(option => option.value);
 

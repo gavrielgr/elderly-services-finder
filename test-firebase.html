@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Initialization Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .log-container {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Initialization Test</h1>
+    <p>This page tests Firebase initialization and basic Firestore operations.</p>
+    
+    <button id="test-init">Test Initialize Firebase</button>
+    <button id="test-query">Test Query Firestore</button>
+    <button id="clear-logs">Clear Logs</button>
+    
+    <div class="log-container" id="log"></div>
+    
+    <script type="module">
+        import { initializeFirebase } from './js/config/firebase.js';
+        import { collection, getDocs, query, limit } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+        
+        const logElement = document.getElementById('log');
+        let db = null;
+        
+        function log(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = type;
+            
+            if (typeof message === 'object') {
+                logItem.innerHTML = `<pre>${JSON.stringify(message, null, 2)}</pre>`;
+            } else {
+                logItem.textContent = message;
+            }
+            
+            logElement.appendChild(logItem);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        async function testInitFirebase() {
+            log('Testing Firebase initialization...', 'info');
+            
+            try {
+                const startTime = performance.now();
+                const { app, db: firestore, auth } = await initializeFirebase();
+                const endTime = performance.now();
+                
+                db = firestore;
+                
+                if (!app || !db) {
+                    throw new Error('Firebase initialization failed');
+                }
+                
+                log(`Firebase initialized in ${Math.round(endTime - startTime)}ms`, 'success');
+                log('Firebase app initialized: ' + !!app, 'success');
+                log('Firestore db initialized: ' + !!db, 'success');
+                log('Auth initialized: ' + !!auth, 'success');
+                
+                return true;
+            } catch (error) {
+                log('Firebase initialization failed: ' + error.message, 'error');
+                log(error.stack, 'error');
+                return false;
+            }
+        }
+        
+        async function testQueryFirestore() {
+            if (!db) {
+                const initialized = await testInitFirebase();
+                if (!initialized) {
+                    log('Cannot test queries without Firebase initialization', 'error');
+                    return;
+                }
+            }
+            
+            log('Testing Firestore query...', 'info');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Test query on categories collection
+                const categoriesQuery = query(collection(db, 'categories'), limit(5));
+                const querySnapshot = await getDocs(categoriesQuery);
+                
+                const endTime = performance.now();
+                
+                log(`Query executed in ${Math.round(endTime - startTime)}ms`, 'success');
+                log(`Retrieved ${querySnapshot.size} documents`, 'success');
+                
+                // Log first document data
+                if (querySnapshot.size > 0) {
+                    const firstDoc = querySnapshot.docs[0];
+                    log('Sample document:', 'info');
+                    log({
+                        id: firstDoc.id,
+                        ...firstDoc.data()
+                    });
+                }
+                
+                return true;
+            } catch (error) {
+                log('Firestore query failed: ' + error.message, 'error');
+                log(error.stack, 'error');
+                return false;
+            }
+        }
+        
+        // Set up button event listeners
+        document.getElementById('test-init').addEventListener('click', testInitFirebase);
+        document.getElementById('test-query').addEventListener('click', testQueryFirestore);
+        document.getElementById('clear-logs').addEventListener('click', () => {
+            logElement.innerHTML = '';
+        });
+        
+        // Initial log
+        log('Firebase test page loaded. Click the buttons to run tests.');
+    </script>
+</body>
+</html> 

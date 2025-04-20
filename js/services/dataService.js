@@ -23,14 +23,18 @@ export class DataService {
     // Helper method to initialize Firebase
     async initializeFirebaseDb() {
         try {
-            // Only initialize if not already initialized
-            if (!db) {
-                console.log('Initializing Firebase in DataService');
-                const { db: firestore } = await initializeFirebase();
-                db = firestore;
+            console.log('Initializing Firebase in DataService');
+            const { db: firestore } = await initializeFirebase();
+            if (firestore) {
+                console.log('Firebase DB initialized successfully in DataService');
+                return firestore;
+            } else {
+                console.error('Firebase DB returned null from initializeFirebase');
+                return null;
             }
         } catch (error) {
             console.error('Failed to initialize Firebase in DataService:', error);
+            return null;
         }
     }
 
@@ -82,6 +86,14 @@ export class DataService {
                 }
             }
 
+            // Make sure Firebase is initialized before proceeding
+            try {
+                await initializeFirebase();
+            } catch (error) {
+                console.error('Failed to initialize Firebase before API fetch:', error);
+                // Continue anyway, the API will try to initialize Firebase again
+            }
+
             // אם יש חיבור אינטרנט ואין מידע במטמון או שביקשנו רענון, נטען מהשרת
             if (navigator.onLine) {
                 console.log('Fetching data from server...');
@@ -92,9 +104,20 @@ export class DataService {
                 const endTime = performance.now();
                 console.log(`API fetch completed in ${Math.round(endTime - startTime)}ms`);
                 
-                if (response && response.data) {
-                    this.allServicesData = response.data;
-                    this.lastUpdated = response.data.lastUpdated;
+                // Handle different possible response structures
+                let data = null;
+                if (response && response.services) {
+                    // If response directly contains the data structure
+                    data = response;
+                } else if (response && response.data && response.data.services) {
+                    // If response is wrapped in a data property
+                    data = response.data;
+                }
+                
+                if (data && data.services) {
+                    console.log(`Received data with ${data.services.length} services, ${data.categories?.length || 0} categories`);
+                    this.allServicesData = data;
+                    this.lastUpdated = data.lastUpdated;
                     
                     // פירסום אירוע עדכון נתונים
                     this._dispatchDataUpdatedEvent(this.lastUpdated);
@@ -103,6 +126,8 @@ export class DataService {
                     this.lastUpdateCheck = Date.now();
                     
                     return true;
+                } else {
+                    console.error('Invalid data format received from API:', response);
                 }
             }
 
@@ -226,16 +251,22 @@ export class DataService {
             return null;
         }
 
-        // Ensure Firebase is initialized
-        if (!db) {
+        // Get a fresh Firebase db instance directly
+        let db = null;
+        if (forceRefresh) {
             try {
-                await this.initializeFirebaseDb();
+                console.log(`Initializing Firebase for getServiceById(${serviceId})`);
+                const { db: freshDb } = await initializeFirebase();
+                db = freshDb;
+                
                 if (!db) {
-                    console.warn("Firebase db still not available after initialization attempt");
+                    console.warn("Firebase db not available after initialization");
                     forceRefresh = false; // Fallback to cache
+                } else {
+                    console.log(`Firebase db initialized successfully for getServiceById(${serviceId})`);
                 }
             } catch (error) {
-                console.error("Failed to initialize Firebase in getServiceById:", error);
+                console.error(`Failed to initialize Firebase in getServiceById(${serviceId}):`, error);
                 // Fallback to cache if DB init fails
                 forceRefresh = false;
             }

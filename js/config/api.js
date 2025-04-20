@@ -76,10 +76,14 @@ async function fetchFromServer() {
         console.log('Fetching data from Firebase with pagination...');
         
         // Make sure Firebase is initialized first
-        const { db } = await initializeFirebase();
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
         if (!db) {
             throw new Error('Firestore not initialized');
         }
+        
+        console.log('Using Firebase db instance:', !!db);
 
         // 1. Get categories (small collection, fetch all at once)
         console.log('Fetching categories...');
@@ -285,6 +289,14 @@ export const API_URL = 'https://script.googleusercontent.com/macros/echo?user_co
  */
 export async function addServiceAPI(serviceData) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         // הוספת חותמת זמן
         serviceData.createdAt = serverTimestamp();
         
@@ -327,6 +339,14 @@ export async function addServiceAPI(serviceData) {
  */
 export async function updateServiceAPI(serviceId, serviceData) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         // עדכון חותמת זמן העדכון
         serviceData.updatedAt = serverTimestamp();
         
@@ -383,6 +403,14 @@ export async function updateServiceAPI(serviceId, serviceData) {
  */
 export async function deleteServiceAPI(serviceId) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         // מחיקת השירות עצמו
         await deleteDoc(doc(db, 'services', serviceId));
         
@@ -419,6 +447,14 @@ export async function deleteServiceAPI(serviceId) {
  */
 export async function addCategoryAPI(categoryData) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         categoryData.createdAt = serverTimestamp();
         const docRef = await addDoc(collection(db, 'categories'), categoryData);
         
@@ -440,6 +476,14 @@ export async function addCategoryAPI(categoryData) {
  */
 export async function updateCategoryAPI(categoryId, categoryData) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         categoryData.updatedAt = serverTimestamp();
         await updateDoc(doc(db, 'categories', categoryId), categoryData);
         
@@ -460,6 +504,14 @@ export async function updateCategoryAPI(categoryId, categoryData) {
  */
 export async function deleteCategoryAPI(categoryId) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         await deleteDoc(doc(db, 'categories', categoryId));
         
         // מחיקת מטמון לאחר שינוי נתונים
@@ -479,6 +531,14 @@ export async function deleteCategoryAPI(categoryId) {
  */
 export async function addInterestAreaAPI(interestAreaData) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         interestAreaData.createdAt = serverTimestamp();
         const docRef = await addDoc(collection(db, 'interest-areas'), interestAreaData);
         
@@ -500,6 +560,14 @@ export async function addInterestAreaAPI(interestAreaData) {
  */
 export async function updateInterestAreaAPI(interestAreaId, interestAreaData) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         interestAreaData.updatedAt = serverTimestamp();
         await updateDoc(doc(db, 'interest-areas', interestAreaId), interestAreaData);
         
@@ -520,6 +588,14 @@ export async function updateInterestAreaAPI(interestAreaId, interestAreaData) {
  */
 export async function deleteInterestAreaAPI(interestAreaId) {
     try {
+        // Initialize Firebase and get db instance
+        const firebaseInstance = await initializeFirebase();
+        const db = firebaseInstance.db;
+        
+        if (!db) {
+            throw new Error('Firestore not initialized');
+        }
+        
         await deleteDoc(doc(db, 'interest-areas', interestAreaId));
         
         // מחיקת כל המיפויים המקושרים לתחום העניין
