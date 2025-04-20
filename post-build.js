@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,7 +13,9 @@ function createDirectories() {
         join(__dirname, 'dist', 'js', 'config'),
         join(__dirname, 'dist', 'js', 'services'),
         join(__dirname, 'dist', 'js', 'admin'),
-        join(__dirname, 'dist', 'css')
+        join(__dirname, 'dist', 'css'),
+        join(__dirname, 'dist', 'styles'),
+        join(__dirname, 'dist', 'styles', 'components')
     ];
     
     for (const dir of dirs) {
@@ -42,6 +44,29 @@ function extractScriptPathsFromHTML(htmlFilePath) {
         return paths;
     } catch (error) {
         console.error(`Error extracting scripts from ${htmlFilePath}:`, error);
+        return [];
+    }
+}
+
+// Extract CSS paths from HTML files
+function extractCSSPathsFromHTML(htmlFilePath) {
+    try {
+        const content = readFileSync(htmlFilePath, 'utf8');
+        const cssRegex = /<link[^>]*rel="stylesheet"[^>]*href="([^"?]+)(\?[^"]*)?"/g;
+        const paths = [];
+        let match;
+        
+        while ((match = cssRegex.exec(content)) !== null) {
+            const path = match[1];
+            if (path.startsWith('/styles/') || path.startsWith('/css/')) {
+                // Convert from absolute path to relative path without leading slash
+                paths.push(path.substring(1));
+            }
+        }
+        
+        return paths;
+    } catch (error) {
+        console.error(`Error extracting CSS from ${htmlFilePath}:`, error);
         return [];
     }
 }
@@ -96,6 +121,60 @@ function copyFiles() {
             }
         }
         
+        // Get all CSS paths from HTML files
+        const cssPathsFromLogin = extractCSSPathsFromHTML(loginFile);
+        const cssPathsFromAdmin = extractCSSPathsFromHTML(adminFile);
+        
+        // Combine and deduplicate CSS paths
+        const allCSSPaths = [...new Set([...cssPathsFromLogin, ...cssPathsFromAdmin])];
+        
+        console.log('Found these CSS files in HTML:', allCSSPaths);
+        
+        // Copy each CSS file
+        for (const path of allCSSPaths) {
+            const sourcePath = join(__dirname, path);
+            const targetPath = join(__dirname, 'dist', path);
+            const targetDir = dirname(targetPath);
+            
+            // Ensure directory exists
+            if (!existsSync(targetDir)) {
+                mkdirSync(targetDir, { recursive: true });
+            }
+            
+            // Copy file if it exists
+            if (existsSync(sourcePath)) {
+                copyFileSync(sourcePath, targetPath);
+                console.log(`Copied ${path} to dist`);
+            } else {
+                console.warn(`Warning: Source file ${sourcePath} not found`);
+            }
+        }
+        
+        // Copy all CSS files from styles directory
+        function copyDirectoryRecursive(source, target) {
+            if (existsSync(source)) {
+                if (!existsSync(target)) {
+                    mkdirSync(target, { recursive: true });
+                }
+                
+                const files = readdirSync(source, { withFileTypes: true });
+                
+                for (const file of files) {
+                    const sourcePath = join(source, file.name);
+                    const targetPath = join(target, file.name);
+                    
+                    if (file.isDirectory()) {
+                        copyDirectoryRecursive(sourcePath, targetPath);
+                    } else if (file.name.endsWith('.css')) {
+                        copyFileSync(sourcePath, targetPath);
+                        console.log(`Copied CSS file ${sourcePath} to ${targetPath}`);
+                    }
+                }
+            }
+        }
+        
+        copyDirectoryRecursive(join(__dirname, 'styles'), join(__dirname, 'dist', 'styles'));
+        
         // Also copy our critical files explicitly to be sure
         const criticalFiles = [
             ['js/config/app-config.js', 'dist/js/config/app-config.js'],
@@ -116,7 +195,7 @@ function copyFiles() {
             }
         }
         
-        console.log('Successfully copied HTML and JS files to dist');
+        console.log('Successfully copied HTML, JS and CSS files to dist');
     } catch (error) {
         console.error('Error copying files:', error);
         process.exit(1);

@@ -36,6 +36,20 @@
   for = "/styles/**/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+    Content-Type = "text/css"
+
+# Make sure CSS and other assets are served correctly
+[[redirects]]
+  from = "*.css"
+  to = ":splat.css"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/styles/components/auth.css"
+  to = "/styles/components/auth.css"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/api/auth/init"
