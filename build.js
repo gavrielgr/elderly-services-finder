@@ -16,49 +16,19 @@ const packageJson = JSON.parse(readFileSync(PACKAGE_PATH, 'utf8'));
 const APP_VERSION = packageJson.version;
 const BUILD_TIMESTAMP = new Date().toISOString();
 
-// If this is a version bump command
-if (process.argv.includes('--bump')) {
-    const newVersion = bumpVersion(APP_VERSION);
-    packageJson.version = newVersion;
-    writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
-    console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
-    
-    // Update HTML files with new version
-    updateHtmlVersions(newVersion);
-    
-    process.exit(0);
-}
-
 // Update all version/timestamp references
 function updateFile(path, replacements) {
-    const content = readFileSync(path, 'utf8');
-    const newContent = replacements.reduce((acc, [search, replace]) => 
-        acc.replace(search, replace), content);
-    writeFileSync(path, newContent);
+    try {
+        const content = readFileSync(path, 'utf8');
+        const newContent = replacements.reduce((acc, [search, replace]) => 
+            acc.replace(search, replace), content);
+        writeFileSync(path, newContent);
+        return true;
+    } catch (error) {
+        console.error(`Error updating file ${path}:`, error.message);
+        return false;
+    }
 }
-
-// Create dist directory if it doesn't exist
-const distDir = join(__dirname, 'dist');
-if (!existsSync(distDir)) {
-    mkdirSync(distDir, { recursive: true });
-}
-
-// Update service worker version
-updateFile(
-    join(__dirname, 'sw.js'),
-    [
-        [/const CACHE_VERSION = .*?;/, `const CACHE_VERSION = '${APP_VERSION}';`]
-    ]
-);
-
-// Update constants.js with more specific replacements
-updateFile(
-    join(__dirname, 'js', 'config', 'constants.js'),
-    [
-        [/export const BUILD_TIMESTAMP = .*?;/, `export const BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`],
-        [/export const APP_VERSION = .*?;/, `export const APP_VERSION = '${APP_VERSION}';`]
-    ]
-);
 
 // Function to update version in HTML files
 function updateHtmlVersions(version) {
@@ -80,7 +50,57 @@ function updateHtmlVersions(version) {
     });
 }
 
-// Update HTML files with current version
+// Function to update version in constants.js
+function updateConstantsVersion(version) {
+    const constantsPath = join(__dirname, 'js', 'config', 'constants.js');
+    if (existsSync(constantsPath)) {
+        updateFile(
+            constantsPath,
+            [
+                [/export const BUILD_TIMESTAMP = .*?;/, `export const BUILD_TIMESTAMP = '${BUILD_TIMESTAMP}';`],
+                [/export const APP_VERSION = .*?;/, `export const APP_VERSION = '${version}';`]
+            ]
+        );
+        console.log(`Updated constants.js version to ${version}`);
+    } else {
+        console.warn(`constants.js file not found at ${constantsPath}`);
+    }
+}
+
+// If this is a version bump command
+if (process.argv.includes('--bump')) {
+    const newVersion = bumpVersion(APP_VERSION);
+    packageJson.version = newVersion;
+    writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
+    console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
+    
+    // Update HTML files with new version
+    updateHtmlVersions(newVersion);
+    
+    // Also update constants.js with the new version
+    updateConstantsVersion(newVersion);
+    
+    process.exit(0);
+}
+
+// Create dist directory if it doesn't exist
+const distDir = join(__dirname, 'dist');
+if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true });
+}
+
+// Update service worker version
+updateFile(
+    join(__dirname, 'sw.js'),
+    [
+        [/const CACHE_VERSION = .*?;/, `const CACHE_VERSION = '${APP_VERSION}';`]
+    ]
+);
+
+// Update constants.js during normal build with current version
+updateConstantsVersion(APP_VERSION);
+
+// Update HTML files with current version during normal build
 updateHtmlVersions(APP_VERSION);
 
 console.log(`Updated builds with version ${APP_VERSION} and timestamp ${BUILD_TIMESTAMP}`);
