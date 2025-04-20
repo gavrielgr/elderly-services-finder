@@ -19,4 +19,7 @@ export const getApiBaseUrl = () => {
   
   // For production, use relative URLs
   return '';
-}; 
+};
+
+// Application Version (from package.json) - MOVED TO constants.js
+// export const APP_VERSION = '1.99.96'; 

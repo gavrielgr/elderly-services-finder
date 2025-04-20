@@ -12,45 +12,8 @@ import { DataService } from './services/dataService.js';
 // יצירת מופע של שירות הנתונים לשימוש גלובלי
 export const dataService = new DataService();
 
-// Register Service Worker
-if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registered with scope:', registration.scope);
-            })
-            .catch(error => {
-                console.error('ServiceWorker registration failed:', error);
-            });
-    });
-}
+// Service Worker registration moved to app.js
+// if ('serviceWorker' in navigator && location.hostname !== 'localhost') { ... }
 
-// אתחול האפליקציה בטעינת העמוד
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        console.log('Initializing application...');
-        
-        // טעינת נתונים ראשונית
-        await dataService.refreshData();
-        
-        // יצירת מופע UI Manager עם הנתונים שנטענו
-        const uiManager = new UIManager();
-        await uiManager.initialize();
-        
-        // שמירת המופע בחלון לגישה מקומפוננטים אחרים
-        window.uiManager = uiManager;
-        
-        // פרסום אירוע מוכנות UI Manager
-        window.dispatchEvent(new Event('uiManagerReady'));
-        
-        console.log('Application initialized successfully');
-    } catch (error) {
-        console.error('Error initializing application:', error);
-        document.body.innerHTML = `
-            <div class="error-message">
-                <h1>שגיאה בטעינת האפליקציה</h1>
-                <p>אנא נסה לרענן את הדף</p>
-            </div>
-        `;
-    }
-});
+// Initialization logic moved to app.js
+// document.addEventListener('DOMContentLoaded', async () => { ... });

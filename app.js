@@ -1,5 +1,5 @@
 import { CACHE_VERSION, APP_VERSION } from './js/config/constants.js';
-import { dataService } from './js/services/dataService.js';
+import { dataService } from './js/main.js';
 import { UIManager } from './js/ui/uiManager.js';
 import { installManager } from './js/services/installManager.js';
 
@@ -20,24 +20,37 @@ async function initApp() {
     const appVersionElement = document.getElementById('app-version');
     if (appVersionElement) {
         appVersionElement.textContent = `גרסה: ${APP_VERSION}`;
+        console.log('Set app version in footer:', appVersionElement.textContent);
+    } else {
+        console.error('#app-version element not found in initApp');
     }
     
     uiManager.updateConnectionStatus(isOnline);
     
     try {
-        await dataService.refreshData(false);
-        uiManager.renderInitialUI();
+        // Initialize the UIManager - this will load data and render the UI
+        await uiManager.initialize(); 
         
-        // Check if app is installable
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            const installButton = document.getElementById('install-button');
-            if (installButton) {
-                installButton.style.display = 'block';
-            }
-        }
+        // Check if app is installable - This seems PWA related, might belong elsewhere or be removed if installManager handles it
+        // if ('serviceWorker' in navigator && 'PushManager' in window) {
+        //     const installButton = document.getElementById('install-button');
+        //     if (installButton) {
+        //         installButton.style.display = 'block';
+        //     }
+        // }
     } catch (error) {
         console.error('Error initializing app:', error);
-        uiManager.showStatusMessage('שגיאה בטעינת המידע. נסה שוב מאוחר יותר.', 'error');
+        // Display error via UIManager if it initialized enough, otherwise fallback
+        if (uiManager && typeof uiManager.showStatusMessage === 'function') {
+            uiManager.showStatusMessage('שגיאה בטעינת המידע. נסה שוב מאוחר יותר.', 'error');
+        } else {
+            document.body.innerHTML = `
+                <div class="error-message">
+                    <h1>שגיאה בטעינת האפליקציה</h1>
+                    <p>אנא נסה לרענן את הדף</p>
+                </div>
+            `;
+        }
     }
 }
 
@@ -78,6 +91,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// Initialize install manager
-installManager.init();
+// Install manager initialization happens automatically on import now
+// export const installManager = new InstallManager(); 
 
