@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Firebase Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            margin-top: 20px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .code-block {
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 10px 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .warning {
+            color: orange;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .info {
+            color: blue;
+        }
+        #log-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+        .test-group {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        #network-requests {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .tab {
+            overflow: hidden;
+            border: 1px solid #ccc;
+            background-color: #f1f1f1;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            color: black;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+        }
+        .tab button.active {
+            background-color: #ccc;
+        }
+        .tabcontent {
+            display: none;
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-top: none;
+        }
+        #results-summary {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Comprehensive Diagnostic Tool</h1>
+    <p>This tool performs detailed testing of your Firebase configuration, initialization, and operations.</p>
+    
+    <div class="tab">
+        <button class="tablinks active" onclick="openTab(event, 'test-tab')">Tests</button>
+        <button class="tablinks" onclick="openTab(event, 'logs-tab')">Logs</button>
+        <button class="tablinks" onclick="openTab(event, 'config-tab')">Config</button>
+        <button class="tablinks" onclick="openTab(event, 'network-tab')">Network</button>
+        <button class="tablinks" onclick="openTab(event, 'debug-tab')">Debug Info</button>
+    </div>
+    
+    <!-- Tests Tab -->
+    <div id="test-tab" class="tabcontent" style="display: block;">
+        <h2>Firebase Tests</h2>
+        
+        <div class="test-group">
+            <h3>1. Environment & Prerequisites</h3>
+            <button id="test-env" onclick="testEnvironment()">Test Environment</button>
+            <button id="test-prerequisites" onclick="testPrerequisites()">Test Prerequisites</button>
+        </div>
+        
+        <div class="test-group">
+            <h3>2. Configuration</h3>
+            <button id="test-config-endpoint" onclick="testConfigEndpoint()">Test Config Endpoint</button>
+            <button id="test-config-structure" onclick="testConfigStructure()">Test Config Structure</button>
+        </div>
+        
+        <div class="test-group">
+            <h3>3. Firebase Initialization</h3>
+            <button id="test-firebase-import" onclick="testFirebaseImport()">Test Imports</button>
+            <button id="test-firebase-init" onclick="testFirebaseInit()">Initialize Firebase</button>
+            <button id="test-firebase-reinit" onclick="testFirebaseReinit()">Test Re-initialization</button>
+        </div>
+        
+        <div class="test-group">
+            <h3>4. Firestore Operations</h3>
+            <button id="test-firestore-collection" onclick="testFirestoreCollection()" disabled>Test Collection</button>
+            <button id="test-firestore-query" onclick="testFirestoreQuery()" disabled>Test Query</button>
+            <button id="test-firestore-doc" onclick="testFirestoreDoc()" disabled>Test Get Document</button>
+        </div>
+        
+        <div class="test-group">
+            <h3>5. Full Integration Tests</h3>
+            <button id="test-api-fetch" onclick="testApiFetch()" disabled>Test API Fetch</button>
+            <button id="run-all-tests" onclick="runAllTests()">Run All Tests</button>
+            <button id="clear-results" onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div id="results-summary">
+            <h3>Test Results Summary</h3>
+            <p>Run tests to see results</p>
+        </div>
+    </div>
+    
+    <!-- Logs Tab -->
+    <div id="logs-tab" class="tabcontent">
+        <h2>Detailed Logs</h2>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <div id="log-container"></div>
+    </div>
+    
+    <!-- Config Tab -->
+    <div id="config-tab" class="tabcontent">
+        <h2>Configuration Details</h2>
+        <p>This shows the configuration information after testing (sensitive data is redacted)</p>
+        <div id="config-display">Run config tests to see details</div>
+    </div>
+    
+    <!-- Network Tab -->
+    <div id="network-tab" class="tabcontent">
+        <h2>Network Requests</h2>
+        <div id="network-requests">Run tests to see network activity</div>
+    </div>
+    
+    <!-- Debug Tab -->
+    <div id="debug-tab" class="tabcontent">
+        <h2>Debug Information</h2>
+        <h3>Browser Information</h3>
+        <pre id="browser-info"></pre>
+        
+        <h3>Firebase Version Check</h3>
+        <pre id="firebase-version"></pre>
+        
+        <h3>Global Variables</h3>
+        <pre id="global-vars"></pre>
+    </div>
+    
+    <!-- Script Testing Imports -->
+    <script type="module">
+        // Import the required modules
+        import { initializeFirebase, isFirebaseInitialized, getFirebaseDb } from './js/config/firebase.js';
+        import { collection, getDocs, query, limit, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+        import { getApiBaseUrl } from './js/config/app-config.js';
+        
+        // Make functions available globally
+        window.firebaseModules = {
+            initializeFirebase,
+            isFirebaseInitialized,
+            getFirebaseDb,
+            collection,
+            getDocs,
+            query,
+            limit,
+            doc, 
+            getDoc,
+            getApiBaseUrl
+        };
+        
+        // Set browser info
+        document.getElementById('browser-info').textContent = `
+User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+Cookies Enabled: ${navigator.cookieEnabled}
+Online: ${navigator.onLine}
+        `;
+        
+        // Log firebase version info
+        try {
+            document.getElementById('firebase-version').textContent = `
+Firebase Imports Available: ${typeof collection === 'function' ? 'Yes' : 'No'}
+Collection function: ${typeof collection}
+GetDocs function: ${typeof getDocs}
+Query function: ${typeof query}
+        `;
+        } catch (e) {
+            document.getElementById('firebase-version').textContent = `Error checking Firebase: ${e.message}`;
+        }
+        
+        // Initialize test environment
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Diagnostic tool loaded', 'info');
+            log('Ready to run tests', 'info');
+        });
+    </script>
+    
+    <!-- Main Script -->
+    <script>
+        // Global state
+        const state = {
+            testsRun: 0,
+            testsPassed: 0,
+            testsFailed: 0,
+            testsWarning: 0,
+            config: null,
+            firebaseInitialized: false,
+            networkRequests: []
+        };
+        
+        // Tab switching
+        function openTab(evt, tabName) {
+            const tabcontent = document.getElementsByClassName("tabcontent");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            
+            const tablinks = document.getElementsByClassName("tablinks");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        
+        // Logging
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const logItem = document.createElement('div');
+            logItem.className = type;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            
+            if (typeof message === 'object') {
+                logItem.innerHTML = `<strong>[${timestamp}]</strong> <pre>${JSON.stringify(message, (key, value) => {
+                    // Redact sensitive fields
+                    if (key === 'apiKey' || key === 'appId' || key === 'messagingSenderId') {
+                        return '[REDACTED]';
+                    }
+                    return value;
+                }, 2)}</pre>`;
+            } else {
+                logItem.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            }
+            
+            logContainer.appendChild(logItem);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[${type}] ${message}`);
+        }
+        
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '';
+            log('Logs cleared', 'info');
+        }
+        
+        function clearResults() {
+            state.testsRun = 0;
+            state.testsPassed = 0;
+            state.testsFailed = 0;
+            state.testsWarning = 0;
+            updateResultsSummary();
+            document.getElementById('network-requests').innerHTML = '';
+            state.networkRequests = [];
+            log('Results cleared', 'info');
+        }
+        
+        function updateResultsSummary() {
+            const resultsEl = document.getElementById('results-summary');
+            
+            if (state.testsRun === 0) {
+                resultsEl.innerHTML = '<h3>Test Results Summary</h3><p>Run tests to see results</p>';
+                resultsEl.style.backgroundColor = '#f9f9f9';
+                return;
+            }
+            
+            const allPassed = state.testsFailed === 0 && state.testsWarning === 0;
+            const hasFailed = state.testsFailed > 0;
+            
+            resultsEl.style.backgroundColor = allPassed ? '#e6ffe6' : (hasFailed ? '#ffe6e6' : '#fff9e6');
+            
+            resultsEl.innerHTML = `
+                <h3>Test Results Summary</h3>
+                <p>Tests Run: ${state.testsRun}</p>
+                <p class="success">Tests Passed: ${state.testsPassed}</p>
+                <p class="warning">Tests with Warnings: ${state.testsWarning}</p>
+                <p class="error">Tests Failed: ${state.testsFailed}</p>
+                <p><strong>Status: ${allPassed ? 'All tests passed!' : (hasFailed ? 'Some tests failed' : 'Completed with warnings')}</strong></p>
+            `;
+        }
+        
+        function trackNetworkRequest(url, status, details) {
+            const timestamp = new Date().toLocaleTimeString();
+            state.networkRequests.push({ timestamp, url, status, details });
+            
+            const networkEl = document.getElementById('network-requests');
+            networkEl.innerHTML = state.networkRequests.map(req => 
+                `<div class="${req.status === 'success' ? 'success' : 'error'}">
+                    <strong>[${req.timestamp}]</strong> ${req.url} - ${req.status}<br>
+                    <small>${req.details}</small>
+                </div>`
+            ).join('<hr>');
+        }
+        
+        // Testing Functions
+        async function testEnvironment() {
+            log('Testing environment...', 'info');
+            state.testsRun++;
+            
+            try {
+                // Check if we're in a browser
+                if (typeof window === 'undefined') {
+                    throw new Error('Not running in a browser environment');
+                }
+                
+                // Check if fetch is available
+                if (typeof fetch !== 'function') {
+                    throw new Error('Fetch API not available');
+                }
+                
+                // Check if we're online
+                if (!navigator.onLine) {
+                    log('Warning: Browser is offline', 'warning');
+                    state.testsWarning++;
+                }
+                
+                // Check local storage
+                try {
+                    localStorage.setItem('firebase_test', 'test');
+                    localStorage.removeItem('firebase_test');
+                } catch (e) {
+                    log('Warning: LocalStorage not available: ' + e.message, 'warning');
+                    state.testsWarning++;
+                }
+                
+                // Check indexedDB
+                if (!window.indexedDB) {
+                    log('Warning: IndexedDB not available', 'warning');
+                    state.testsWarning++;
+                }
+                
+                log('Environment check passed', 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Environment check failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testPrerequisites() {
+            log('Testing prerequisites...', 'info');
+            state.testsRun++;
+            
+            try {
+                // Check if module imports are available
+                if (!window.firebaseModules) {
+                    throw new Error('Firebase modules not imported correctly');
+                }
+                
+                const { 
+                    initializeFirebase, collection, getDocs, 
+                    query, limit, getApiBaseUrl 
+                } = window.firebaseModules;
+                
+                // Check that all required functions are available
+                if (typeof initializeFirebase !== 'function') {
+                    throw new Error('initializeFirebase function not available');
+                }
+                
+                if (typeof getApiBaseUrl !== 'function') {
+                    throw new Error('getApiBaseUrl function not available');
+                }
+                
+                // Check Firestore functions
+                if (typeof collection !== 'function') {
+                    throw new Error('collection function not available');
+                }
+                
+                if (typeof getDocs !== 'function') {
+                    throw new Error('getDocs function not available');
+                }
+                
+                if (typeof query !== 'function') {
+                    throw new Error('query function not available');
+                }
+                
+                if (typeof limit !== 'function') {
+                    throw new Error('limit function not available');
+                }
+                
+                // Update global debug info
+                const globalVarsEl = document.getElementById('global-vars');
+                globalVarsEl.textContent = `
+Firebase initialized: ${window.firebaseModules.isFirebaseInitialized ? 'Yes' : 'No'}
+initializeFirebase available: ${typeof initializeFirebase === 'function' ? 'Yes' : 'No'}
+collection available: ${typeof collection === 'function' ? 'Yes' : 'No'}
+getDocs available: ${typeof getDocs === 'function' ? 'Yes' : 'No'}
+query available: ${typeof query === 'function' ? 'Yes' : 'No'}
+                `;
+                
+                log('Prerequisites check passed', 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Prerequisites check failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testConfigEndpoint() {
+            log('Testing config endpoint...', 'info');
+            state.testsRun++;
+            
+            try {
+                const { getApiBaseUrl } = window.firebaseModules;
+                const apiUrl = `${getApiBaseUrl()}/api/config`;
+                
+                log(`Fetching config from: ${apiUrl}`, 'info');
+                
+                const startTime = performance.now();
+                const response = await fetch(apiUrl);
+                const endTime = performance.now();
+                
+                if (!response.ok) {
+                    trackNetworkRequest(apiUrl, 'error', `HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`Config endpoint returned ${response.status}: ${response.statusText}`);
+                }
+                
+                const config = await response.json();
+                trackNetworkRequest(apiUrl, 'success', `Received in ${Math.round(endTime - startTime)}ms`);
+                
+                // Store the config for later tests
+                state.config = config;
+                
+                // Display the config with sensitive parts redacted
+                const redactedConfig = JSON.parse(JSON.stringify(config));
+                if (redactedConfig.apiKey) redactedConfig.apiKey = '[REDACTED]';
+                if (redactedConfig.authDomain) redactedConfig.authDomain = '[REDACTED]';
+                if (redactedConfig.messagingSenderId) redactedConfig.messagingSenderId = '[REDACTED]';
+                if (redactedConfig.appId) redactedConfig.appId = '[REDACTED]';
+                
+                document.getElementById('config-display').innerHTML = `
+                    <h3>Firebase Configuration</h3>
+                    <pre>${JSON.stringify(redactedConfig, null, 2)}</pre>
+                    <p>Response time: ${Math.round(endTime - startTime)}ms</p>
+                `;
+                
+                log(`Config endpoint responded in ${Math.round(endTime - startTime)}ms`, 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Config endpoint test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testConfigStructure() {
+            log('Testing config structure...', 'info');
+            state.testsRun++;
+            
+            try {
+                if (!state.config) {
+                    log('No config available. Run the config endpoint test first.', 'warning');
+                    state.testsWarning++;
+                    updateResultsSummary();
+                    return;
+                }
+                
+                const requiredFields = [
+                    'apiKey', 
+                    'authDomain', 
+                    'projectId', 
+                    'storageBucket', 
+                    'messagingSenderId', 
+                    'appId'
+                ];
+                
+                const missingFields = requiredFields.filter(field => !state.config[field]);
+                
+                if (missingFields.length > 0) {
+                    throw new Error(`Missing required config fields: ${missingFields.join(', ')}`);
+                }
+                
+                log('Config structure is valid with all required fields', 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Config structure test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testFirebaseImport() {
+            log('Testing Firebase imports...', 'info');
+            state.testsRun++;
+            
+            try {
+                const { 
+                    initializeFirebase, isFirebaseInitialized,
+                    collection, getDocs, query, limit 
+                } = window.firebaseModules;
+                
+                // Check essential functions
+                const missingFunctions = [];
+                
+                if (typeof initializeFirebase !== 'function') missingFunctions.push('initializeFirebase');
+                if (typeof collection !== 'function') missingFunctions.push('collection');
+                if (typeof getDocs !== 'function') missingFunctions.push('getDocs');
+                if (typeof query !== 'function') missingFunctions.push('query');
+                if (typeof limit !== 'function') missingFunctions.push('limit');
+                
+                if (missingFunctions.length > 0) {
+                    throw new Error(`Missing Firebase functions: ${missingFunctions.join(', ')}`);
+                }
+                
+                log('Firebase imports are available', 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Firebase import test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testFirebaseInit() {
+            log('Testing Firebase initialization...', 'info');
+            state.testsRun++;
+            
+            try {
+                const { initializeFirebase } = window.firebaseModules;
+                
+                if (!initializeFirebase) {
+                    throw new Error('initializeFirebase function not available');
+                }
+                
+                const startTime = performance.now();
+                const { app, db, auth } = await initializeFirebase();
+                const endTime = performance.now();
+                
+                if (!app) {
+                    throw new Error('Firebase app not initialized');
+                }
+                
+                if (!db) {
+                    throw new Error('Firestore db not initialized');
+                }
+                
+                state.firebaseInitialized = true;
+                
+                // Enable Firestore test buttons
+                document.getElementById('test-firestore-collection').disabled = false;
+                document.getElementById('test-firestore-query').disabled = false;
+                document.getElementById('test-firestore-doc').disabled = false;
+                document.getElementById('test-api-fetch').disabled = false;
+                
+                log(`Firebase initialized in ${Math.round(endTime - startTime)}ms`, 'success');
+                log('Firebase app initialized: ' + !!app, 'success');
+                log('Firestore db initialized: ' + !!db, 'success');
+                log('Auth initialized: ' + !!auth, 'success');
+                
+                state.testsPassed++;
+            } catch (error) {
+                log('Firebase initialization failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testFirebaseReinit() {
+            log('Testing Firebase re-initialization...', 'info');
+            state.testsRun++;
+            
+            try {
+                const { initializeFirebase } = window.firebaseModules;
+                
+                if (!initializeFirebase) {
+                    throw new Error('initializeFirebase function not available');
+                }
+                
+                // First call should be immediate if already initialized
+                const startTime1 = performance.now();
+                const firstResult = await initializeFirebase();
+                const endTime1 = performance.now();
+                
+                // Second call should also be immediate
+                const startTime2 = performance.now();
+                const secondResult = await initializeFirebase();
+                const endTime2 = performance.now();
+                
+                log(`First re-init call took: ${Math.round(endTime1 - startTime1)}ms`, 'info');
+                log(`Second re-init call took: ${Math.round(endTime2 - startTime2)}ms`, 'info');
+                
+                // Check that we got the same instances back
+                const sameApp = firstResult.app === secondResult.app;
+                const sameDb = firstResult.db === secondResult.db;
+                const sameAuth = firstResult.auth === secondResult.auth;
+                
+                if (!sameApp || !sameDb || !sameAuth) {
+                    log('Warning: Re-initialization returned different instances', 'warning');
+                    state.testsWarning++;
+                } else {
+                    log('Re-initialization returns same instances as expected', 'success');
+                }
+                
+                state.testsPassed++;
+            } catch (error) {
+                log('Firebase re-initialization test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testFirestoreCollection() {
+            log('Testing Firestore collection...', 'info');
+            state.testsRun++;
+            
+            try {
+                if (!state.firebaseInitialized) {
+                    log('Firebase not initialized. Run initialization test first.', 'warning');
+                    state.testsWarning++;
+                    updateResultsSummary();
+                    return;
+                }
+                
+                const { getFirebaseDb, collection } = window.firebaseModules;
+                const db = getFirebaseDb();
+                
+                if (!db) {
+                    throw new Error('Firestore db not available');
+                }
+                
+                // Test creating a collection reference
+                const categoriesCollection = collection(db, 'categories');
+                
+                if (!categoriesCollection) {
+                    throw new Error('Failed to create collection reference');
+                }
+                
+                log('Collection reference created successfully', 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Firestore collection test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testFirestoreQuery() {
+            log('Testing Firestore query...', 'info');
+            state.testsRun++;
+            
+            try {
+                if (!state.firebaseInitialized) {
+                    log('Firebase not initialized. Run initialization test first.', 'warning');
+                    state.testsWarning++;
+                    updateResultsSummary();
+                    return;
+                }
+                
+                const { getFirebaseDb, collection, query, limit, getDocs } = window.firebaseModules;
+                const db = getFirebaseDb();
+                
+                if (!db) {
+                    throw new Error('Firestore db not available');
+                }
+                
+                // Create a collection reference
+                const categoriesCollection = collection(db, 'categories');
+                
+                // Create a query limiting to 3 documents
+                const categoriesQuery = query(categoriesCollection, limit(3));
+                
+                // Execute the query
+                const startTime = performance.now();
+                const querySnapshot = await getDocs(categoriesQuery);
+                const endTime = performance.now();
+                
+                // Log success information
+                log(`Query executed in ${Math.round(endTime - startTime)}ms`, 'success');
+                log(`Retrieved ${querySnapshot.size} documents`, 'success');
+                
+                // If documents were retrieved, show the first one
+                if (querySnapshot.size > 0) {
+                    const firstDoc = querySnapshot.docs[0];
+                    log('Sample document data:', 'info');
+                    log({
+                        id: firstDoc.id,
+                        ...firstDoc.data()
+                    });
+                } else {
+                    log('Collection appears to be empty', 'warning');
+                    state.testsWarning++;
+                }
+                
+                state.testsPassed++;
+            } catch (error) {
+                log('Firestore query test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testFirestoreDoc() {
+            log('Testing Firestore document retrieval...', 'info');
+            state.testsRun++;
+            
+            try {
+                if (!state.firebaseInitialized) {
+                    log('Firebase not initialized. Run initialization test first.', 'warning');
+                    state.testsWarning++;
+                    updateResultsSummary();
+                    return;
+                }
+                
+                const { getFirebaseDb, collection, query, limit, getDocs, doc, getDoc } = window.firebaseModules;
+                const db = getFirebaseDb();
+                
+                if (!db) {
+                    throw new Error('Firestore db not available');
+                }
+                
+                // First get a document ID by querying a collection
+                const categoriesCollection = collection(db, 'categories');
+                const categoriesQuery = query(categoriesCollection, limit(1));
+                const querySnapshot = await getDocs(categoriesQuery);
+                
+                if (querySnapshot.size === 0) {
+                    log('No documents available to test document retrieval', 'warning');
+                    state.testsWarning++;
+                    state.testsPassed++;
+                    updateResultsSummary();
+                    return;
+                }
+                
+                // Get the first document ID
+                const firstDocId = querySnapshot.docs[0].id;
+                
+                // Now test retrieving that specific document
+                const docRef = doc(db, 'categories', firstDocId);
+                const docSnap = await getDoc(docRef);
+                
+                if (!docSnap.exists()) {
+                    throw new Error(`Document with ID ${firstDocId} does not exist`);
+                }
+                
+                log(`Successfully retrieved document with ID ${firstDocId}`, 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('Firestore document test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function testApiFetch() {
+            log('Testing API fetch...', 'info');
+            state.testsRun++;
+            
+            try {
+                if (!state.firebaseInitialized) {
+                    log('Firebase not initialized. Run initialization test first.', 'warning');
+                    state.testsWarning++;
+                    updateResultsSummary();
+                    return;
+                }
+                
+                const { getFirebaseDb, collection, getDocs } = window.firebaseModules;
+                const db = getFirebaseDb();
+                
+                // Simulate the fetchFromServer function from api.js
+                log('Simulating the fetchFromServer function', 'info');
+                
+                // Test categories
+                log('Testing categories collection...', 'info');
+                const categoriesCollection = collection(db, 'categories');
+                const categoriesSnapshot = await getDocs(categoriesCollection);
+                log(`Retrieved ${categoriesSnapshot.size} categories`, 'success');
+                
+                // Test interest areas
+                log('Testing interest-areas collection...', 'info');
+                const interestAreasCollection = collection(db, 'interest-areas');
+                const interestAreasSnapshot = await getDocs(interestAreasCollection);
+                log(`Retrieved ${interestAreasSnapshot.size} interest areas`, 'success');
+                
+                // Test services collection
+                log('Testing services collection...', 'info');
+                const servicesCollection = collection(db, 'services');
+                const servicesSnapshot = await getDocs(servicesCollection);
+                log(`Retrieved ${servicesSnapshot.size} services`, 'success');
+                
+                // Test mappings
+                log('Testing service-interest-areas collection...', 'info');
+                const mappingsCollection = collection(db, 'service-interest-areas');
+                const mappingsSnapshot = await getDocs(mappingsCollection);
+                log(`Retrieved ${mappingsSnapshot.size} mappings`, 'success');
+                
+                log('API fetch simulation successful', 'success');
+                state.testsPassed++;
+            } catch (error) {
+                log('API fetch test failed: ' + error.message, 'error');
+                state.testsFailed++;
+            }
+            
+            updateResultsSummary();
+        }
+        
+        async function runAllTests() {
+            log('Running all tests sequentially...', 'info');
+            
+            await testEnvironment();
+            await testPrerequisites();
+            await testConfigEndpoint();
+            await testConfigStructure();
+            await testFirebaseImport();
+            await testFirebaseInit();
+            await testFirebaseReinit();
+            
+            if (state.firebaseInitialized) {
+                await testFirestoreCollection();
+                await testFirestoreQuery();
+                await testFirestoreDoc();
+                await testApiFetch();
+            } else {
+                log('Skipping Firestore tests because Firebase initialization failed', 'warning');
+            }
+            
+            log('All tests completed', 'info');
+        }
+        
+        // Expose functions to window for button clicks
+        window.testEnvironment = testEnvironment;
+        window.testPrerequisites = testPrerequisites;
+        window.testConfigEndpoint = testConfigEndpoint;
+        window.testConfigStructure = testConfigStructure;
+        window.testFirebaseImport = testFirebaseImport;
+        window.testFirebaseInit = testFirebaseInit;
+        window.testFirebaseReinit = testFirebaseReinit;
+        window.testFirestoreCollection = testFirestoreCollection;
+        window.testFirestoreQuery = testFirestoreQuery;
+        window.testFirestoreDoc = testFirestoreDoc;
+        window.testApiFetch = testApiFetch;
+        window.runAllTests = runAllTests;
+        window.clearResults = clearResults;
+        window.clearLogs = clearLogs;
+        window.log = log;
+    </script>
+</body>
+</html> 

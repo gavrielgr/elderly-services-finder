@@ -75,158 +75,213 @@ async function fetchFromServer() {
     try {
         console.log('Fetching data from Firebase with pagination...');
         
-        // Make sure Firebase is initialized first
+        // Make sure Firebase is fully initialized first
         const firebaseInstance = await initializeFirebase();
         const db = firebaseInstance.db;
         
         if (!db) {
-            throw new Error('Firestore not initialized');
+            throw new Error('Firestore not initialized properly. Firebase initialization may have failed.');
+        }
+        
+        // Verify collection function is available
+        if (typeof collection !== 'function') {
+            console.error('Firebase collection function not found. Verify Firebase imports are correct.');
+            throw new Error('Firebase collection function not available. Check Firebase imports.');
         }
         
         console.log('Using Firebase db instance:', !!db);
 
-        // 1. Get categories (small collection, fetch all at once)
-        console.log('Fetching categories...');
-        const categoriesSnapshot = await getDocs(collection(db, 'categories'));
-        const categories = categoriesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Retrieved ${categories.length} categories`);
-
-        // 2. Get interest areas (small collection, fetch all at once)
-        console.log('Fetching interest areas...');
-        const interestAreasSnapshot = await getDocs(collection(db, 'interest-areas'));
-        const interestAreas = interestAreasSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        console.log(`Retrieved ${interestAreas.length} interest areas`);
-
-        // 3. Get services with pagination
-        console.log('Fetching services with pagination...');
-        let services = [];
-        let lastDoc = null;
-        let hasMore = true;
-        let batchCount = 0;
-
-        while (hasMore) {
-            batchCount++;
-            let servicesQuery;
-            
-            if (lastDoc) {
-                servicesQuery = query(
-                    collection(db, 'services'),
-                    orderBy('name'),
-                    startAfter(lastDoc),
-                    limit(BATCH_SIZE)
-                );
-            } else {
-                servicesQuery = query(
-                    collection(db, 'services'),
-                    orderBy('name'),
-                    limit(BATCH_SIZE)
-                );
+        try {
+            // 1. Get categories (small collection, fetch all at once)
+            console.log('Fetching categories...');
+            const categoriesCollection = collection(db, 'categories');
+            if (!categoriesCollection) {
+                throw new Error('Failed to create categories collection reference');
             }
-
-            console.log(`Fetching services batch ${batchCount}...`);
-            const servicesSnapshot = await getDocs(servicesQuery);
             
-            const batchServices = servicesSnapshot.docs.map(doc => ({
+            const categoriesSnapshot = await getDocs(categoriesCollection);
+            const categories = categoriesSnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+            console.log(`Retrieved ${categories.length} categories`);
+
+            // 2. Get interest areas (small collection, fetch all at once)
+            console.log('Fetching interest areas...');
+            const interestAreasCollection = collection(db, 'interest-areas');
+            if (!interestAreasCollection) {
+                throw new Error('Failed to create interest-areas collection reference');
+            }
             
-            services = [...services, ...batchServices];
-            
-            // Check if we have more services to fetch
-            if (servicesSnapshot.docs.length < BATCH_SIZE) {
-                hasMore = false;
-                console.log('No more services to fetch');
-            } else {
-                // Update the last document for pagination
-                lastDoc = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
-                console.log(`Fetched ${services.length} services so far`);
+            const interestAreasSnapshot = await getDocs(interestAreasCollection);
+            const interestAreas = interestAreasSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            console.log(`Retrieved ${interestAreas.length} interest areas`);
+
+            // 3. Get services with pagination
+            console.log('Fetching services with pagination...');
+            let services = [];
+            let lastDoc = null;
+            let hasMore = true;
+            let batchCount = 0;
+
+            while (hasMore) {
+                batchCount++;
+                let servicesQuery;
                 
-                // Add delay between batches to prevent rate limiting
-                if (hasMore) {
-                    console.log(`Waiting ${QUERY_DELAY}ms before next batch...`);
-                    await delay(QUERY_DELAY);
+                // Create services collection reference
+                const servicesCollection = collection(db, 'services');
+                if (!servicesCollection) {
+                    throw new Error('Failed to create services collection reference');
+                }
+                
+                if (lastDoc) {
+                    servicesQuery = query(
+                        servicesCollection,
+                        orderBy('name'),
+                        startAfter(lastDoc),
+                        limit(BATCH_SIZE)
+                    );
+                } else {
+                    servicesQuery = query(
+                        servicesCollection,
+                        orderBy('name'),
+                        limit(BATCH_SIZE)
+                    );
+                }
+
+                console.log(`Fetching services batch ${batchCount}...`);
+                const servicesSnapshot = await getDocs(servicesQuery);
+                
+                const batchServices = servicesSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                services = [...services, ...batchServices];
+                
+                // Check if we have more services to fetch
+                if (servicesSnapshot.docs.length < BATCH_SIZE) {
+                    hasMore = false;
+                    console.log('No more services to fetch');
+                } else {
+                    // Update the last document for pagination
+                    lastDoc = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
+                    console.log(`Fetched ${services.length} services so far`);
+                    
+                    // Add delay between batches to prevent rate limiting
+                    if (hasMore) {
+                        console.log(`Waiting ${QUERY_DELAY}ms before next batch...`);
+                        await delay(QUERY_DELAY);
+                    }
                 }
             }
-        }
 
-        // 4. Get service-interest-area mappings (may be large, use pagination)
-        console.log('Fetching service-interest-area mappings...');
-        const serviceInterestAreasMap = {};
-        let lastMappingDoc = null;
-        hasMore = true;
-        batchCount = 0;
+            // 4. Get service-interest-area mappings (may be large, use pagination)
+            console.log('Fetching service-interest-area mappings...');
+            const serviceInterestAreasMap = {};
+            let lastMappingDoc = null;
+            hasMore = true;
+            batchCount = 0;
 
-        while (hasMore) {
-            batchCount++;
-            let mappingsQuery;
-            
-            if (lastMappingDoc) {
-                mappingsQuery = query(
-                    collection(db, 'service-interest-areas'),
-                    orderBy('serviceId'),
-                    startAfter(lastMappingDoc),
-                    limit(BATCH_SIZE)
-                );
-            } else {
-                mappingsQuery = query(
-                    collection(db, 'service-interest-areas'),
-                    orderBy('serviceId'),
-                    limit(BATCH_SIZE)
-                );
+            while (hasMore) {
+                batchCount++;
+                let mappingsQuery;
+                
+                // Create collection reference for mappings
+                const mappingsCollection = collection(db, 'service-interest-areas');
+                if (!mappingsCollection) {
+                    throw new Error('Failed to create service-interest-areas collection reference');
+                }
+                
+                if (lastMappingDoc) {
+                    mappingsQuery = query(
+                        mappingsCollection,
+                        orderBy('serviceId'),
+                        startAfter(lastMappingDoc),
+                        limit(BATCH_SIZE)
+                    );
+                } else {
+                    mappingsQuery = query(
+                        mappingsCollection,
+                        orderBy('serviceId'),
+                        limit(BATCH_SIZE)
+                    );
+                }
+
+                console.log(`Fetching mappings batch ${batchCount}...`);
+                const mappingsSnapshot = await getDocs(mappingsQuery);
+                
+                // Process this batch of mappings
+                mappingsSnapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (!serviceInterestAreasMap[data.serviceId]) {
+                        serviceInterestAreasMap[data.serviceId] = [];
+                    }
+                    serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
+                });
+                
+                // Check if we have more mappings to fetch
+                if (mappingsSnapshot.docs.length < BATCH_SIZE) {
+                    hasMore = false;
+                    console.log('No more mappings to fetch');
+                } else {
+                    // Update the last document for pagination
+                    lastMappingDoc = mappingsSnapshot.docs[mappingsSnapshot.docs.length - 1];
+                    console.log(`Processed ${Object.keys(serviceInterestAreasMap).length} service mappings so far`);
+                    
+                    // Add delay between batches to prevent rate limiting
+                    if (hasMore) {
+                        console.log(`Waiting ${QUERY_DELAY}ms before next batch...`);
+                        await delay(QUERY_DELAY);
+                    }
+                }
             }
 
-            console.log(`Fetching mappings batch ${batchCount}...`);
-            const mappingsSnapshot = await getDocs(mappingsQuery);
-            
-            // Process this batch of mappings
-            mappingsSnapshot.docs.forEach(doc => {
-                const data = doc.data();
-                if (!serviceInterestAreasMap[data.serviceId]) {
-                    serviceInterestAreasMap[data.serviceId] = [];
-                }
-                serviceInterestAreasMap[data.serviceId].push(data.interestAreaId);
+            // Tie interest areas to each service
+            services.forEach(service => {
+                service.interestAreas = serviceInterestAreasMap[service.id] || [];
             });
+
+            console.log(`Total data fetched: ${services.length} services, ${categories.length} categories, ${interestAreas.length} interest areas`);
             
-            // Check if we have more mappings to fetch
-            if (mappingsSnapshot.docs.length < BATCH_SIZE) {
-                hasMore = false;
-                console.log('No more mappings to fetch');
-            } else {
-                // Update the last document for pagination
-                lastMappingDoc = mappingsSnapshot.docs[mappingsSnapshot.docs.length - 1];
-                console.log(`Processed ${Object.keys(serviceInterestAreasMap).length} service mappings so far`);
-                
-                // Add delay between batches to prevent rate limiting
-                if (hasMore) {
-                    console.log(`Waiting ${QUERY_DELAY}ms before next batch...`);
-                    await delay(QUERY_DELAY);
-                }
+            // Return the complete dataset
+            return {
+                services,
+                categories,
+                interestAreas,
+                lastUpdated: new Date().toISOString()
+            };
+        } catch (error) {
+            console.error('Firebase query error:', error);
+            // Try to provide more context on collection errors
+            if (error.message.includes('collection()')) {
+                console.error('This appears to be a Firebase collection reference error. Verify that:');
+                console.error('1. Firebase was properly initialized');
+                console.error('2. The Firestore instance is valid');
+                console.error('3. Firebase imports (especially collection, query, etc.) are correct');
             }
+            throw error;
         }
-
-        // Tie interest areas to each service
-        services.forEach(service => {
-            service.interestAreas = serviceInterestAreasMap[service.id] || [];
-        });
-
-        console.log(`Total data fetched: ${services.length} services, ${categories.length} categories, ${interestAreas.length} interest areas`);
-        
-        // Return the complete dataset
-        return {
-            services,
-            categories,
-            interestAreas,
-            lastUpdated: new Date().toISOString()
-        };
     } catch (error) {
         console.error('Error in fetchFromServer:', error);
+        // Add fallback mechanism
+        console.warn('Attempting fallback data retrieval...');
+        
+        // Try a last resort, direct re-initialization  
+        try {
+            // Attempt to get cached data
+            const cachedData = await getFromCache();
+            if (cachedData) {
+                console.log('Successfully retrieved fallback data from cache');
+                return cachedData;
+            }
+        } catch (cacheError) {
+            console.error('Cache fallback also failed:', cacheError);
+        }
+        
         throw error;
     }
 }
