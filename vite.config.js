@@ -54,24 +54,21 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     
-    // Define a separate entry point for auth library
-    lib: {
-      entry: resolve(__dirname, 'js/auth-bundle.js'),
-      name: 'auth',
-      fileName: 'js/auth-bundle'
-    },
-    
     rollupOptions: {
       input: {
         main: 'index.html',
         login: 'login.html',
         admin: 'admin.html',
-        sw: 'sw.js'
+        sw: 'sw.js',
+        auth: 'js/auth-bundle.js'
       },
       output: {
         entryFileNames: (chunkInfo) => {
           if (chunkInfo.name === 'sw') {
             return 'sw.js';
+          }
+          if (chunkInfo.name === 'auth') {
+            return 'js/auth-bundle.js';
           }
           return 'assets/[name]-[hash].js';
         },
@@ -95,7 +92,9 @@ export default defineConfig({
             return 'js/[name][extname]';
           }
           return 'assets/[name]-[hash][extname]';
-        }
+        },
+        // Disable inlineDynamicImports to fix the build conflict
+        inlineDynamicImports: false
       }
     },
     // Copy files from public to dist
