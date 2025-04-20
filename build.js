@@ -70,8 +70,42 @@ function updateConstantsVersion(version) {
 // If this is a version bump command
 if (process.argv.includes('--bump')) {
     const newVersion = bumpVersion(APP_VERSION);
+    
+    // Update package.json
     packageJson.version = newVersion;
     writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
+    
+    // Update package-lock.json
+    const PACKAGE_LOCK_PATH = join(__dirname, 'package-lock.json');
+    if (existsSync(PACKAGE_LOCK_PATH)) {
+        try {
+            const packageLockJson = JSON.parse(readFileSync(PACKAGE_LOCK_PATH, 'utf8'));
+            packageLockJson.version = newVersion;
+            
+            // Also update the version in the packages section
+            if (packageLockJson.packages && packageLockJson.packages['']) {
+                packageLockJson.packages[''].version = newVersion;
+            }
+            
+            writeFileSync(PACKAGE_LOCK_PATH, JSON.stringify(packageLockJson, null, 2) + '\n');
+            console.log(`Updated package-lock.json version to ${newVersion}`);
+        } catch (error) {
+            console.error('Error updating package-lock.json:', error.message);
+        }
+    }
+    
+    // Update service worker version
+    const swPath = join(__dirname, 'sw.js');
+    if (existsSync(swPath)) {
+        updateFile(
+            swPath,
+            [
+                [/const CACHE_VERSION = ['"].*?['"];/, `const CACHE_VERSION = '${newVersion}';`]
+            ]
+        );
+        console.log(`Updated sw.js version to ${newVersion}`);
+    }
+    
     console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
     
     // Update HTML files with new version
@@ -90,12 +124,18 @@ if (!existsSync(distDir)) {
 }
 
 // Update service worker version
-updateFile(
-    join(__dirname, 'sw.js'),
-    [
-        [/const CACHE_VERSION = .*?;/, `const CACHE_VERSION = '${APP_VERSION}';`]
-    ]
-);
+const swPath = join(__dirname, 'sw.js');
+if (existsSync(swPath)) {
+    updateFile(
+        swPath,
+        [
+            [/const CACHE_VERSION = ['"].*?['"];/, `const CACHE_VERSION = '${APP_VERSION}';`]
+        ]
+    );
+    console.log(`Updated sw.js version to ${APP_VERSION}`);
+} else {
+    console.warn('Service worker file (sw.js) not found');
+}
 
 // Update constants.js during normal build with current version
 updateConstantsVersion(APP_VERSION);

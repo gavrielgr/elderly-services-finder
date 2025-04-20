@@ -7,13 +7,15 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-content {
     position: relative;
     background-color: var(--bg-primary);
     color: var(--text-color);
-    margin: 10% auto;
+    margin: 0 auto;
     width: 90%;
     max-width: 500px;
     border-radius: 12px;
@@ -159,7 +161,7 @@
 /* Responsive styles */
 @media (max-width: 480px) {
     .modal-content {
-        margin: 5% auto;
+        margin: 0 auto;
         width: 95%;
         max-height: 90vh;
     }
