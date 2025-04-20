@@ -3,6 +3,11 @@
 /api/config /.netlify/functions/config 200
 /api/data /.netlify/functions/data 200
 
+# Explicitly serve JS files without redirecting
+/js/config/app-config.js /js/config/app-config.js 200
+/js/config/firebase.js /js/config/firebase.js 200
+/js/services/authService.js /js/services/authService.js 200
+
 # Handle routes for login and admin pages
 /login /login.html 200
 /admin /admin.html 200

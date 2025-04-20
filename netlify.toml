@@ -61,6 +61,25 @@
   status = 200
   force = true
 
+# Explicitly serve JS files directly
+[[redirects]]
+  from = "/js/config/app-config.js"
+  to = "/js/config/app-config.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/js/config/firebase.js"
+  to = "/js/config/firebase.js"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/js/services/authService.js"
+  to = "/js/services/authService.js"
+  status = 200
+  force = true
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
