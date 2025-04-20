@@ -82,17 +82,9 @@ export class ModalManager {
         const categories = this.uiManager.dataService.getCategories();
         let categoryName = 'כללי';
 
-        // בדיקה עבור שדה category (מבנה ישן)
+        // בדיקה עבור שדה category (מבנה ישן) - כעת הסטנדרט
         if (service.category && categories) {
             const category = categories.find(cat => cat.id === service.category);
-            if (category) {
-                categoryName = category.name;
-            }
-        }
-
-        // בדיקה עבור שדה categoryId (מבנה חדש)
-        if ((!categoryName || categoryName === 'כללי') && service.categoryId && categories) {
-            const category = categories.find(cat => cat.id === service.categoryId);
             if (category) {
                 categoryName = category.name;
             }

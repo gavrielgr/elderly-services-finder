@@ -205,29 +205,10 @@ export class ResultsManager {
             let categoryName = 'כללי';
 
             if (service.category && categories) {
-                // תמיכה במבנה הנתונים הישן
-                if (typeof service.category === 'string') {
-                    const category = categories.find(cat => cat.id === service.category);
-                    if (category) {
-                        categoryName = category.name;
-                    }
-                } 
-                // תמיכה במבנה החדש כשהקטגוריה בשדה categoryId
-                else if (service.categoryId) {
-                    const category = categories.find(cat => cat.id === service.categoryId);
-                    if (category) {
-                        categoryName = category.name;
-                    }
-                }
-            }
-
-            // בדיקה נוספת אם יש שדה categoryId
-            if (!categoryName || categoryName === 'כללי') {
-                if (service.categoryId && categories) {
-                    const category = categories.find(cat => cat.id === service.categoryId);
-                    if (category) {
-                        categoryName = category.name;
-                    }
+                // תמיכה במבנה הנתונים הישן - כעת הסטנדרט
+                const category = categories.find(cat => cat.id === service.category);
+                if (category) {
+                    categoryName = category.name;
                 }
             }
 
@@ -356,7 +337,14 @@ export class ResultsManager {
     }
 
     updateResults(data) {
-        this.currentResults = data;
-        this.renderResults(data);
+        // Ensure data exists and has a services array
+        if (!data || !Array.isArray(data.services)) {
+            console.warn('updateResults received invalid data, skipping render:', data);
+            // Optionally clear results or show an error message
+            // this.renderResults([]); 
+            return;
+        }
+        this.currentResults = data.services; // Store only the services array
+        this.renderResults(data.services); // Pass only the services array
     }
 }

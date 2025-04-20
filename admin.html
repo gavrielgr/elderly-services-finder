@@ -887,6 +887,18 @@
             background-color: var(--primary-color, #01b3a7);
             color: white;
         }
+        
+        /* Specific style for service category dropdown arrow */
+        #service-category {
+          appearance: none; /* Remove default arrow */
+          -webkit-appearance: none; /* Safari/Chrome */
+          -moz-appearance: none; /* Firefox */
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23333' d='M6 8L0 2l1.4-1.4L6 5.2l4.6-4.6L12 2z'/%3E%3C/svg%3E"); /* Simple downward arrow SVG */
+          background-repeat: no-repeat;
+          background-position: left 10px center; /* Position arrow on the left */
+          padding-left: 30px; /* Add padding on the left for the arrow */
+          padding-right: 8px; /* Reset right padding if needed */
+        }
     </style>
 </head>
 <body>
