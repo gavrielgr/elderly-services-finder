@@ -1,3 +1,6 @@
+/* Import Bootstrap first */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
 /* Base Imports */
 @import 'base/variables.css';
 @import 'base/reset.css';
@@ -53,4 +56,15 @@
 
 .status-icon.hidden {
     display: none;
+}
+
+/* Footer Styles */
+.site-footer {
+    max-width: 900px;
+    margin: 2rem auto 0 auto; /* Add margin for spacing and centering */
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9rem;
 }

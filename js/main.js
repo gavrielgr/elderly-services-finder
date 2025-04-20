@@ -1,3 +1,5 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 // Import modules
 import { UIManager } from './ui/uiManager.js';
 import { SearchManager } from './ui/searchManager.js';

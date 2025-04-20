@@ -1,5 +1,6 @@
 .app-header {
     max-width: 900px;
+    margin: 0 auto; /* Center the header */
     background-color: #F1F1F1;
     color: black;
     padding: 1rem;

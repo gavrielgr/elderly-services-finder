@@ -76,4 +76,138 @@
 .login-prompt p {
     margin: 0;
     color: #555;
+}
+
+/* Login Page Specific Styles */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 150px); /* Adjust based on header/footer height */
+    padding: 2rem 1rem;
+}
+
+.auth-box {
+    background-color: var(--background-color, #fff);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.auth-title {
+    margin-bottom: 0.5rem;
+    font-size: 1.8rem;
+    color: var(--text-primary, #333);
+}
+
+.auth-description {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary, #666);
+}
+
+.google-button {
+    display: inline-flex; /* To center icon and text */
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #4285F4; /* Google Blue */
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%; /* Make button full width of the box */
+}
+
+.google-button:hover {
+    background-color: #357ae8;
+}
+
+.google-button .button-icon {
+    width: 18px;
+    height: 18px;
+}
+
+.auth-error {
+    color: var(--danger-color, red);
+    margin-top: 1rem;
+    background-color: var(--danger-background-color, #ffebee);
+    padding: 0.75rem;
+    border-radius: 4px;
+}
+
+.auth-success {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.auth-success .user-info {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column; /* Stack avatar and details */
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.auth-success .user-avatar-container {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #eee;
+}
+
+.auth-success .user-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.auth-success .user-avatar-placeholder {
+    font-size: 2rem;
+    color: #999;
+}
+
+.auth-success .user-details {
+    text-align: center;
+}
+
+.auth-success .redirect-message {
+    margin-top: 1rem;
+    font-style: italic;
+    color: var(--text-secondary, #666);
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #09f;
+    animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.auth-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
 } 
