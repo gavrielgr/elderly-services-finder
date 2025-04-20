@@ -2516,6 +2516,9 @@
             console.log('Editing service:', service);
             
             if (service) {
+                // Set the modal title for editing
+                document.getElementById('service-modal-title').textContent = 'עריכת שירות';
+                
                 // Populate basic fields
                 document.getElementById('service-id').value = id;
                 document.getElementById('service-id-visible').value = id;
