@@ -1,16 +1,26 @@
 .app-header {
-    max-width: 900px;
-    margin: 0 auto; /* Center the header */
+    /* max-width: 900px; */ /* Removed */
+    /* margin: 0 auto; */ /* Removed */
     background-color: #F1F1F1;
     color: black;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 1rem; /* Keep padding for spacing from viewport edges */
+    /* display: flex; */ /* Moved to wrapper */
+    /* justify-content: space-between; */ /* Moved to wrapper */
+    /* align-items: center; */ /* Moved to wrapper */
     box-shadow: var(--shadow-md);
     position: relative;
     top: 0;
     z-index: 100;
+}
+
+/* New wrapper for header content */
+.header-content-wrapper {
+    max-width: 900px;
+    margin: 0 auto; /* Center the content */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%; /* Ensure it takes available space within header */
 }
 
 .header-logo {
@@ -118,4 +128,9 @@
         font-size: 1.1rem;
         margin-left: 0.3rem;
     }
+}
+
+/* Hide the authentication container */
+#auth-container {
+    display: none;
 }

@@ -147,49 +147,48 @@ export class ModalManager {
             detailsHTML += this.createDetailSection('אתר אינטרנט', websiteLinks);
         }
 
+        // Log the service object right before tag generation
+        console.log("Service object before tag generation:", JSON.stringify(service));
+
         // תגיות
+        let tagsHtmlContent = ''; // Initialize variable to hold tag HTML
         if (service.interestAreas?.length > 0) {
-            // Try to get the interest areas data
+            // New format: Use interestAreas
             const interestAreasData = this.uiManager.dataService.getInterestAreas() || [];
-            
-            const areasHtml = service.interestAreas
+            console.log('Interest Areas Data for Lookup:', interestAreasData); // Log the data used for lookup
+            tagsHtmlContent = service.interestAreas
                 .map(area => {
-                    // בדיקה אם האובייקט הוא מחרוזת או אובייקט עם שדה name
+                    console.log(`Processing interest area:`, area); // Log each area being processed
                     if (typeof area === 'string') {
-                        // Look up the interest area name by ID
                         const interestArea = interestAreasData.find(a => a.id === area);
-                        if (interestArea && interestArea.name) {
-                            // Use the Hebrew name if available
-                            return `<span class="service-tag">${interestArea.name}</span>`;
-                        } else {
-                            // Fallback to ID if area not found or no name
-                            return `<span class="service-tag">${area}</span>`;
-                        }
+                        console.log(`Lookup result for ${area}:`, interestArea); // Log the result of the find
+                        const tagName = interestArea?.name || area; // Use name or fallback to ID
+                        const tagHtml = `<span class="service-tag">${tagName}</span>`;
+                        console.log(`Generated HTML: ${tagHtml}`); // Log the generated HTML
+                        return tagHtml;
                     } else if (typeof area === 'object' && area.name) {
-                        return `<span class="service-tag">${area.name}</span>`;
+                        const tagHtml = `<span class="service-tag">${area.name}</span>`;
+                        console.log(`Generated HTML for object: ${tagHtml}`); // Log the generated HTML
+                        return tagHtml;
                     }
                     return '';
                 })
-                .filter(html => html) // מסנן תגיות ריקות
+                .filter(html => html)
                 .join('');
-            
-            if (areasHtml) {
-                detailsHTML += this.createDetailSection('תגיות', areasHtml);
-            }
         } else if (service.tags?.length > 0) {
-            // תמיכה בפורמט הישן של תגיות
-            const tagsHtml = service.tags
+            // Old format: Fallback to tags
+            tagsHtmlContent = service.tags
                 .map(tag => {
-                    // בדיקה אם התג הוא מחרוזת או אובייקט עם שדה name
                     const tagName = typeof tag === 'string' ? tag : (tag.name || '');
                     return tagName ? `<span class="service-tag">${tagName}</span>` : '';
                 })
-                .filter(html => html) // מסנן תגיות ריקות
+                .filter(html => html)
                 .join('');
-            
-            if (tagsHtml) {
-                detailsHTML += this.createDetailSection('תגיות', tagsHtml);
-            }
+        }
+
+        // Add the tags section if any tags were found
+        if (tagsHtmlContent) {
+            detailsHTML += this.createDetailSection('תגיות', tagsHtmlContent);
         }
 
         // מיקום

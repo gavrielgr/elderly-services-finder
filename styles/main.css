@@ -14,6 +14,7 @@
 @import 'components/modal.css';
 @import 'components/install-prompt.css';
 @import 'components/status-bar.css';
+@import 'components/auth.css';
 
 /* Layout Imports */
 @import 'layout/responsive.css';
@@ -67,4 +68,9 @@
     color: var(--text-secondary);
     border-top: 1px solid var(--border-color);
     font-size: 0.9rem;
+}
+
+/* Hide rating sections temporarily */
+.rating-section {
+    display: none;
 }

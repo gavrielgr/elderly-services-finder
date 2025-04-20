@@ -111,7 +111,9 @@ export class RatingComponent {
         try {
             // Load user's rating if authenticated and not just loading more
             if (authService.isAuthenticated() && !isLoadMore) {
-                this.userRating = await ratingService.getUserRating(this.serviceId);
+                // TEMPORARILY DISABLED: Fetch user rating
+                // this.userRating = await ratingService.getUserRating(this.serviceId);
+                this.userRating = null; // Assume no rating for now
             } else if (!authService.isAuthenticated()) {
                 this.userRating = null;
             }
@@ -138,11 +140,13 @@ export class RatingComponent {
                     const page = isLoadMore ? this.currentPage : 1;
                     this.isLoadingRatings = true;
                     
-                    const newRatings = await ratingService.getServiceRatings(
-                        this.serviceId, 
-                        this.ratingsPerPage, 
-                        page
-                    );
+                    // TEMPORARILY DISABLED: Fetch service ratings
+                    // const newRatings = await ratingService.getServiceRatings(
+                    //     this.serviceId, 
+                    //     this.ratingsPerPage, 
+                    //     page
+                    // );
+                    const newRatings = []; // Assume no ratings for now
                     
                     if (!silent) {
                         console.log(`Loaded ${newRatings.length} ratings for page ${page}`);

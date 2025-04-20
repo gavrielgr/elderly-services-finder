@@ -1,6 +1,12 @@
 import { fetchFromAPI } from '../config/api.js';
 import { saveToIndexedDB, getFromIndexedDB } from './storageService.js';
 import { ALL_SERVICES_KEY } from '../config/constants.js';
+// Add Firebase imports
+import { initializeFirebase } from '../config/firebase.js';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+
+// Variable to hold the db instance
+let db;
 
 export class DataService {
     constructor() {
@@ -202,48 +208,96 @@ export class DataService {
         if (!serviceId) {
             return null;
         }
-        
-        // First check if we have it in memory
+
+        // Initialize DB instance if not already done
+        if (!db) {
+            try {
+                const firebaseApp = await initializeFirebase();
+                db = firebaseApp.db; // Assuming initializeFirebase returns { db }
+            } catch (error) {
+                console.error("Failed to initialize Firebase in getServiceById:", error);
+                // Fallback to cache if DB init fails
+                forceRefresh = false;
+            }
+        }
+
+        // First check if we have it in memory (unless forceRefresh)
         if (this.allServicesData?.services && !forceRefresh) {
             const service = this.allServicesData.services.find(s => s.id === serviceId);
             if (service) {
+                // console.log(`Returning service ${serviceId} from memory cache`);
                 return service;
             }
         }
-        
-        if (forceRefresh) {
+
+        // If forceRefresh is true and db is available, fetch fresh from Firestore
+        if (forceRefresh && db) {
             try {
-                // Fetch the latest service data from the server
-                const response = await fetch(`${window.location.origin.replace('5173', '5001')}/api/service/${serviceId}`);
-                
-                if (response.ok) {
-                    const serviceData = await response.json();
-                    
-                    // Update the service in our local data if it exists
-                    if (this.allServicesData?.services) {
-                        const index = this.allServicesData.services.findIndex(s => s.id === serviceId);
-                        if (index >= 0) {
-                            this.allServicesData.services[index] = serviceData;
-                            
-                            // Save the updated data to IndexedDB
-                            await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
-                        }
-                    }
-                    
-                    return serviceData;
-                } else {
-                    console.warn(`Failed to fetch service ${serviceId} from server:`, response.status);
+                console.log(`Fetching fresh data for service ${serviceId} from Firestore...`);
+                // 1. Fetch the service document
+                const serviceDocRef = doc(db, 'services', serviceId);
+                const serviceDocSnap = await getDoc(serviceDocRef);
+
+                if (!serviceDocSnap.exists()) {
+                    console.warn(`Service ${serviceId} not found in Firestore.`);
+                    return null; // Service doesn't exist
                 }
+
+                let serviceData = { id: serviceDocSnap.id, ...serviceDocSnap.data() };
+
+                // 2. Fetch related interest area mappings
+                const mappingsQuery = query(
+                    collection(db, 'service-interest-areas'),
+                    where('serviceId', '==', serviceId)
+                );
+                const mappingsSnapshot = await getDocs(mappingsQuery);
+
+                const interestAreaIds = [];
+                mappingsSnapshot.forEach(mappingDoc => {
+                    const mappingData = mappingDoc.data();
+                    if (mappingData.interestAreaId) {
+                        interestAreaIds.push(mappingData.interestAreaId);
+                    }
+                });
+
+                // 3. Merge interest areas into the service data
+                serviceData.interestAreas = interestAreaIds;
+                console.log(`Merged interestAreas for ${serviceId}:`, interestAreaIds);
+
+                // 4. Update the service in our local memory cache (allServicesData)
+                if (this.allServicesData?.services) {
+                    const index = this.allServicesData.services.findIndex(s => s.id === serviceId);
+                    if (index >= 0) {
+                        console.log(`Updating service ${serviceId} in memory cache`);
+                        this.allServicesData.services[index] = serviceData;
+                    } else {
+                        // If service wasn't in cache before, add it (less common case)
+                        this.allServicesData.services.push(serviceData);
+                    }
+                    // Optionally, update the main lastUpdated timestamp if needed
+                    // this.allServicesData.lastUpdated = new Date().toISOString();
+
+                    // 5. Save the *entire* updated data structure back to IndexedDB
+                    // This ensures the cache reflects the newly merged data
+                    await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
+                    console.log(`Saved updated allServicesData to IndexedDB after fetching ${serviceId}`);
+                }
+
+                return serviceData; // Return the freshly fetched and merged data
+
             } catch (error) {
-                console.error(`Error fetching service ${serviceId}:`, error);
+                console.error(`Error fetching service ${serviceId} directly from Firestore:`, error);
+                // Don't fallback here if Firestore fetch fails, let the final fallback handle it
             }
         }
-        
-        // Fallback to local cache
+
+        // Fallback to local cache if not forceRefresh, or if Firestore fetch failed
         if (this.allServicesData?.services) {
+            // console.log(`Returning service ${serviceId} from memory cache (fallback)`);
             return this.allServicesData.services.find(s => s.id === serviceId) || null;
         }
-        
+
+        console.warn(`Service ${serviceId} could not be found.`);
         return null;
     }
 
