@@ -56,4 +56,22 @@ updateFile(
     ]
 );
 
+// Update version parameters in HTML files
+const htmlFiles = ['login.html', 'admin.html'];
+htmlFiles.forEach(file => {
+    const filePath = join(__dirname, file);
+    if (existsSync(filePath)) {
+        updateFile(
+            filePath,
+            [
+                // Update script src version parameters
+                [/src="(\/js\/[^"]+)\?v=[\d\.]+"/g, `src="$1?v=${APP_VERSION}"`]
+            ]
+        );
+        console.log(`Updated version parameters in ${file} to ${APP_VERSION}`);
+    } else {
+        console.warn(`HTML file ${file} not found, skipping version update`);
+    }
+});
+
 console.log(`Updated builds with version ${APP_VERSION} and timestamp ${BUILD_TIMESTAMP}`);
