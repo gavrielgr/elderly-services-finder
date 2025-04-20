@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Firebase Test</title>
+</head>
+<body>
+  <h1>Simple Firebase Test Page</h1>
+  <p>This is a minimal test page to check if Netlify redirects are working.</p>
+  <p>If you can see this page, the redirect is working correctly!</p>
+  
+  <button onclick="testAPI()">Test API Endpoint</button>
+  <div id="result"></div>
+  
+  <script>
+    async function testAPI() {
+      try {
+        document.getElementById('result').innerText = 'Testing API endpoint...';
+        const response = await fetch('/api/config');
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        document.getElementById('result').innerText = 'API test successful! Config received.';
+      } catch (error) {
+        document.getElementById('result').innerText = `Error: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html> 

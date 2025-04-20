@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Firebase Direct Test</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        button { padding: 10px; margin: 5px; }
+        pre { background: #f0f0f0; padding: 10px; }
+        .log { border: 1px solid #ccc; padding: 10px; height: 300px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>Firebase Direct Test</h1>
+    <p>Minimal test for Firebase initialization and collection issues</p>
+    
+    <button onclick="runTest()">Run Test</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    
+    <div class="log" id="log"></div>
+    
+    <script type="module">
+        // Import the necessary Firebase modules directly from CDN
+        const firebaseApp = await import('https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js');
+        const firebaseFirestore = await import('https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js');
+        
+        // Make them globally available
+        window.firebase = {
+            app: firebaseApp,
+            firestore: firebaseFirestore
+        };
+        
+        const logElement = document.getElementById('log');
+        
+        function log(message) {
+            const div = document.createElement('div');
+            if (typeof message === 'object') {
+                div.innerHTML = `<pre>${JSON.stringify(message, null, 2)}</pre>`;
+            } else {
+                div.textContent = message;
+            }
+            logElement.appendChild(div);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        window.clearLogs = function() {
+            logElement.innerHTML = '';
+            log('Logs cleared');
+        };
+        
+        window.runTest = async function() {
+            try {
+                log('Starting Firebase test...');
+                
+                // Step 1: Test the imports
+                log('Checking imports:');
+                log(`initializeApp available: ${typeof firebaseApp.initializeApp === 'function'}`);
+                log(`getFirestore available: ${typeof firebaseFirestore.getFirestore === 'function'}`);
+                log(`collection available: ${typeof firebaseFirestore.collection === 'function'}`);
+                
+                // Step 2: Fetch Firebase config
+                log('Fetching Firebase config from /api/config...');
+                const configResponse = await fetch('/api/config');
+                
+                if (!configResponse.ok) {
+                    throw new Error(`Config endpoint returned ${configResponse.status}: ${configResponse.statusText}`);
+                }
+                
+                const config = await configResponse.json();
+                log('Config received successfully');
+                
+                // Step 3: Initialize Firebase
+                log('Initializing Firebase...');
+                const app = firebaseApp.initializeApp(config);
+                log('Firebase app initialized');
+                
+                // Step 4: Initialize Firestore
+                log('Initializing Firestore...');
+                const db = firebaseFirestore.getFirestore(app);
+                log('Firestore initialized');
+                
+                // Step 5: Create a collection reference
+                log('Creating collection reference...');
+                const categoriesCollection = firebaseFirestore.collection(db, 'categories');
+                log('Collection reference created successfully');
+                
+                // Step 6: Query the collection
+                log('Querying collection...');
+                const q = firebaseFirestore.query(categoriesCollection, firebaseFirestore.limit(1));
+                const querySnapshot = await firebaseFirestore.getDocs(q);
+                
+                log(`Query successful. Documents in collection: ${querySnapshot.size}`);
+                
+                if (querySnapshot.size > 0) {
+                    const doc = querySnapshot.docs[0];
+                    log('Sample document:');
+                    log({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                } else {
+                    log('Collection is empty');
+                }
+                
+                log('Test completed successfully');
+            } catch (error) {
+                log(`ERROR: ${error.message}`);
+                log(error.stack);
+            }
+        };
+        
+        // Initial log
+        log('Firebase Direct Test loaded. Click "Run Test" to begin.');
+    </script>
+</body>
+</html> 

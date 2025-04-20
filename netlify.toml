@@ -126,6 +126,18 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/firebase-direct-test.html"
+  to = "/firebase-direct-test.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/fb_test_20250420.html"
+  to = "/fb_test_20250420.html"
+  status = 200
+  force = true
+
 # The catch-all redirect should be last
 [[redirects]]
   from = "/*"
