@@ -24,7 +24,7 @@
         import { 
             getFirestore, doc, getDoc, collection, getDocs, 
             query, where, orderBy, limit, startAfter, addDoc, updateDoc, deleteDoc, serverTimestamp,
-            getCountFromServer // Added this import
+            getCountFromServer, writeBatch // Added writeBatch import
         } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
         import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
         
@@ -34,7 +34,7 @@
             getFirestore, doc, getDoc, collection, getDocs,
             query, where, orderBy, limit, startAfter, addDoc, updateDoc, deleteDoc,
             getAuth, onAuthStateChanged, signOut, serverTimestamp,
-            getCountFromServer // Added to global object
+            getCountFromServer, writeBatch // Added writeBatch to global object
         };
         
         // Signal that modules are loaded
@@ -2418,7 +2418,7 @@
                 }
                 
                 // Set default section
-                showSection('services-section');
+              //  showSection('services-section');
                 
                 console.log('Admin page initialized successfully');
             } catch (error) {
@@ -2678,13 +2678,22 @@
         
         // Save a service
         async function saveService(form) {
+            // Get the form element and the save button
+            const serviceForm = form || document.getElementById('service-form');
+            const saveButton = serviceForm.querySelector('.save-button');
+            const originalButtonText = saveButton.textContent;
+
+            // Set loading state
+            saveButton.disabled = true;
+            saveButton.textContent = 'שומר...';
+
             try {
                 // Get the form element, even if not passed as argument
-                const serviceForm = form || document.getElementById('service-form');
+                // const serviceForm = form || document.getElementById('service-form'); // Already defined above
                 if (!serviceForm) {
                     console.error('Service form not found');
                     showMessage('שגיאה: טופס שירות לא נמצא', 'error');
-                    return;
+                    return; // Exit if form not found
                 }
 
                 // Get basic information
@@ -2763,6 +2772,10 @@
             } catch (error) {
                 console.error('Error saving service:', error);
                 showMessage('שגיאה בשמירת השירות', 'error');
+            } finally {
+                // Restore button state regardless of success or error
+                saveButton.disabled = false;
+                saveButton.textContent = originalButtonText;
             }
         }
 
