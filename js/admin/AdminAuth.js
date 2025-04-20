@@ -4,7 +4,7 @@ import {
     signInWithPopup, 
     signOut,
     onAuthStateChanged
-} from 'firebase/auth';
+} from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 import { 
     getFirestore, 
     doc, 
@@ -14,7 +14,7 @@ import {
     serverTimestamp,
     collection,
     addDoc
-} from 'firebase/firestore';
+} from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
 import { initializeFirebase } from '../config/firebase.js';
 
 export class AdminAuth {

@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
 import { getApiBaseUrl } from './app-config.js';
 
 // Initialize Firebase with config from server
