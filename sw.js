@@ -1,7 +1,7 @@
 // Service Worker for Elderly Services Finder
 
 // This version is injected during build
-const CACHE_VERSION = '1.99.112'; // Updated version
+const CACHE_VERSION = '1.99.113'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 
 // Function to normalize URL

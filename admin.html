@@ -2925,7 +2925,7 @@
                 console.log('Loaded services:', allServices.length);
                 
                 // Render the services
-                renderServices(isLoadMore);
+                renderServices(isLoadMore, newServices);
                 
             } catch (error) {
                 console.error('Error loading services:', error);
@@ -2942,7 +2942,7 @@
         }
         
         // Render services in the list
-        function renderServices(isAppend = false) {
+        function renderServices(isAppend = false, newlyLoadedServices = []) {
             if (!servicesListContainer) return;
             
             if (allServices.length === 0 && !isAppend) {
@@ -2950,7 +2950,11 @@
                 return;
             }
             
-            const html = allServices.map(service => {
+            // When appending, only render the newly loaded services
+            // When not appending (initial load), render all services
+            const servicesToRender = isAppend ? newlyLoadedServices : allServices;
+            
+            const html = servicesToRender.map(service => {
                 // Format category name
                 let categoryName = '';
                 if (service.category) {
