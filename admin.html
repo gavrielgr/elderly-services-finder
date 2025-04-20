@@ -365,9 +365,10 @@
         }
         
         .modal form {
-            padding: 0 20px 20px 20px;
+            padding: 0 20px 0 20px; /* Removed bottom padding */
             overflow-y: auto;
-            max-height: calc(90vh - 70px);
+            /* Adjusted max-height calculation to better account for header + sticky footer */
+            max-height: calc(90vh - 120px);
         }
         
         .close-modal {
@@ -411,8 +412,11 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-top: 20px;
+            margin-top: 20px; /* Keep margin-top for spacing above actions */
             padding-top: 15px;
+            padding-right: 20px; /* Add side padding */
+            padding-left: 20px; /* Add side padding */
+            padding-bottom: 20px; /* Added bottom padding here */
             border-top: 1px solid #eee;
             background-color: white;
             position: sticky;
