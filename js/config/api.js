@@ -1,10 +1,10 @@
 import { getFromIndexedDB, saveToIndexedDB } from '../services/storageService.js';
 import { ALL_SERVICES_KEY } from './constants.js';
-import { initializeFirebase, db as firebaseDb } from './firebase.js';
+import { initializeFirebase } from './firebase.js';
 import { 
     collection, getDocs, query, limit, orderBy, startAfter, where, 
     doc, getDoc, addDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp 
-} from 'firebase/firestore';
+} from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
 
 // הגדרות עבור בקרת עומס קריאות פיירבייס
 const BATCH_SIZE = 50;

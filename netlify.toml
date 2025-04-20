@@ -113,6 +113,19 @@
   status = 200
   force = true
 
+# Explicit redirects for Firebase diagnostic pages
+[[redirects]]
+  from = "/firebase-diagnostic.html"
+  to = "/firebase-diagnostic.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/firebase-test.html"
+  to = "/firebase-test.html"
+  status = 200
+  force = true
+
 # The catch-all redirect should be last
 [[redirects]]
   from = "/*"

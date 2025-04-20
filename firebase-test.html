@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Initialization Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background-color: #4285F4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        .log-entry {
+            margin: 5px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+        .warning { color: orange; }
+        pre {
+            background-color: #f4f4f4;
+            padding: 5px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firebase Initialization Test</h1>
+    <p>This page tests the Firebase initialization and collection reference issues.</p>
+    
+    <div>
+        <button id="test-imports">Test Imports</button>
+        <button id="test-init">Initialize Firebase</button>
+        <button id="test-collection" disabled>Test Collection Reference</button>
+        <button id="clear-log">Clear Log</button>
+    </div>
+    
+    <div class="log" id="log-container"></div>
+    
+    <script type="module">
+        // Direct imports from CDN for isolation
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
+        import { getFirestore, collection, getDocs, query, limit } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
+        
+        // Local import to test app's Firebase initialization
+        import { initializeFirebase } from './js/config/firebase.js';
+        import { getApiBaseUrl } from './js/config/app-config.js';
+        
+        // References to DOM elements
+        const logContainer = document.getElementById('log-container');
+        const testImportsBtn = document.getElementById('test-imports');
+        const testInitBtn = document.getElementById('test-init');
+        const testCollectionBtn = document.getElementById('test-collection');
+        const clearLogBtn = document.getElementById('clear-log');
+        
+        // Firestore instance reference
+        let firestoreDb = null;
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            
+            if (typeof message === 'object') {
+                entry.innerHTML = `<strong>[${timestamp}]</strong> <pre>${JSON.stringify(message, null, 2)}</pre>`;
+            } else {
+                entry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            }
+            
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(`[${type}]`, message);
+        }
+        
+        // Test Firebase imports
+        async function testImports() {
+            try {
+                log('Testing Firebase imports...', 'info');
+                
+                // Check if imports from CDN are working
+                log('Direct imports from CDN:');
+                log(`initializeApp: ${typeof initializeApp === 'function' ? 'Available ✓' : 'Not available ✗'}`);
+                log(`getFirestore: ${typeof getFirestore === 'function' ? 'Available ✓' : 'Not available ✗'}`);
+                log(`collection: ${typeof collection === 'function' ? 'Available ✓' : 'Not available ✗'}`);
+                log(`getDocs: ${typeof getDocs === 'function' ? 'Available ✓' : 'Not available ✗'}`);
+                
+                // Check if local imports are working
+                log('Local imports:');
+                log(`initializeFirebase: ${typeof initializeFirebase === 'function' ? 'Available ✓' : 'Not available ✗'}`);
+                log(`getApiBaseUrl: ${typeof getApiBaseUrl === 'function' ? 'Available ✓' : 'Not available ✗'}`);
+                
+                // Check if there are any Firebase imports in global scope
+                log('Global Firebase objects:');
+                log(`window.firebase: ${typeof window.firebase !== 'undefined' ? 'Available' : 'Not available'}`);
+                log(`window._firebaseApp: ${typeof window._firebaseApp !== 'undefined' ? 'Available' : 'Not available'}`);
+                log(`window._firebaseDb: ${typeof window._firebaseDb !== 'undefined' ? 'Available' : 'Not available'}`);
+                
+                log('Import test complete', 'success');
+            } catch (error) {
+                log(`Error testing imports: ${error.message}`, 'error');
+                log(error.stack, 'error');
+            }
+        }
+        
+        // Initialize Firebase using app's function
+        async function testInit() {
+            try {
+                log('Initializing Firebase using app\'s initializeFirebase function...', 'info');
+                
+                const startTime = performance.now();
+                const { app, db, auth } = await initializeFirebase();
+                const endTime = performance.now();
+                
+                log(`Firebase initialized in ${Math.round(endTime - startTime)}ms`, 'info');
+                
+                if (!app) {
+                    throw new Error('Firebase app not initialized (returned null/undefined)');
+                }
+                
+                if (!db) {
+                    throw new Error('Firestore db not initialized (returned null/undefined)');
+                }
+                
+                log('Firebase app initialized successfully', 'success');
+                log('Firestore db initialized successfully', 'success');
+                log('Auth initialized: ' + (auth ? 'Yes' : 'No'), 'info');
+                
+                // Store Firestore instance for collection test
+                firestoreDb = db;
+                
+                // Enable collection test button
+                testCollectionBtn.disabled = false;
+                
+                // Additional logging for debugging
+                log('Logging Firestore instance details:', 'info');
+                log(`Firestore type: ${Object.prototype.toString.call(db)}`);
+                log(`Firestore instance ID: ${db._key?.id || 'N/A'}`);
+                
+                // Show a string representation of the Firestore object
+                try {
+                    const propsDb = Object.getOwnPropertyNames(db);
+                    log(`Firestore properties: ${propsDb.join(', ')}`);
+                } catch (e) {
+                    log('Could not enumerate Firestore properties: ' + e.message, 'warning');
+                }
+                
+                // Log app info
+                log('App info:', 'info');
+                log(`App name: ${app.name}`);
+                log(`App options:`, app.options);
+                
+                return true;
+            } catch (error) {
+                log(`Firebase initialization failed: ${error.message}`, 'error');
+                log(error.stack, 'error');
+                return false;
+            }
+        }
+        
+        // Test creating a collection reference
+        async function testCollection() {
+            try {
+                log('Testing collection reference...', 'info');
+                
+                if (!firestoreDb) {
+                    throw new Error('Firestore not initialized. Run initialization test first.');
+                }
+                
+                // Try to create a collection reference using our stored Firestore instance
+                log('Creating collection reference using app\'s Firestore instance...', 'info');
+                const categoriesCollectionRef = collection(firestoreDb, 'categories');
+                
+                if (!categoriesCollectionRef) {
+                    throw new Error('Collection reference creation failed (returned null/undefined)');
+                }
+                
+                log('Collection reference created successfully', 'success');
+                
+                // Try querying the collection
+                log('Querying the collection...', 'info');
+                const q = query(categoriesCollectionRef, limit(1));
+                const snapshot = await getDocs(q);
+                
+                log(`Query successful. Documents in collection: ${snapshot.size}`, 'success');
+                
+                if (snapshot.size > 0) {
+                    const firstDoc = snapshot.docs[0];
+                    log('First document data:', 'info');
+                    log({
+                        id: firstDoc.id,
+                        ...firstDoc.data()
+                    });
+                } else {
+                    log('Collection is empty', 'warning');
+                }
+                
+                // Now test an alternative approach - create a fresh Firestore instance directly
+                log('Testing with direct Firebase initialization (bypassing app code)...', 'info');
+                
+                // Fetch config from API
+                const apiUrl = `${getApiBaseUrl()}/api/config`;
+                log(`Fetching config from: ${apiUrl}`, 'info');
+                
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch Firebase config: ${response.status} ${response.statusText}`);
+                }
+                
+                const config = await response.json();
+                log('Config received successfully', 'success');
+                
+                // Initialize a fresh Firebase app
+                const freshApp = initializeApp(config, 'test-app');
+                const freshDb = getFirestore(freshApp);
+                
+                // Test collection creation with fresh Firestore instance
+                log('Creating collection reference using fresh Firestore instance...', 'info');
+                const freshCategoriesRef = collection(freshDb, 'categories');
+                
+                if (!freshCategoriesRef) {
+                    throw new Error('Fresh collection reference creation failed');
+                }
+                
+                log('Fresh collection reference created successfully', 'success');
+                
+                return true;
+            } catch (error) {
+                log(`Collection test failed: ${error.message}`, 'error');
+                log(error.stack, 'error');
+                return false;
+            }
+        }
+        
+        // Event listeners
+        testImportsBtn.addEventListener('click', testImports);
+        testInitBtn.addEventListener('click', testInit);
+        testCollectionBtn.addEventListener('click', testCollection);
+        clearLogBtn.addEventListener('click', () => {
+            logContainer.innerHTML = '';
+            log('Log cleared', 'info');
+        });
+        
+        // Initial log
+        log('Firebase test page loaded. Click buttons to run tests.', 'info');
+    </script>
+</body>
+</html> 
