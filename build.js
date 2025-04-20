@@ -22,6 +22,10 @@ if (process.argv.includes('--bump')) {
     packageJson.version = newVersion;
     writeFileSync(PACKAGE_PATH, JSON.stringify(packageJson, null, 2) + '\n');
     console.log(`Bumped version from ${APP_VERSION} to ${newVersion}`);
+    
+    // Update HTML files with new version
+    updateHtmlVersions(newVersion);
+    
     process.exit(0);
 }
 
@@ -56,22 +60,27 @@ updateFile(
     ]
 );
 
-// Update version parameters in HTML files
-const htmlFiles = ['login.html', 'admin.html'];
-htmlFiles.forEach(file => {
-    const filePath = join(__dirname, file);
-    if (existsSync(filePath)) {
-        updateFile(
-            filePath,
-            [
-                // Update script src version parameters
-                [/src="(\/js\/[^"]+)\?v=[\d\.]+"/g, `src="$1?v=${APP_VERSION}"`]
-            ]
-        );
-        console.log(`Updated version parameters in ${file} to ${APP_VERSION}`);
-    } else {
-        console.warn(`HTML file ${file} not found, skipping version update`);
-    }
-});
+// Function to update version in HTML files
+function updateHtmlVersions(version) {
+    const htmlFiles = ['login.html', 'admin.html'];
+    htmlFiles.forEach(file => {
+        const filePath = join(__dirname, file);
+        if (existsSync(filePath)) {
+            updateFile(
+                filePath,
+                [
+                    // Update script src version parameters for both JS files and CDN links if they have versions
+                    [/src="([^"]+)\?v=[\d\.]+"/g, `src="$1?v=${version}"`]
+                ]
+            );
+            console.log(`Updated version parameters in ${file} to ${version}`);
+        } else {
+            console.warn(`HTML file ${file} not found, skipping version update`);
+        }
+    });
+}
+
+// Update HTML files with current version
+updateHtmlVersions(APP_VERSION);
 
 console.log(`Updated builds with version ${APP_VERSION} and timestamp ${BUILD_TIMESTAMP}`);
