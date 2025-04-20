@@ -8,7 +8,7 @@
     "server": "node server.js",
     "client": "vite",
     "build": "vite build && node post-build.js",
-    "build:netlify": "vite build && node post-build.js",
+    "build:netlify": "vite build && node post-build.js && node scripts/verify-build.js",
     "preview": "vite preview",
     "bump": "node build.js --bump",
     "push": "npm run bump && npm run build && git add . && git commit -m \"v$npm_package_version\" && git push"

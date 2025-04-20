@@ -10,6 +10,8 @@ function createDirectories() {
         join(__dirname, 'dist'),
         join(__dirname, 'dist', 'assets'),
         join(__dirname, 'dist', 'js'),
+        join(__dirname, 'dist', 'js', 'config'),
+        join(__dirname, 'dist', 'js', 'services'),
         join(__dirname, 'dist', 'css')
     ];
     
@@ -41,7 +43,21 @@ function copyFiles() {
         copyFileSync(loginFile, join(__dirname, 'dist', 'login.html'));
         copyFileSync(adminFile, join(__dirname, 'dist', 'admin.html'));
         
-        console.log('Successfully copied login.html and admin.html to dist');
+        // Copy critical JS files to their expected locations
+        copyFileSync(
+            join(__dirname, 'js', 'config', 'app-config.js'),
+            join(__dirname, 'dist', 'js', 'config', 'app-config.js')
+        );
+        copyFileSync(
+            join(__dirname, 'js', 'config', 'firebase.js'),
+            join(__dirname, 'dist', 'js', 'config', 'firebase.js')
+        );
+        copyFileSync(
+            join(__dirname, 'js', 'services', 'authService.js'),
+            join(__dirname, 'dist', 'js', 'services', 'authService.js')
+        );
+        
+        console.log('Successfully copied HTML and JS files to dist');
     } catch (error) {
         console.error('Error copying files:', error);
         process.exit(1);

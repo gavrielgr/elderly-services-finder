@@ -1,0 +1,11 @@
+# Handle API routes
+/api/auth/init /.netlify/functions/auth-init 200
+/api/config /.netlify/functions/config 200
+/api/data /.netlify/functions/data 200
+
+# Handle routes for login and admin pages
+/login /login.html 200
+/admin /admin.html 200
+
+# Fallback for all other routes to the SPA
+/* /index.html 200 
