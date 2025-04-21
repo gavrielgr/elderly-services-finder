@@ -3074,129 +3074,149 @@
             try {
                 if (!window.firestoreDB) throw new Error('Firestore not initialized');
                 
-                // Show loading state
-                if (!isLoadMore) {
-                    if (servicesListContainer) {
-                        servicesListContainer.innerHTML = '<div class="spinner"></div>';
-                    }
-                    // Reset pagination state
-                    lastServiceDoc = null;
-                    allServices = [];
-                    hasMoreServices = true;
-                } else {
-                    // Show loading for load more
-                    const loadMoreBtn = document.getElementById('load-more-services');
-                    if (loadMoreBtn) {
-                        loadMoreBtn.disabled = true;
-                        loadMoreBtn.innerHTML = '<span class="spinner-small"></span> טוען...';
-                    }
+                // Show loading state only on the very first load
+                if (!initialServicesLoaded && servicesListContainer) {
+                    servicesListContainer.innerHTML = '<div class="spinner"></div>';
                 }
-                
+
                 // Use Firebase modules from window
-                const { collection, query, orderBy, limit, startAfter, getDocs } = window.firebaseModules;
-                
-                // Build query with pagination
-                let servicesQuery;
-                
-                if (lastServiceDoc && isLoadMore) {
-                    servicesQuery = query(
-                        collection(window.firestoreDB, 'services'),
-                        orderBy('name'),
-                        startAfter(lastServiceDoc),
-                        limit(servicesPerPage)
-                    );
-                } else {
-                    servicesQuery = query(
-                        collection(window.firestoreDB, 'services'),
-                        orderBy('name'),
-                        limit(servicesPerPage)
-                    );
-                }
-                
+                const { collection, query, orderBy, limit, getDocs } = window.firebaseModules;
+
+                // Query only the first page
+                const servicesQuery = query(
+                    collection(window.firestoreDB, 'services'),
+                    orderBy('name'),
+                    limit(servicesPerPage)
+                );
+
                 const servicesSnapshot = await getDocs(servicesQuery);
-                
-                // Check if we have more services to load
-                hasMoreServices = servicesSnapshot.docs.length === servicesPerPage;
-                
-                // Update the last visible service for next pagination
+
+                // Store the last document for the background fetch
                 if (servicesSnapshot.docs.length > 0) {
-                    lastServiceDoc = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
-                } else if (!isLoadMore) {
-                    // No services found on initial load
-                    if (servicesListContainer) {
-                        servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
-                    }
-                    return;
+                    lastDocFromInitialLoad = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
+                } else {
+                     lastDocFromInitialLoad = null; // No services at all
                 }
-                
-                // Process the services
-                const newServices = [];
+
+                // Process the initial batch of services
+                const initialServices = [];
                 servicesSnapshot.forEach(doc => {
                     const serviceData = doc.data();
-                    
-                    // Ensure active property exists (set default if missing)
                     if (serviceData.active === undefined) {
                         serviceData.active = true;
                     }
-                    
-                    newServices.push({
+                    initialServices.push({
                         id: doc.id,
                         ...serviceData
                     });
                 });
-                
-                // Append to existing services if loading more
-                if (isLoadMore) {
-                    allServices = [...allServices, ...newServices];
-                } else {
-                    allServices = newServices;
-                }
-                
-                console.log('Loaded services:', allServices.length);
-                
-                // Render the services
-                renderServices(isLoadMore, newServices);
-                
+
+                // Set the global array ONLY with the initial data for now
+                allServices = initialServices;
+                initialServicesLoaded = true; // Mark initial load as complete
+
+                console.log('Initial services loaded:', allServices.length);
+
+                // Render the initial services
+                renderServices(allServices); // Render the initially loaded services
+
+                // Trigger background loading of remaining services
+                // Start fetching *after* the initial render to show something quickly
+                fetchAllServicesInBackground(); 
+
             } catch (error) {
-                console.error('Error loading services:', error);
+                console.error('Error loading initial services:', error);
                 if (servicesListContainer) {
                     servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים</div>';
                 }
-                // Reset load more button if error
-                const loadMoreBtn = document.getElementById('load-more-services');
-                if (loadMoreBtn) {
-                    loadMoreBtn.disabled = false;
-                    loadMoreBtn.textContent = 'טען עוד';
-                }
             }
         }
-        
-        // Render services in the list
-        function renderServices(isAppend = false, newlyLoadedServices = []) {
+
+        // New function to fetch all remaining services in the background
+        async function fetchAllServicesInBackground(lastVisibleDoc = lastDocFromInitialLoad) {
+             if (allServicesFullyLoaded) return; // Don't run if already loaded everything
+             if (!lastVisibleDoc) {
+                 console.log('All services already loaded (no last doc from initial load).');
+                 allServicesFullyLoaded = true;
+                 updateServicesResultsInfo(); // Update count with final number
+                 return; // Nothing more to fetch
+             }
+
+             try {
+                 console.log('Fetching next batch of services in background...');
+                 const { collection, query, orderBy, limit, startAfter, getDocs } = window.firebaseModules;
+
+                 const backgroundQuery = query(
+                     collection(window.firestoreDB, 'services'),
+                     orderBy('name'),
+                     startAfter(lastVisibleDoc),
+                     limit(50) // Fetch in batches of 50 for background load
+                 );
+
+                 const snapshot = await getDocs(backgroundQuery);
+                 const fetchedServices = [];
+
+                 snapshot.forEach(doc => {
+                     const serviceData = doc.data();
+                     if (serviceData.active === undefined) serviceData.active = true;
+                     fetchedServices.push({ id: doc.id, ...serviceData });
+                 });
+
+                 if (fetchedServices.length > 0) {
+                     allServices = [...allServices, ...fetchedServices]; // Append to the global array
+                     const newLastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+                     // Fetch the next batch recursively
+                     fetchAllServicesInBackground(newLastVisibleDoc);
+                 } else {
+                     // No more documents found, all services are loaded
+                     allServicesFullyLoaded = true;
+                     console.log('All services loaded in background. Total:', allServices.length);
+                     updateServicesResultsInfo(); // Update count with final number
+                 }
+
+             } catch (error) {
+                 console.error('Error fetching services in background:', error);
+                 // Optionally inform the user or stop trying
+             }
+        }
+
+        // Update the results info message
+        function updateServicesResultsInfo(count = allServices.length, searchTerm = null) {
+             if (servicesResultsInfo) {
+                 let message = '';
+                 if (searchTerm) {
+                     message = `${count} שירותים תואמים לחיפוש "${searchTerm}"`;
+                 } else {
+                     message = `${count} שירותים ${allServicesFullyLoaded ? '(כל הנתונים נטענו)' : '(טוען נתונים נוספים ברקע...)'}`;
+                 }
+                 servicesResultsInfo.textContent = message;
+             }
+        }
+
+        // Render services in the list - Modified to remove pagination/load more
+        function renderServices(servicesToRender) { // Accepts the list to render
             if (!servicesListContainer) return;
-            
-            if (allServices.length === 0 && !isAppend) {
-                servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+
+            // Clear previous content (spinner or list)
+            servicesListContainer.innerHTML = ''; 
+
+            if (!servicesToRender || servicesToRender.length === 0) {
+                servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים תואמים.</div>';
+                // Still update the count info
+                updateServicesResultsInfo(0, document.getElementById('services-search')?.value.trim().toLowerCase());
                 return;
             }
-            
-            // When appending, only render the newly loaded services
-            // When not appending (initial load), render all services
-            const servicesToRender = isAppend ? newlyLoadedServices : allServices;
-            
+
             const html = servicesToRender.map(service => {
-                // Format category name
                 let categoryName = '';
                 if (service.category) {
                     const category = allCategories.find(c => c.id === service.category);
                     categoryName = category ? category.name : 'קטגוריה לא מוגדרת';
                 }
-                
-                // Format active status
-                const statusDot = service.active !== false ? 
-                    '<span class="status-dot active"></span> פעיל' : 
+                const statusDot = service.active !== false ?
+                    '<span class="status-dot active"></span> פעיל' :
                     '<span class="status-dot inactive"></span> לא פעיל';
-                
+
                 return `
                 <div class="item-card">
                     <div class="item-header">
@@ -3216,34 +3236,17 @@
                 </div>
                 `;
             }).join('');
-            
-            if (isAppend) {
-                servicesListContainer.insertAdjacentHTML('beforeend', html);
-            } else {
-                servicesListContainer.innerHTML = html;
-            }
-            
-            // Update results info
-            if (servicesResultsInfo) {
-                servicesResultsInfo.textContent = `${allServices.length} שירותים ${hasMoreServices ? '(טען עוד להצגת הכל)' : ''}`;
-            }
-            
-            // Add or update load more button
-            if (hasMoreServices) {
-                const loadMoreContainer = document.querySelector('.load-more-container') || document.createElement('div');
-                loadMoreContainer.className = 'load-more-container';
-                loadMoreContainer.innerHTML = `<button id="load-more-services" class="load-more-button">טען עוד שירותים</button>`;
-                servicesListContainer.after(loadMoreContainer);
-                
-                // Add event listener to load more button
-                document.getElementById('load-more-services').addEventListener('click', () => loadServices(true));
-            } else {
-                // Remove load more button if no more services
-                const loadMoreContainer = document.querySelector('.load-more-container');
-                if (loadMoreContainer) {
-                    loadMoreContainer.remove();
-                }
-            }
+
+            servicesListContainer.innerHTML = html;
+
+            // Update results info based on the rendered count and search term
+            updateServicesResultsInfo(servicesToRender.length, document.getElementById('services-search')?.value.trim().toLowerCase());
+
+            // Remove any lingering "Load More" container
+            const loadMoreContainer = servicesListContainer.nextElementSibling;
+             if (loadMoreContainer && loadMoreContainer.classList.contains('load-more-container')) {
+                 loadMoreContainer.remove();
+             }
         }
         
         // Load categories from Firebase
