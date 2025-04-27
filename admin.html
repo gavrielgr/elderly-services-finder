@@ -2014,25 +2014,25 @@
             if (!allServices) return;
             
             if (!searchTerm) {
-                // If no search term, show all services
-                renderServices();
+                // If no search term, show all services from the global array
+                renderServices(allServices);
+                // Update results info based on the full list
+                updateServicesResultsInfo(); // Ensure this uses the global count
                 return;
             }
             
-            // Filter services based on search term
+            // Filter services based on search term FROM THE GLOBAL ARRAY
             const filteredServices = allServices.filter(service => 
                 service.name?.toLowerCase().includes(searchTerm) || 
                 service.description?.toLowerCase().includes(searchTerm)
             );
             
-            // Save original services, update allServices with filtered results
-            const originalServices = [...allServices];
-            allServices = filteredServices;
-            
+            // START MODIFICATION: Render the filtered list without modifying global allServices
             // Render filtered services
-            renderServices();
+            renderServices(filteredServices);
+            // END MODIFICATION
             
-            // Update results info
+            // Update results info based on the filtered count
             if (servicesResultsInfo) {
                 if (filteredServices.length > 0) {
                     servicesResultsInfo.textContent = `${filteredServices.length} שירותים תואמים לחיפוש "${searchTerm}"`;
@@ -2041,8 +2041,10 @@
                 }
             }
             
-            // Restore original services
-            allServices = originalServices;
+            // START MODIFICATION: Remove restoration logic as global allServices is not modified
+            // Restore original services - NO LONGER NEEDED
+            // allServices = originalServices;
+            // END MODIFICATION
         }
         
         // Filter categories based on search term
@@ -3071,179 +3073,7 @@
             }
         }
 
-        // Load services from Firebase - Modified for initial load + background trigger
-        async function loadServices() {
-            try {
-                if (!window.firestoreDB) throw new Error('Firestore not initialized');
-                
-                // Show loading state
-                if (servicesListContainer) {
-                    servicesListContainer.innerHTML = '<div class="spinner"></div>';
-                }
-                
-                // Use Firebase modules from window
-                const { collection, query, orderBy, limit, startAfter, getDocs } = window.firebaseModules;
-                
-                // Build query for initial load
-                const servicesQuery = query(
-                    collection(window.firestoreDB, 'services'),
-                    orderBy('name'),
-                    limit(servicesPerPage)
-                );
-                
-                const servicesSnapshot = await getDocs(servicesQuery);
-                
-                // Process the services
-                const newServices = [];
-                servicesSnapshot.forEach(doc => {
-                    const serviceData = doc.data();
-                    
-                    // Ensure active property exists (set default if missing)
-                    if (serviceData.active === undefined) {
-                        serviceData.active = true;
-                    }
-                    
-                    newServices.push({
-                        id: doc.id,
-                        ...serviceData
-                    });
-                });
-                
-                // Update the last visible service for next pagination
-                if (servicesSnapshot.docs.length > 0) {
-                    lastDocFromInitialLoad = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
-                } else {
-                    // No services found on initial load
-                    if (servicesListContainer) {
-                        servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
-                    }
-                    return;
-                }
-                
-                // Render the services
-                renderServices(newServices);
-                
-                // Set initial load flag
-                initialServicesLoaded = true;
-                
-                // Trigger background fetch
-                fetchAllServicesInBackground();
-            } catch (error) {
-                console.error('Error loading services:', error);
-                if (servicesListContainer) {
-                    servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים</div>';
-                }
-            }
-        }
-        
-        // Render services in the list
-        function renderServices(servicesToRender) {
-            if (!servicesListContainer) return;
-            
-            if (servicesToRender.length === 0) {
-                servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
-                return;
-            }
-            
-            const html = servicesToRender.map(service => {
-                // Format category name
-                let categoryName = '';
-                if (service.category) {
-                    const category = allCategories.find(c => c.id === service.category);
-                    categoryName = category ? category.name : 'קטגוריה לא מוגדרת';
-                }
-                
-                // Format active status
-                const statusDot = service.active !== false ? 
-                    '<span class="status-dot active"></span> פעיל' : 
-                    '<span class="status-dot inactive"></span> לא פעיל';
-                
-                return `
-                <div class="item-card">
-                    <div class="item-header">
-                        <div class="item-title">${service.name}</div>
-                        <div class="item-actions">
-                            <button class="action-button edit-button" data-id="${service.id}">עריכה</button>
-                            <button class="action-button delete-button" data-id="${service.id}">מחיקה</button>
-                        </div>
-                    </div>
-                    <div class="item-details">
-                        <div class="item-category">
-                            <span class="category-badge">${categoryName}</span>
-                        </div>
-                        <div class="item-description">${service.description || 'אין תיאור'}</div>
-                        <div class="item-status">${statusDot}</div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-            
-            servicesListContainer.innerHTML = html;
-            
-            // Update results info
-            updateServicesResultsInfo();
-        }
-        
-        // Update services results info
-        function updateServicesResultsInfo() {
-            if (servicesResultsInfo) {
-                const loadingText = allServicesFullyLoaded ? '' : ' (טוען...)';
-                servicesResultsInfo.textContent = `${allServices.length} שירותים${loadingText}`;
-            }
-        }
-        
-        // Fetch all services in background
-        async function fetchAllServicesInBackground() {
-            try {
-                if (!window.firestoreDB) throw new Error('Firestore not initialized');
-                
-                // Use Firebase modules from window
-                const { collection, query, orderBy, startAfter, getDocs } = window.firebaseModules;
-                
-                // Build query for background fetch
-                const servicesQuery = query(
-                    collection(window.firestoreDB, 'services'),
-                    orderBy('name'),
-                    startAfter(lastDocFromInitialLoad)
-                );
-                
-                const servicesSnapshot = await getDocs(servicesQuery);
-                
-                // Process the services
-                const newServices = [];
-                servicesSnapshot.forEach(doc => {
-                    const serviceData = doc.data();
-                    
-                    // Ensure active property exists (set default if missing)
-                    if (serviceData.active === undefined) {
-                        serviceData.active = true;
-                    }
-                    
-                    newServices.push({
-                        id: doc.id,
-                        ...serviceData
-                    });
-                });
-                
-                // Append to existing services
-                allServices = [...allServices, ...newServices];
-                
-                // Update the last visible service for next pagination
-                if (servicesSnapshot.docs.length > 0) {
-                    lastDocFromInitialLoad = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
-                } else {
-                    // No more services to load
-                    allServicesFullyLoaded = true;
-                    updateServicesResultsInfo();
-                    return;
-                }
-                
-                // Recursively fetch more services
-                fetchAllServicesInBackground();
-            } catch (error) {
-                console.error('Error fetching services in background:', error);
-            }
-        }
+       
         
         // Load categories from Firebase
         async function loadCategories() {
@@ -3716,6 +3546,219 @@
 
         // Ratings pagination variables
         // ... existing code ...
+
+        // Render services in the list
+        function renderServices(servicesToRender) {
+            if (!servicesListContainer) return;
+            
+            if (!servicesToRender || servicesToRender.length === 0) { // Added check for null/undefined
+                servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים להצגה.</div>'; // Adjusted message
+                updateServicesResultsInfo(0); // Update info when empty
+                return;
+            }
+            
+            const html = servicesToRender.map(service => {
+                // Format category name
+                let categoryName = '';
+                if (service.category) {
+                    const category = allCategories.find(c => c.id === service.category);
+                    categoryName = category ? category.name : 'קטגוריה לא מוגדרת';
+                }
+                
+                // Format active status
+                const statusDot = service.active !== false ? 
+                    '<span class="status-dot active"></span> פעיל' : 
+                    '<span class="status-dot inactive"></span> לא פעיל';
+                
+                return `
+                <div class="item-card">
+                    <div class="item-header">
+                        <div class="item-title">${service.name}</div>
+                        <div class="item-actions">
+                            <button class="action-button edit-button" data-id="${service.id}">עריכה</button>
+                            <button class="action-button delete-button" data-id="${service.id}">מחיקה</button>
+                        </div>
+                    </div>
+                    <div class="item-details">
+                        <div class="item-category">
+                            <span class="category-badge">${categoryName}</span>
+                        </div>
+                        <div class="item-description">${service.description || 'אין תיאור'}</div>
+                        <div class="item-status">${statusDot}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            servicesListContainer.innerHTML = html;
+            
+            // Update results info (use the count of rendered services)
+            updateServicesResultsInfo(servicesToRender.length);
+        }
+        
+        // Update services results info
+        function updateServicesResultsInfo(count = null) { // Allow passing count
+            if (servicesResultsInfo) {
+                const currentCount = count !== null ? count : allServices.length;
+                const loadingText = allServicesFullyLoaded ? '' : ' (טוען...)';
+                // Adjust text based on whether filtering is active
+                const searchInput = document.getElementById('services-search');
+                const isFiltering = searchInput && searchInput.value.trim() !== '';
+                
+                if (isFiltering) {
+                    // If filtering, show the count of filtered results
+                    if (currentCount > 0) {
+                       servicesResultsInfo.textContent = `${currentCount} שירותים תואמים לחיפוש "${searchInput.value.trim()}"`;
+                    } else {
+                       servicesResultsInfo.textContent = `אין שירותים תואמים לחיפוש "${searchInput.value.trim()}"`;
+                    }
+                } else {
+                    // If not filtering, show the total count
+                    servicesResultsInfo.textContent = `${allServices.length} שירותים בסך הכל${loadingText}`;
+                }
+            }
+        }
+        
+        // Fetch all services in background
+        async function fetchAllServicesInBackground() {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                if (!lastDocFromInitialLoad) { // Don't run if initial load failed or was empty
+                    console.log('Skipping background fetch: no last document from initial load.');
+                    allServicesFullyLoaded = true;
+                    updateServicesResultsInfo(); 
+                    return;
+                }
+                
+                // Use Firebase modules from window
+                const { collection, query, orderBy, startAfter, getDocs } = window.firebaseModules;
+                
+                // Build query for background fetch
+                const servicesQuery = query(
+                    collection(window.firestoreDB, 'services'),
+                    orderBy('name'),
+                    startAfter(lastDocFromInitialLoad)
+                    // No limit needed here, fetch all remaining
+                );
+                
+                const servicesSnapshot = await getDocs(servicesQuery);
+                
+                // Process the services
+                const newServices = [];
+                servicesSnapshot.forEach(doc => {
+                    const serviceData = doc.data();
+                    
+                    // Ensure active property exists (set default if missing)
+                    if (serviceData.active === undefined) {
+                        serviceData.active = true;
+                    }
+                    
+                    newServices.push({
+                        id: doc.id,
+                        ...serviceData
+                    });
+                });
+                
+                // Append to existing services
+                allServices = [...allServices, ...newServices];
+                
+                // Update the last visible service (though not strictly needed for fetching ALL)
+                if (servicesSnapshot.docs.length > 0) {
+                    lastDocFromInitialLoad = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
+                    // Recursively fetch more services IF pagination was used (e.g., limited query)
+                    // fetchAllServicesInBackground(); // Remove recursion if fetching all at once
+                    allServicesFullyLoaded = true; // Mark as loaded after this fetch
+                    updateServicesResultsInfo();
+                } else {
+                    // No more services to load
+                    allServicesFullyLoaded = true;
+                    updateServicesResultsInfo();
+                    return;
+                }
+                
+            } catch (error) {
+                 if (servicesListContainer) {
+                    servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים</div>';
+                 } // Fix: Added closing curly brace for the catch block
+            }
+        }
+
+         // Load services from Firebase - Modified for initial load + background trigger
+         async function loadServices() {
+            try {
+                if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                // Show loading state
+                if (servicesListContainer) {
+                    servicesListContainer.innerHTML = '<div class="spinner"></div>';
+                }
+                
+                // Use Firebase modules from window
+                const { collection, query, orderBy, limit, startAfter, getDocs } = window.firebaseModules;
+                
+                // Build query for initial load
+                const servicesQuery = query(
+                    collection(window.firestoreDB, 'services'),
+                    orderBy('name'),
+                    limit(servicesPerPage)
+                );
+                
+                const servicesSnapshot = await getDocs(servicesQuery);
+                
+                // Process the services
+                const newServices = [];
+                servicesSnapshot.forEach(doc => {
+                    const serviceData = doc.data();
+                    
+                    // Ensure active property exists (set default if missing)
+                    if (serviceData.active === undefined) {
+                        serviceData.active = true;
+                    }
+                    
+                    newServices.push({
+                        id: doc.id,
+                        ...serviceData
+                    });
+                });
+
+                // START MODIFICATION: Initialize allServices with the first batch
+                allServices = newServices;
+                // END MODIFICATION
+                
+                // Update the last visible service for next pagination
+                if (servicesSnapshot.docs.length > 0) {
+                    lastDocFromInitialLoad = servicesSnapshot.docs[servicesSnapshot.docs.length - 1];
+                } else {
+                    lastDocFromInitialLoad = null; // Reset if no initial docs
+                    // No services found on initial load
+                    if (servicesListContainer) {
+                        servicesListContainer.innerHTML = '<div class="empty-message">אין שירותים ברשימה.</div>';
+                    }
+                    allServicesFullyLoaded = true; // Mark as fully loaded if empty
+                    updateServicesResultsInfo();
+                    return;
+                }
+                
+                // Render the services initially loaded
+                renderServices(allServices); // Pass the initialized allServices
+                
+                // Set initial load flag
+                initialServicesLoaded = true;
+                
+                // Trigger background fetch if there might be more services
+                if (servicesSnapshot.docs.length === servicesPerPage) {
+                     fetchAllServicesInBackground();
+                } else {
+                     allServicesFullyLoaded = true; // Mark as fully loaded if less than a full page came back
+                     updateServicesResultsInfo();
+                }
+            } catch (error) {
+                console.error('Error loading services:', error);
+                if (servicesListContainer) {
+                    servicesListContainer.innerHTML = '<div class="error-message">שגיאה בטעינת השירותים</div>';
+                } // Fix: Added closing curly brace for the catch block
+            }
+        }
     </script>
 
     <!-- Ratings Rejection Modal -->
