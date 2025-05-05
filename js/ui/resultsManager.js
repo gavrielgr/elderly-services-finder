@@ -48,26 +48,33 @@ export class ResultsManager {
         if (searchQuery) {
             const fuse = new Fuse(services, {
                 keys: ['name', 'description', 'tags'],
-                threshold: 0.2,
+                threshold: 0.0,
                 distance: 40,
-                ignoreLocation: true
+                ignoreLocation: true,
+                includeMatches: true,
+                minMatchCharLength: 3
             });
 
-            results = fuse.search(searchQuery).map(result => result.item);
+            // Keep the full Fuse result object, including matches
+            results = fuse.search(searchQuery); 
+            
+            // Mark results as having come from a search
+            results.forEach(r => r.isSearchResult = true);
+
         } else {
             // If no search query, use all services
-            results = services;
+            results = services.map(service => ({ item: service, isSearchResult: false })); // Wrap in expected structure
         }
 
         // Filter by category if active
         if (activeCategory) {
-            results = results.filter(service => {
+            results = results.filter(result => {
                 // תמיכה במבנה נתונים ישן
-                if (service.category === activeCategory) {
+                if (result.item.category === activeCategory) {
                     return true;
                 }
                 // תמיכה במבנה נתונים חדש
-                if (service.categoryId === activeCategory) {
+                if (result.item.categoryId === activeCategory) {
                     return true;
                 }
                 return false;
@@ -76,10 +83,10 @@ export class ResultsManager {
 
         // מיון התוצאות לפי א-ב
         results.sort((a, b) => {
-            return a.name.localeCompare(b.name, 'he');
+            return a.item.name.localeCompare(b.item.name, 'he');
         });
 
-        this.renderResults(results);
+        this.renderResults(results, searchQuery);
         this.updateResultsCount(results.length);
     }
 
@@ -172,13 +179,13 @@ export class ResultsManager {
         }
     }
 
-    renderResults(services) {
+    renderResults(results, searchQuery = '') {
         if (!this.resultsContainer) return;
 
         this.resultsContainer.innerHTML = '';
-        this.currentResults = services;
+        this.currentResults = results;
 
-        if (!services || services.length === 0) {
+        if (!results || results.length === 0) {
             if (this.noResultsMessage) {
                 this.noResultsMessage.classList.remove('hidden');
             }
@@ -192,10 +199,14 @@ export class ResultsManager {
             this.noResultsMessage.classList.add('hidden');
         }
         if (this.resultsCount) {
-            this.resultsCount.textContent = `${services.length} תוצאות`;
+            this.resultsCount.textContent = `${results.length} תוצאות`;
         }
 
-        services.forEach(service => {
+        results.forEach(result => {
+            // Extract the service item and matches (if any)
+            const service = result.item;
+            const matches = result.isSearchResult ? result.matches : null; // Only use matches if it was a search result
+            
             const card = document.createElement('div');
             card.className = 'result-card';
             card.setAttribute('data-service-id', service.id);
@@ -212,60 +223,101 @@ export class ResultsManager {
                 }
             }
 
-            // Process service tags properly
-            let tags = [];
+            // ---- Revised Tag Handling & Highlighting Logic ----
+            let highlightedName = service.name || '';
+            let highlightedDescription = service.description || 'אין תיאור זמין';
             
-            // Add tags from the service.tags property
+            // 1. Collect all potential tag strings
+            let allTagStrings = [];
+            // From service.tags
             if (service.tags) {
                 if (Array.isArray(service.tags)) {
+                    // Handle array of strings or objects
                     service.tags.forEach(tag => {
                         if (typeof tag === 'string') {
-                            tags.push(tag);
-                        } else if (typeof tag === 'object' && tag.name) {
-                            tags.push(tag.name);
+                            allTagStrings.push(tag.trim());
+                        } else if (typeof tag === 'object' && tag.name && typeof tag.name === 'string') {
+                            allTagStrings.push(tag.name.trim());
                         }
                     });
+                } else if (typeof service.tags === 'string') {
+                    // Handle comma-separated string
+                    allTagStrings = allTagStrings.concat(
+                        service.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+                    );
                 }
             }
             
-            // Add interest areas as tags
+            // From service.interestAreas
+            const interestAreasData = this.uiManager.dataService.getInterestAreas() || [];
             if (service.interestAreas && Array.isArray(service.interestAreas)) {
-                // Try to get the interest areas data
-                const interestAreasData = this.uiManager.dataService.getInterestAreas() || [];
-                
-                service.interestAreas.forEach(area => {
-                    if (typeof area === 'string') {
-                        // Look up the interest area name by ID
-                        const interestArea = interestAreasData.find(a => a.id === area);
-                        if (interestArea && interestArea.name) {
-                            // Use the Hebrew name if available
-                            tags.push(interestArea.name);
-                        } else {
-                            // Fallback to ID if area not found or no name
-                            tags.push(area);
-                        }
-                    } else if (typeof area === 'object' && area.name) {
-                        tags.push(area.name);
-                    }
-                });
+                 service.interestAreas.forEach(area => {
+                     if (typeof area === 'string') {
+                         // Area is an ID, look it up
+                         const interestArea = interestAreasData.find(a => a.id === area);
+                         const name = interestArea?.name || area; // Use name or fallback to ID
+                         allTagStrings.push(name.trim());
+                     } else if (typeof area === 'object' && area.name && typeof area.name === 'string') {
+                         // Area is an object with a name
+                         allTagStrings.push(area.name.trim());
+                     }
+                 });
             }
             
-            // Remove duplicates
-            tags = [...new Set(tags)];
+            // Filter out any potential empty strings after trimming
+            allTagStrings = allTagStrings.filter(tag => tag);
+
+            // 2. Apply highlighting using a map (only if searchQuery exists)
+            const highlightedTagsMap = new Map(); // Map original tag string -> highlighted version
+            
+            // Prepare a case-insensitive regex for the exact search query
+            // Escape special regex characters in the query first
+            const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const highlightRegex = searchQuery ? new RegExp(`(${escapedQuery})`, 'i') : null;
+            
+            // Apply highlighting to name and description
+            if (highlightRegex) {
+                highlightedName = highlightedName.replace(highlightRegex, '<mark>$1</mark>');
+                highlightedDescription = highlightedDescription.replace(highlightRegex, '<mark>$1</mark>');
+            }
+            
+            // 3. De-duplicate and prepare for rendering tags
+            const uniqueTagStrings = [...new Set(allTagStrings)];
+            uniqueTagStrings.forEach(tag => {
+                if (highlightRegex) {
+                    const highlightedTag = tag.replace(highlightRegex, '<mark>$1</mark>');
+                    // Only add to map if highlighting actually happened
+                    if (highlightedTag !== tag) { 
+                        highlightedTagsMap.set(tag, highlightedTag);
+                    }
+                }
+            });
+            
+            // ---- Remove the old Fuse.js match processing loop ----
+            /* 
+            if (matches && matches.length > 0) {
+                matches.forEach(match => {
+                    // ... old complex logic based on indices ...
+                });
+            }
+            */
+           // ---- End Removal ----
 
             card.innerHTML = `
                 <div class="result-category-tag">${categoryName}</div>
-                <h3 class="result-name">${service.name}</h3>
-                <p class="result-description">${service.description || 'אין תיאור זמין'}</p>
+                <h3 class="result-name">${highlightedName}</h3>
+                <p class="result-description">${highlightedDescription}</p>
                 <div class="result-details">
                     ${service.address ? `<div class="result-address"><i class="fas fa-map-marker-alt"></i> ${service.address}</div>` : ''}
                     ${service.phone ? `<div class="result-phone"><i class="fas fa-phone"></i> ${service.phone}</div>` : ''}
                     ${service.email ? `<div class="result-email"><i class="fas fa-envelope"></i> ${service.email}</div>` : ''}
                     ${service.website ? `<div class="result-website"><i class="fas fa-globe"></i> <a href="${service.website}" target="_blank">${service.website}</a></div>` : ''}
                 </div>
-                ${tags.length > 0 ? `
+                ${uniqueTagStrings.length > 0 ? `
                     <div class="result-tags">
-                        ${tags.map(tag => `<span class="result-tag">${tag}</span>`).join('')}
+                        ${uniqueTagStrings.map(tag => 
+                            `<span class="result-tag">${highlightedTagsMap.get(tag) || tag}</span>` // Use highlighted version if available, else original
+                        ).join('')}
                     </div>
                 ` : ''}
             `;
