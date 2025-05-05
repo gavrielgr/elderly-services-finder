@@ -46,17 +46,85 @@ export class ResultsManager {
         
         // If we have a search query, use Fuse.js
         if (searchQuery) {
-            const fuse = new Fuse(services, {
-                keys: ['name', 'description', 'tags'],
-                threshold: 0.0,
+            
+            // --- Enrich data for searching ---
+            const interestAreasMap = new Map((this.uiManager.dataService.getInterestAreas() || []).map(area => [area.id, area.name]));
+            const categoriesMap = new Map((this.uiManager.dataService.getCategories() || []).map(cat => [cat.id, cat.name]));
+            
+            const searchableData = services.map(service => {
+                let strictKeywords = [];
+                let fuzzyKeywords = [];
+                
+                // Add description to fuzzy list
+                if (service.description) fuzzyKeywords.push(service.description);
+                
+                // Add name to strict list
+                if (service.name) strictKeywords.push(service.name.trim());
+
+                // Add category name to strict list
+                const categoryId = service.categoryId || service.category;
+                if (categoryId) {
+                    const categoryName = categoriesMap.get(categoryId);
+                    if (categoryName) strictKeywords.push(categoryName.trim());
+                }
+                
+                // Add tags from service.tags to strict list
+                if (service.tags) {
+                    if (Array.isArray(service.tags)) {
+                        service.tags.forEach(tag => {
+                            if (typeof tag === 'string') strictKeywords.push(tag.trim());
+                            else if (typeof tag === 'object' && tag.name && typeof tag.name === 'string') strictKeywords.push(tag.name.trim());
+                        });
+                    } else if (typeof service.tags === 'string') {
+                        strictKeywords = strictKeywords.concat(service.tags.split(',').map(tag => tag.trim()).filter(tag => tag));
+                    }
+                }
+                
+                // Add resolved interest area names to strict list
+                if (service.interestAreas && Array.isArray(service.interestAreas)) {
+                    service.interestAreas.forEach(area => {
+                        let areaName = null;
+                        if (typeof area === 'string') {
+                            areaName = interestAreasMap.get(area) || area; // Use name or fallback to ID
+                        } else if (typeof area === 'object' && area.name && typeof area.name === 'string') {
+                            areaName = area.name;
+                        }
+                        if(areaName) strictKeywords.push(areaName.trim());
+                    });
+                }
+                
+                // Filter out empty strings and duplicates
+                strictKeywords = [...new Set(strictKeywords.filter(k => k))];
+                // fuzzyKeywords will likely just be the description, no need to filter/unique yet
+                
+                return {
+                    originalService: service, 
+                    strictKeywords: strictKeywords, 
+                    fuzzyKeywords: fuzzyKeywords // Should just contain description
+                };
+            });
+            // --- End Enrichment ---
+            
+            // console.log('Services data being searched by Fuse:', searchableData); // Optional: Debug enriched data
+            
+            const fuse = new Fuse(searchableData, { 
+                keys: [ // Search both lists with different weights
+                    { name: 'strictKeywords', weight: 1.0 }, 
+                    { name: 'fuzzyKeywords', weight: 0.7 } // Lower weight for description
+                ],
+                threshold: 0.1, // Keep threshold relatively permissive 
                 distance: 40,
                 ignoreLocation: true,
                 includeMatches: true,
-                minMatchCharLength: 3
+                minMatchCharLength: 1
             });
 
             // Keep the full Fuse result object, including matches
             results = fuse.search(searchQuery); 
+            
+            // ---- Debugging ----
+            console.log('Raw results from Fuse search:', results);
+            // ---- End Debugging ----
             
             // Mark results as having come from a search
             results.forEach(r => r.isSearchResult = true);
@@ -69,12 +137,14 @@ export class ResultsManager {
         // Filter by category if active
         if (activeCategory) {
             results = results.filter(result => {
-                // תמיכה במבנה נתונים ישן
-                if (result.item.category === activeCategory) {
+                // Get the actual service object based on the result structure
+                const service = result.item.originalService || result.item;
+                
+                // Check category using the correct service object
+                if (service.category === activeCategory) {
                     return true;
                 }
-                // תמיכה במבנה נתונים חדש
-                if (result.item.categoryId === activeCategory) {
+                if (service.categoryId === activeCategory) {
                     return true;
                 }
                 return false;
@@ -83,7 +153,11 @@ export class ResultsManager {
 
         // מיון התוצאות לפי א-ב
         results.sort((a, b) => {
-            return a.item.name.localeCompare(b.item.name, 'he');
+            // Get the actual service objects based on the result structure
+            const serviceA = a.item.originalService || a.item;
+            const serviceB = b.item.originalService || b.item;
+            // Compare names from the correct service objects
+            return serviceA.name.localeCompare(serviceB.name, 'he');
         });
 
         this.renderResults(results, searchQuery);
@@ -203,9 +277,16 @@ export class ResultsManager {
         }
 
         results.forEach(result => {
-            // Extract the service item and matches (if any)
-            const service = result.item;
-            const matches = result.isSearchResult ? result.matches : null; // Only use matches if it was a search result
+            // Extract the service item and check if it came from search
+            const service = result.item.originalService || result.item;
+            const isSearchResult = result.isSearchResult || false;
+            
+            // --- Safety Check ---
+            if (!service) {
+                console.error('Skipping result because service data is missing:', result);
+                return; // Skip this iteration
+            }
+            // --- End Safety Check ---
             
             const card = document.createElement('div');
             card.className = 'result-card';
@@ -227,12 +308,11 @@ export class ResultsManager {
             let highlightedName = service.name || '';
             let highlightedDescription = service.description || 'אין תיאור זמין';
             
-            // 1. Collect all potential tag strings
+            // 1. Collect all potential tag strings FROM ORIGINAL SERVICE for display
             let allTagStrings = [];
             // From service.tags
-            if (service.tags) {
+            if (service.tags) { 
                 if (Array.isArray(service.tags)) {
-                    // Handle array of strings or objects
                     service.tags.forEach(tag => {
                         if (typeof tag === 'string') {
                             allTagStrings.push(tag.trim());
@@ -241,7 +321,6 @@ export class ResultsManager {
                         }
                     });
                 } else if (typeof service.tags === 'string') {
-                    // Handle comma-separated string
                     allTagStrings = allTagStrings.concat(
                         service.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
                     );
@@ -303,8 +382,15 @@ export class ResultsManager {
             */
            // ---- End Removal ----
 
+            // ---- Highlight Category Name ----
+            let highlightedCategoryName = categoryName; // Start with the resolved name
+            if (highlightRegex) {
+                highlightedCategoryName = highlightedCategoryName.replace(highlightRegex, '<mark>$1</mark>');
+            }
+            // ---- End Highlight Category Name ----
+
             card.innerHTML = `
-                <div class="result-category-tag">${categoryName}</div>
+                <div class="result-category-tag">${highlightedCategoryName}</div>
                 <h3 class="result-name">${highlightedName}</h3>
                 <p class="result-description">${highlightedDescription}</p>
                 <div class="result-details">
