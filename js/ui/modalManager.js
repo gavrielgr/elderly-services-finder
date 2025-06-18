@@ -248,17 +248,40 @@ export class ModalManager {
     
     shareService() {
         if (!this.currentService) return;
-        
-        const serviceName = this.currentService.name;
-        const serviceDescription = this.currentService.description || '';
-        
-        // Generate text to share
-        const shareText = `שירות: ${serviceName}\n\n${serviceDescription}`;
-        
-        // Check if the navigator.share API is available
+
+        const s = this.currentService;
+        const contact = s.contact || {};
+        let shareLines = [];
+
+        // Name
+        if (s.name) shareLines.push(`שירות: ${s.name}`);
+        // Description
+        if (s.description) shareLines.push(`תיאור: ${s.description}`);
+        // Phone(s)
+        if (contact.phone && Array.isArray(contact.phone) && contact.phone.length > 0) {
+            const phones = contact.phone.map(p => p.number + (p.description ? ` (${p.description})` : '')).join(', ');
+            shareLines.push(`טלפון: ${phones}`);
+        }
+        // Email(s)
+        if (contact.email && Array.isArray(contact.email) && contact.email.length > 0) {
+            const emails = contact.email.map(e => e.address + (e.description ? ` (${e.description})` : '')).join(', ');
+            shareLines.push(`דוא"ל: ${emails}`);
+        }
+        // Website(s)
+        if (contact.website && Array.isArray(contact.website) && contact.website.length > 0) {
+            const websites = contact.website.map(w => w.url + (w.description ? ` (${w.description})` : '')).join(', ');
+            shareLines.push(`אתר: ${websites}`);
+        }
+        // City
+        if (s.city) shareLines.push(`עיר: ${s.city}`);
+        // Address
+        if (s.address) shareLines.push(`כתובת: ${s.address}`);
+
+        const shareText = shareLines.join('\n');
+
         if (navigator.share) {
             navigator.share({
-                title: serviceName,
+                title: s.name,
                 text: shareText
             }).catch(error => {
                 console.error('Error sharing:', error);
