@@ -2364,6 +2364,11 @@
                 // Load data based on section
                 if (sectionId === 'services-section') {
                     if (typeof loadServices === 'function') {
+                        // Clear any existing search when switching to services
+                        const servicesSearch = document.getElementById('services-search');
+                        if (servicesSearch) {
+                            servicesSearch.value = '';
+                        }
                         loadServices();
                     }
                 } else if (sectionId === 'categories-section') {
@@ -3630,6 +3635,12 @@
                     return;
                 }
                 
+                // Check if services are still being loaded (prevent race conditions)
+                if (!initialServicesLoaded) {
+                    console.log('Skipping background fetch: initial load not complete.');
+                    return;
+                }
+                
                 // Use Firebase modules from window
                 const { collection, query, orderBy, startAfter, getDocs } = window.firebaseModules;
                 
@@ -3659,8 +3670,10 @@
                     });
                 });
                 
-                // Append to existing services
-                allServices = [...allServices, ...newServices];
+                // Append to existing services only if still loading
+                if (initialServicesLoaded && !allServicesFullyLoaded) {
+                    allServices = [...allServices, ...newServices];
+                }
                 
                 // Update the last visible service (though not strictly needed for fetching ALL)
                 if (servicesSnapshot.docs.length > 0) {
@@ -3687,6 +3700,12 @@
          async function loadServices() {
             try {
                 if (!window.firestoreDB) throw new Error('Firestore not initialized');
+                
+                // Reset flags and data when loading services to prevent duplicates
+                allServices = [];
+                initialServicesLoaded = false;
+                allServicesFullyLoaded = false;
+                lastDocFromInitialLoad = null;
                 
                 // Show loading state
                 if (servicesListContainer) {
@@ -3721,9 +3740,8 @@
                     });
                 });
 
-                // START MODIFICATION: Initialize allServices with the first batch
+                // Initialize allServices with the first batch
                 allServices = newServices;
-                // END MODIFICATION
                 
                 // Update the last visible service for next pagination
                 if (servicesSnapshot.docs.length > 0) {
