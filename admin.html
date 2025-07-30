@@ -1543,19 +1543,26 @@
             // Set app version in footer
             const appVersionElement = document.getElementById('app-version');
             if (appVersionElement) {
-                // Import version from constants if available, otherwise use a default
-                try {
-                    // Try to get version from constants.js
-                    import('./js/config/constants.js').then(module => {
-                        appVersionElement.textContent = `גרסה: ${module.APP_VERSION}`;
-                    }).catch(() => {
-                        // Fallback to a default version if constants.js is not available
-                        appVersionElement.textContent = 'גרסה: 1.99.130';
+                // Try to fetch version from constants.js file
+                fetch('/js/config/constants.js')
+                    .then(response => response.text())
+                    .then(content => {
+                        // Extract APP_VERSION from the file content
+                        const versionMatch = content.match(/export const APP_VERSION = ['"]([^'"]+)['"]/);
+                        if (versionMatch) {
+                            appVersionElement.textContent = `גרסה: ${versionMatch[1]}`;
+                            console.log('App version loaded from constants.js:', versionMatch[1]);
+                        } else {
+                            // Hide the version element if no version found
+                            appVersionElement.style.display = 'none';
+                            console.log('No version found, hiding version element');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading version from constants.js:', error);
+                        // Hide the version element if there's an error
+                        appVersionElement.style.display = 'none';
                     });
-                } catch (error) {
-                    console.error('Error setting app version:', error);
-                    appVersionElement.textContent = 'גרסה: 1.99.130';
-                }
             }
         });
         
