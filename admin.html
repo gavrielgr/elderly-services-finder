@@ -950,6 +950,42 @@
             font-weight: bold;
             color: var(--primary-color, #01b3a7);
         }
+        
+        /* Admin Footer Styles */
+        .admin-footer {
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        
+        .footer-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .copyright {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .app-version {
+            color: #999;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        /* Responsive footer */
+        @media (max-width: 768px) {
+            .footer-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1301,6 +1337,16 @@
         </div>
     </div>
     
+    <!-- Footer with version -->
+    <footer class="admin-footer">
+        <div class="footer-container">
+            <div class="copyright">
+                © 2025 שירותי+ | כל הזכויות שמורות
+            </div>
+            <div id="app-version" class="app-version"></div>
+        </div>
+    </footer>
+    
     <script>
         // Loading and error UI elements
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -1493,6 +1539,24 @@
         init().then(() => {
             // Setup event listeners after the page is fully loaded
             setupEventListeners();
+            
+            // Set app version in footer
+            const appVersionElement = document.getElementById('app-version');
+            if (appVersionElement) {
+                // Import version from constants if available, otherwise use a default
+                try {
+                    // Try to get version from constants.js
+                    import('./js/config/constants.js').then(module => {
+                        appVersionElement.textContent = `גרסה: ${module.APP_VERSION}`;
+                    }).catch(() => {
+                        // Fallback to a default version if constants.js is not available
+                        appVersionElement.textContent = 'גרסה: 1.99.130';
+                    });
+                } catch (error) {
+                    console.error('Error setting app version:', error);
+                    appVersionElement.textContent = 'גרסה: 1.99.130';
+                }
+            }
         });
         
         // Set up UI event listeners after Firebase initialization
