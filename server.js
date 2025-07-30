@@ -487,10 +487,21 @@ app.get('/api/service-version/:serviceId', async (req, res) => {
 // Serve static files 
 app.use(express.static('public'));
 
+// Serve JavaScript files from root directory
+app.get('/js/*', (req, res) => {
+    const filePath = __dirname + req.path;
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error('Error serving JS file:', err);
+            res.status(404).json({ error: 'File not found' });
+        }
+    });
+});
+
 // Handle SPA routes
 app.get('*', (req, res) => {
     // Only serve HTML/static files for GET requests
-    if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+    if (req.method === 'GET' && !req.path.startsWith('/api/') && !req.path.startsWith('/js/')) {
         if (req.path === '/login' || req.path === '/login.html') {
             res.sendFile(__dirname + '/login.html');
         } else if (req.path === '/admin' || req.path === '/admin.html') {

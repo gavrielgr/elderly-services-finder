@@ -40,7 +40,9 @@ function updateHtmlVersions(version) {
                 filePath,
                 [
                     // Update script src version parameters for both JS files and CDN links if they have versions
-                    [/src="([^"]+)\?v=[\d\.]+"/g, `src="$1?v=${version}"`]
+                    [/src="([^"]+)\?v=[\d\.]+"/g, `src="$1?v=${version}"`],
+                    // Update hardcoded version in admin.html
+                    [/appVersionElement\.textContent = 'גרסה: [\d\.]+';/, `appVersionElement.textContent = 'גרסה: ${version}';`]
                 ]
             );
             console.log(`Updated version parameters in ${file} to ${version}`);
