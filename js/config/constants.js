@@ -1,6 +1,6 @@
 // These values will be replaced during build but work for local dev
-export const BUILD_TIMESTAMP = '2025-07-30T07:15:29.710Z';
-export const APP_VERSION = '1.99.132'; // Updated version to match package.json
+export const BUILD_TIMESTAMP = '2025-07-30T07:22:35.337Z';
+export const APP_VERSION = '1.99.133'; // Updated version to match package.json
 export const CACHE_VERSION = `${APP_VERSION}-${BUILD_TIMESTAMP}`;
 
 // Database constants

@@ -1540,30 +1540,7 @@
             // Setup event listeners after the page is fully loaded
             setupEventListeners();
             
-            // Set app version in footer
-            const appVersionElement = document.getElementById('app-version');
-            if (appVersionElement) {
-                // Try to fetch version from constants.js file
-                fetch('/js/config/constants.js')
-                    .then(response => response.text())
-                    .then(content => {
-                        // Extract APP_VERSION from the file content
-                        const versionMatch = content.match(/export const APP_VERSION = ['"]([^'"]+)['"]/);
-                        if (versionMatch) {
-                            appVersionElement.textContent = `גרסה: ${versionMatch[1]}`;
-                            console.log('App version loaded from constants.js:', versionMatch[1]);
-                        } else {
-                            // Hide the version element if no version found
-                            appVersionElement.style.display = 'none';
-                            console.log('No version found, hiding version element');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error loading version from constants.js:', error);
-                        // Hide the version element if there's an error
-                        appVersionElement.style.display = 'none';
-                    });
-            }
+
         });
         
         // Set up UI event listeners after Firebase initialization
@@ -3941,5 +3918,17 @@
             </form>
         </div>
     </div>
+    
+    <!-- Admin version script -->
+    <script type="module">
+        import { APP_VERSION } from './js/config/constants.js';
+        
+        // Set app version in footer - same as main page
+        const appVersionElement = document.getElementById('app-version');
+        if (appVersionElement) {
+            appVersionElement.textContent = `גרסה: ${APP_VERSION}`;
+            console.log('App version set in admin footer:', appVersionElement.textContent);
+        }
+    </script>
 </body>
 </html> 
