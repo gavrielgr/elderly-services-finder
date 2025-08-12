@@ -179,3 +179,63 @@
 ## תודות
 
 תודה לכל המפתחים והתורמים שעזרו בשיפור הפרויקט!
+
+## 🚀 Development Workflow
+
+### Version Management and Deployment
+
+This project includes automated scripts for version management and deployment:
+
+#### **Version Bump**
+```bash
+npm run bump
+```
+- Increments the version number in `package.json`
+- Updates version in `sw.js` (Service Worker)
+- Updates version parameters in HTML files
+- Updates version in `constants.js`
+
+#### **Build and Deploy**
+```bash
+npm run push
+```
+This single command executes the complete deployment workflow:
+1. **Bumps version** (`npm run bump`)
+2. **Builds project** (`npm run build`)
+3. **Stages changes** (`git add .`)
+4. **Commits with version** (`git commit -m "v$npm_package_version"`)
+5. **Pushes to repository** (`git push`)
+
+#### **Development Server**
+```bash
+npm run dev
+```
+- Starts both backend server (port 5001) and frontend (Vite on port 5173)
+- Runs concurrently: `concurrently "node server.js" "vite"`
+
+#### **Build for Production**
+```bash
+npm run build
+```
+- Builds the project using Vite
+- Runs post-build processing
+- Copies critical files to `dist` folder
+
+### **Workflow Summary**
+
+**For regular development:**
+```bash
+npm run dev
+```
+
+**For version update and deployment:**
+```bash
+npm run push
+```
+
+**For manual version bump only:**
+```bash
+npm run bump
+```
+
+The `npm run push` command is the recommended way to handle version updates and deployments as it automates the entire process from version bumping to pushing to the repository.
