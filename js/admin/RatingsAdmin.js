@@ -1,18 +1,18 @@
-import { 
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    updateDoc,
-    query,
-    where,
-    orderBy,
-    limit,
-    startAfter,
-    serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
-import { adminAuth } from './AdminAuth.js';
 import { initializeFirebase } from '../config/firebase.js';
+import { 
+    collection, 
+    query, 
+    where, 
+    orderBy, 
+    limit, 
+    getDocs, 
+    doc, 
+    getDoc, 
+    updateDoc, 
+    deleteDoc,
+    serverTimestamp 
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { adminAuth } from './AdminAuth.js';
 
 export class RatingsAdmin {
     constructor() {

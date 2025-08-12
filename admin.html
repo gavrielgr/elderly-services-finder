@@ -20,13 +20,24 @@
     <!-- Preload Firebase modules -->
     <script type="module">
         // Import Firebase modules directly from CDN with full URLs
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
         import { 
-            getFirestore, doc, getDoc, collection, getDocs, 
-            query, where, orderBy, limit, startAfter, addDoc, updateDoc, deleteDoc, serverTimestamp,
-            getCountFromServer, writeBatch // Added writeBatch import
-        } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
-        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+            getFirestore, 
+            collection, 
+            getDocs, 
+            query, 
+            where, 
+            orderBy, 
+            limit, 
+            startAfter,
+            doc,
+            getDoc,
+            updateDoc,
+            deleteDoc,
+            writeBatch,
+            serverTimestamp
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         
         // Make Firebase modules available globally
         window.firebaseModules = {
@@ -3924,7 +3935,7 @@
         // Set app version in footer - same as main page
         const appVersionElement = document.getElementById('app-version');
         if (appVersionElement) {
-            appVersionElement.textContent = 'גרסה: 1.99.137';
+            appVersionElement.textContent = 'גרסה: 1.99.138';
             console.log('App version set in admin footer');
         }
     </script>

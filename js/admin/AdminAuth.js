@@ -1,21 +1,14 @@
+import { initializeFirebase } from '../config/firebase.js';
 import { 
-    getAuth, 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    signOut,
-    onAuthStateChanged
-} from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+    onAuthStateChanged, 
+    signOut 
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { 
-    getFirestore, 
     doc, 
     getDoc, 
-    setDoc,
-    updateDoc,
-    serverTimestamp,
-    collection,
-    addDoc
-} from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
-import { initializeFirebase } from '../config/firebase.js';
+    setDoc, 
+    serverTimestamp 
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 export class AdminAuth {
     constructor() {

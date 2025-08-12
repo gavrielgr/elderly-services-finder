@@ -1,6 +1,6 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js';
-import { getAuth } from 'https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { getApiBaseUrl } from './app-config.js';
 
 // Initialization state tracking
@@ -48,6 +48,7 @@ async function fetchFirebaseConfig() {
 export async function initializeFirebase() {
   // If already fully initialized, return existing instances
   if (isInitialized && firebaseApp && firebaseDb && firebaseAuth) {
+    console.log('Firebase already initialized, returning existing instances');
     return { app: firebaseApp, db: firebaseDb, auth: firebaseAuth };
   }
   
@@ -71,23 +72,36 @@ export async function initializeFirebase() {
     try {
       // Fetch Firebase config
       const firebaseConfig = await fetchFirebaseConfig();
+      console.log('Firebase config fetched successfully:', {
+        projectId: firebaseConfig.projectId,
+        authDomain: firebaseConfig.authDomain,
+        hasApiKey: !!firebaseConfig.apiKey
+      });
       
       // Initialize Firebase app if needed
       if (!firebaseApp) {
         console.log('Initializing Firebase app...');
         firebaseApp = initializeApp(firebaseConfig);
+        console.log('Firebase app initialized:', firebaseApp.name);
       }
       
       // Initialize Firestore if needed
       if (!firebaseDb) {
         console.log('Initializing Firestore...');
         firebaseDb = getFirestore(firebaseApp);
+        console.log('Firestore initialized:', firebaseDb);
       }
       
       // Initialize Auth if needed
       if (!firebaseAuth) {
         console.log('Initializing Auth...');
         firebaseAuth = getAuth(firebaseApp);
+        console.log('Auth initialized:', firebaseAuth);
+      }
+      
+      // Validate that all instances are properly initialized
+      if (!firebaseApp || !firebaseDb || !firebaseAuth) {
+        throw new Error('One or more Firebase services failed to initialize');
       }
       
       // Add to window for debugging if in browser environment
@@ -103,11 +117,12 @@ export async function initializeFirebase() {
       
       return { app: firebaseApp, db: firebaseDb, auth: firebaseAuth };
     } catch (error) {
-      handleError(error, 'Error initializing Firebase:');
-    } finally {
-      // Clear the promise regardless of outcome
-      // This allows future retries if initialization failed
+      // Clear the promise and mark as not initialized
       initializationPromise = null;
+      isInitialized = false;
+      initializationError = error;
+      console.error('Error initializing Firebase:', error);
+      throw error;
     }
   })();
   

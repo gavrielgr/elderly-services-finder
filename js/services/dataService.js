@@ -3,7 +3,7 @@ import { saveToIndexedDB, getFromIndexedDB } from './storageService.js';
 import { ALL_SERVICES_KEY } from '../config/constants.js';
 // Add Firebase imports
 import { initializeFirebase, db as firebaseDb } from '../config/firebase.js';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 // Local db reference that will be set after initialization
 let db = null;
@@ -256,14 +256,15 @@ export class DataService {
         if (forceRefresh) {
             try {
                 console.log(`Initializing Firebase for getServiceById(${serviceId})`);
-                const { db: freshDb } = await initializeFirebase();
-                db = freshDb;
+                const firebaseResult = await initializeFirebase();
+                console.log('Firebase initialization result:', firebaseResult);
                 
-                if (!db) {
-                    console.warn("Firebase db not available after initialization");
+                if (!firebaseResult || !firebaseResult.db) {
+                    console.warn("Firebase db not available after initialization:", firebaseResult);
                     forceRefresh = false; // Fallback to cache
                 } else {
-                    console.log(`Firebase db initialized successfully for getServiceById(${serviceId})`);
+                    db = firebaseResult.db;
+                    console.log(`Firebase db initialized successfully for getServiceById(${serviceId}):`, db);
                 }
             } catch (error) {
                 console.error(`Failed to initialize Firebase in getServiceById(${serviceId}):`, error);
@@ -284,10 +285,19 @@ export class DataService {
         // If forceRefresh is true and db is available, fetch fresh from Firestore
         if (forceRefresh && db) {
             try {
+                // Validate that db is a valid Firestore instance
+                if (!db || typeof db !== 'object' || !db._databaseId) {
+                    console.error('Invalid Firestore instance:', db);
+                    throw new Error('Invalid Firestore instance');
+                }
+                
                 console.log(`Fetching fresh data for service ${serviceId} from Firestore...`);
                 // 1. Fetch the service document
                 const serviceDocRef = doc(db, 'services', serviceId);
+                console.log('Service document reference:', serviceDocRef);
+                
                 const serviceDocSnap = await getDoc(serviceDocRef);
+                console.log('Service document snapshot:', serviceDocSnap);
 
                 if (!serviceDocSnap.exists()) {
                     console.warn(`Service ${serviceId} not found in Firestore.`);
@@ -295,12 +305,20 @@ export class DataService {
                 }
 
                 let serviceData = { id: serviceDocSnap.id, ...serviceDocSnap.data() };
+                console.log('Service data from Firestore:', serviceData);
 
                 // 2. Fetch related interest area mappings
+                console.log('About to create mappings query...');
+                console.log('collection function:', collection);
+                console.log('db parameter:', db);
+                console.log('db type:', typeof db);
+                
                 const mappingsQuery = query(
                     collection(db, 'service-interest-areas'),
                     where('serviceId', '==', serviceId)
                 );
+                console.log('Mappings query created successfully:', mappingsQuery);
+
                 const mappingsSnapshot = await getDocs(mappingsQuery);
 
                 const interestAreaIds = [];

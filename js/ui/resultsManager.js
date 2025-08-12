@@ -278,8 +278,27 @@ export class ResultsManager {
 
         results.forEach(result => {
             // Extract the service item and check if it came from search
-            const service = result.item.originalService || result.item;
-            const isSearchResult = result.isSearchResult || false;
+            // Handle both search result format and direct service format
+            let service;
+            let isSearchResult = false;
+            
+            if (result.item && result.item.originalService) {
+                // Search result format
+                service = result.item.originalService;
+                isSearchResult = result.isSearchResult || false;
+            } else if (result.item) {
+                // Direct service format
+                service = result.item;
+                isSearchResult = false;
+            } else if (result.originalService) {
+                // Alternative search result format
+                service = result.originalService;
+                isSearchResult = result.isSearchResult || false;
+            } else {
+                // Fallback - treat the result itself as the service
+                service = result;
+                isSearchResult = false;
+            }
             
             // --- Safety Check ---
             if (!service) {

@@ -118,7 +118,8 @@ export class ModalManager {
                 .map(e => {
                     const address = e.address;
                     const description = e.description;
-                    return `<a href="mailto:${address}" class="email-link">${address}</a>${description ? ` - ${description}` : ''}`;
+                    // Create a clean email link without inline onclick
+                    return `<a href="#" class="email-link" data-email="${address}" style="color: #007bff; text-decoration: underline; cursor: pointer;">${address}</a>${description ? ` - ${description}` : ''}`;
                 })
                 .join('<br>');
             
@@ -207,6 +208,47 @@ export class ModalManager {
 
         this.detailsContainer.innerHTML = detailsHTML;
         this.modal.style.display = 'block';
+        
+        // Add event listeners for email links to ensure they work with Chrome
+        const emailLinks = this.detailsContainer.querySelectorAll('.email-link');
+        emailLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const email = link.getAttribute('data-email');
+                if (email) {
+                    console.log('Email link clicked, attempting to open mailto:', email);
+                    
+                    // Create a temporary link element and click it programmatically
+                    // This approach often works better with Chrome's security
+                    const tempLink = document.createElement('a');
+                    tempLink.href = `mailto:${email}`;
+                    tempLink.style.display = 'none';
+                    document.body.appendChild(tempLink);
+                    
+                    // Use a small delay to ensure the element is properly added to DOM
+                    setTimeout(() => {
+                        try {
+                            tempLink.click();
+                            console.log('Temporary link clicked successfully');
+                        } catch (error) {
+                            console.error('Error clicking temporary link:', error);
+                            // Fallback: try direct navigation
+                            try {
+                                window.location.href = `mailto:${email}`;
+                                console.log('Fallback navigation attempted');
+                            } catch (error2) {
+                                console.error('Fallback also failed:', error2);
+                            }
+                        } finally {
+                            // Clean up
+                            if (document.body.contains(tempLink)) {
+                                document.body.removeChild(tempLink);
+                            }
+                        }
+                    }, 10);
+                }
+            });
+        });
         
         // Initialize rating component
         this.initRatingComponent(service.id);

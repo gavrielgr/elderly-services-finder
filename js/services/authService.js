@@ -26,37 +26,25 @@ class AuthService {
     
     async initialize() {
         try {
-            // Initialize Firebase first
-            const { auth, db } = await initializeFirebase();
-            this.auth = auth;
-            this.db = db;
+            console.log('AuthService: Starting Firebase initialization...');
+            const firebaseResult = await initializeFirebase();
+            console.log('AuthService: Firebase initialization result:', firebaseResult);
+            
+            if (!firebaseResult || !firebaseResult.auth || !firebaseResult.db) {
+                console.warn('AuthService: Firebase services not available after initialization:', firebaseResult);
+                throw new Error('Firebase services not properly initialized');
+            }
+            
+            this.auth = firebaseResult.auth;
+            this.db = firebaseResult.db;
+            console.log('AuthService: Firebase services assigned successfully');
             
             this.authStatePromise = new Promise((resolve) => {
                 this.unsubscribe = onAuthStateChanged(this.auth, async (user) => {
                     if (user) {
                         try {
-                            const userDoc = await getDoc(doc(this.db, 'users', user.uid));
-                            if (userDoc.exists()) {
-                                const userData = userDoc.data();
-                                this.currentUser = {
-                                    uid: user.uid,
-                                    email: user.email,
-                                    name: user.displayName,
-                                    photoURL: user.photoURL,
-                                    ...userData
-                                };
-                            } else {
-                                // Create user document if it doesn't exist
-                                await setDoc(doc(this.db, 'users', user.uid), {
-                                    email: user.email,
-                                    name: user.displayName,
-                                    photoURL: user.photoURL,
-                                    role: 'user',
-                                    status: 'active',
-                                    createdAt: serverTimestamp(),
-                                    lastLogin: serverTimestamp()
-                                });
-                                
+                            if (!this.db) {
+                                console.warn('Firestore db not available, skipping user data fetch');
                                 this.currentUser = {
                                     uid: user.uid,
                                     email: user.email,
@@ -65,10 +53,50 @@ class AuthService {
                                     role: 'user',
                                     status: 'active'
                                 };
+                            } else {
+                                const userDoc = await getDoc(doc(this.db, 'users', user.uid));
+                                if (userDoc.exists()) {
+                                    const userData = userDoc.data();
+                                    this.currentUser = {
+                                        uid: user.uid,
+                                        email: user.email,
+                                        name: user.displayName,
+                                        photoURL: user.photoURL,
+                                        ...userData
+                                    };
+                                } else {
+                                    // Create user document if it doesn't exist
+                                    await setDoc(doc(this.db, 'users', user.uid), {
+                                        email: user.email,
+                                        name: user.displayName,
+                                        photoURL: user.photoURL,
+                                        role: 'user',
+                                        status: 'active',
+                                        createdAt: serverTimestamp(),
+                                        lastLogin: serverTimestamp()
+                                    });
+                                    
+                                    this.currentUser = {
+                                        uid: user.uid,
+                                        email: user.email,
+                                        name: user.displayName,
+                                        photoURL: user.photoURL,
+                                        role: 'user',
+                                        status: 'active'
+                                    };
+                                }
                             }
                         } catch (error) {
                             console.error("Error fetching/creating user data:", error);
-                            this.currentUser = null;
+                            // Fallback to basic user info if Firestore operations fail
+                            this.currentUser = {
+                                uid: user.uid,
+                                email: user.email,
+                                name: user.displayName,
+                                photoURL: user.photoURL,
+                                role: 'user',
+                                status: 'active'
+                            };
                         }
                     } else {
                         this.currentUser = null;
