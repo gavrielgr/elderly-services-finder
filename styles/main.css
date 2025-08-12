@@ -74,6 +74,11 @@
 
 
 
+/* Hide rating sections in main application */
+.rating-section {
+    display: none;
+}
+
 /* Override default Bootstrap mark padding for search results */
 .result-name mark,
 .result-description mark,
