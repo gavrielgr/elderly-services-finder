@@ -273,7 +273,21 @@ export class ModalManager {
     refreshRatings() {
         // Refresh ratings for current service
         if (this.currentService && this.ratingComponent) {
-            this.ratingComponent.refresh();
+            const refreshButton = document.getElementById('refresh-ratings-button');
+            if (refreshButton) {
+                // Add loading state
+                refreshButton.classList.add('loading');
+                refreshButton.disabled = true;
+                
+                // Refresh ratings
+                this.ratingComponent.refresh();
+                
+                // Remove loading state after a short delay
+                setTimeout(() => {
+                    refreshButton.classList.remove('loading');
+                    refreshButton.disabled = false;
+                }, 1000);
+            }
         }
     }
     
@@ -438,7 +452,7 @@ export class ModalManager {
                 <div class="rating-header">
                     <h3>דירוגים</h3>
                     <button id="refresh-ratings-button" class="refresh-ratings-button" title="רענן דירוגים">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
                         </svg>
                     </button>

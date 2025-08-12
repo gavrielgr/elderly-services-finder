@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Loading State</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        /* Test 1: Basic loading state */
+        .test-button-1 {
+            background: #7DD1D3;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+        }
+        .test-button-1.loading {
+            background: #ff9800 !important;
+            transform: scale(1.2) !important;
+            border: 3px solid red !important;
+        }
+        
+        /* Test 2: With animation */
+        .test-button-2 {
+            background: #7DD1D3;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 20px;
+        }
+        .test-button-2.loading {
+            background: #ff9800 !important;
+            transform: scale(1.2) !important;
+            border: 3px solid red !important;
+            animation: pulse 0.5s ease-in-out infinite alternate !important;
+        }
+        @keyframes pulse {
+            from { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+            to { box-shadow: 0 0 30px rgba(255, 0, 0, 1); }
+        }
+        
+        /* Test 3: Header refresh button styles */
+        .header-refresh-button {
+            background: #7DD1D3;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            padding: 0;
+        }
+        .header-refresh-button.loading {
+            background: #ff9800 !important;
+            transform: scale(1.1) !important;
+            border: 3px solid red !important;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8) !important;
+            animation: pulse 0.5s ease-in-out infinite alternate !important;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Debug Loading State Test</h1>
+        
+        <div class="debug-info">
+            <strong>Debug Info:</strong><br>
+            - Test 1: Basic loading state (no animation)<br>
+            - Test 2: Loading state with pulse animation<br>
+            - Test 3: Header refresh button with full styles<br>
+            - All should turn orange, scale up, and get red border when loading
+        </div>
+        
+        <div class="button-row">
+            <h3>Test 1: Basic Loading State</h3>
+            <button id="test1" class="test-button-1">🔄</button>
+            <button class="test-button" onclick="testLoading('test1')">Test Loading</button>
+            <button class="test-button" onclick="resetButton('test1')">Reset</button>
+            <span id="status1">Ready</span>
+        </div>
+        
+        <div class="button-row">
+            <h3>Test 2: Loading with Animation</h3>
+            <button id="test2" class="test-button-2">🔄</button>
+            <button class="test-button" onclick="testLoading('test2')">Test Loading</button>
+            <button class="test-button" onclick="resetButton('test2')">Reset</button>
+            <span id="status2">Ready</span>
+        </div>
+        
+        <div class="button-row">
+            <h3>Test 3: Header Refresh Button</h3>
+            <button id="test3" class="header-refresh-button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+                </svg>
+            </button>
+            <button class="test-button" onclick="testLoading('test3')">Test Loading</button>
+            <button class="test-button" onclick="resetButton('test3')">Reset</button>
+            <span id="status3">Ready</span>
+        </div>
+        
+        <div class="button-row">
+            <h3>Console Output</h3>
+            <div id="console-output" class="debug-info">Console output will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            console.log(message);
+            document.getElementById('console-output').innerHTML += message + '<br>';
+        }
+        
+        function testLoading(buttonId) {
+            const button = document.getElementById(buttonId);
+            const status = document.getElementById('status' + buttonId.slice(-1));
+            
+            log(`Testing loading state for ${buttonId}`);
+            log(`Button classes before: ${button.className}`);
+            
+            button.classList.add('loading');
+            button.disabled = true;
+            
+            log(`Button classes after adding loading: ${button.className}`);
+            log(`Button disabled: ${button.disabled}`);
+            status.textContent = 'Loading...';
+            
+            setTimeout(() => {
+                button.classList.remove('loading');
+                button.disabled = false;
+                log(`Button classes after removing loading: ${button.className}`);
+                log(`Button disabled: ${button.disabled}`);
+                status.textContent = 'Ready';
+            }, 3000);
+        }
+        
+        function resetButton(buttonId) {
+            const button = document.getElementById(buttonId);
+            const status = document.getElementById('status' + buttonId.slice(-1));
+            
+            button.classList.remove('loading');
+            button.disabled = false;
+            status.textContent = 'Ready';
+            log(`Reset ${buttonId}`);
+        }
+        
+        log('Debug test page loaded');
+    </script>
+</body>
+</html>

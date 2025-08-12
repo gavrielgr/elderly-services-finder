@@ -37,6 +37,22 @@
     <!-- <link rel="stylesheet" href="css/auth.css"> -->
     <!-- <link rel="stylesheet" href="css/ratings.css"> -->
     
+    <!-- Inline styles to ensure loading state works -->
+    <style>
+        /* Inline styles to ensure loading state works */
+        .header-refresh-button.loading {
+            background: #ff9800 !important;
+            transform: scale(1.1) !important;
+            border: 3px solid red !important;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8) !important;
+            animation: inline-pulse 0.5s ease-in-out infinite alternate !important;
+        }
+        @keyframes inline-pulse {
+            from { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+            to { box-shadow: 0 0 30px rgba(255, 0, 0, 1); }
+        }
+    </style>
+    
     <!-- Favicon -->
     <link rel="icon" href="icons/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
@@ -57,7 +73,11 @@
                 <div class="header-status">
                     <div class="last-updated">
                         <span id="last-updated-text">עודכן: טוען...</span>
-                        <button id="refresh-button" title="רענן מידע">🔄</button>
+                        <button id="refresh-button" class="header-refresh-button" title="רענן מידע" style="transition: all 0.2s ease;">
+                            <svg class="refresh-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
+                            </svg>
+                        </button>
                     </div>
                     <div id="connection-status" class="connection-status" title="סטטוס חיבור">
                         <span class="status-icon online">🟢</span>
@@ -197,6 +217,15 @@
         window.addEventListener('uiManagerReady', () => {
             // Handle refresh button click
             document.getElementById('refresh-button').addEventListener('click', async () => {
+                const refreshButton = document.getElementById('refresh-button');
+                console.log('Refresh button clicked!');
+                
+                // Add loading state
+                refreshButton.classList.add('loading');
+                refreshButton.disabled = true;
+                console.log('Loading state applied, classes:', refreshButton.className);
+                console.log('Button disabled:', refreshButton.disabled);
+                
                 try {
                     const hasUpdates = await window.uiManager.dataService.checkForUpdates();
                     if (hasUpdates) {
@@ -207,6 +236,14 @@
                 } catch (error) {
                     console.error('Error checking for updates:', error);
                     window.uiManager.showStatusMessage('שגיאה בעדכון הנתונים', 'error');
+                } finally {
+                    // Remove loading state after longer delay to make it visible
+                    setTimeout(() => {
+                        refreshButton.classList.remove('loading');
+                        refreshButton.disabled = false;
+                        console.log('Loading state removed, classes:', refreshButton.className);
+                        console.log('Button disabled:', refreshButton.disabled);
+                    }, 2000);
                 }
             });
 
@@ -236,5 +273,37 @@
     
     <!-- Main application script - load after all the modules -->
     <script src="app.js" type="module"></script>
+    
+    <!-- Fallback refresh button handler that doesn't depend on UIManager -->
+    <script>
+        // Simple fallback event listener that will definitely work
+        document.addEventListener('DOMContentLoaded', () => {
+            const refreshButton = document.getElementById('refresh-button');
+            
+            if (refreshButton) {
+                console.log('Setting up fallback refresh button listener');
+                
+                refreshButton.addEventListener('click', function() {
+                    console.log('Fallback refresh button clicked!');
+                    
+                    // Add loading state
+                    this.classList.add('loading');
+                    this.disabled = true;
+                    console.log('Loading state applied, classes:', this.className);
+                    console.log('Button disabled:', this.disabled);
+                    
+                    // Simulate loading for 3 seconds
+                    setTimeout(() => {
+                        this.classList.remove('loading');
+                        this.disabled = false;
+                        console.log('Loading state removed, classes:', this.className);
+                        console.log('Button disabled:', this.disabled);
+                    }, 3000);
+                });
+            } else {
+                console.error('Refresh button not found for fallback listener');
+            }
+        });
+    </script>
 </body>
 </html>

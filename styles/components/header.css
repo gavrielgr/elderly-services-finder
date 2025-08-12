@@ -67,6 +67,73 @@
     transform: rotate(45deg);
 }
 
+/* Override for header refresh button with circular design */
+.header-refresh-button {
+    background: var(--primary-color, #7DD1D3) !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 20px !important;
+    height: 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    color: white !important;
+    padding: 0 !important;
+    margin-right: 0.25rem;
+    min-width: 20px !important;
+    min-height: 20px !important;
+}
+
+.header-refresh-button:hover {
+    background: var(--primary-hover, #5CB9BB) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.header-refresh-button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.header-refresh-button .refresh-icon {
+    transition: transform 0.3s ease;
+    display: block !important;
+}
+
+.header-refresh-button.loading .refresh-icon {
+    animation: header-spin 1s linear infinite !important;
+}
+
+/* Debug: Make loading state more visible */
+.header-refresh-button.loading {
+    background: var(--warning, #ff9800) !important;
+    transform: scale(1.1) !important;
+    border: 3px solid red !important;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.8) !important;
+    animation: pulse 0.5s ease-in-out infinite alternate !important;
+}
+
+@keyframes pulse {
+    from {
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+    }
+    to {
+        box-shadow: 0 0 30px rgba(255, 0, 0, 1);
+    }
+}
+
+@keyframes header-spin {
+    from {
+        transform: rotate(0deg) !important;
+    }
+    to {
+        transform: rotate(360deg) !important;
+    }
+}
+
 .connection-status {
     font-size: 0.8rem;
     display: flex;
