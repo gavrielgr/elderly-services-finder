@@ -9,6 +9,7 @@
     background-color: rgba(0, 0, 0, 0.5);
     align-items: center;
     justify-content: center;
+    pointer-events: auto;
 }
 
 .modal-content {
@@ -37,6 +38,7 @@
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-primary);
     z-index: 10;
+    min-height: 3rem;
 }
 
 .modal-title {
@@ -55,7 +57,23 @@
 .close-modal {
     font-size: 1.5rem;
     cursor: pointer;
-    position: static;
+    position: relative;
+    z-index: 20;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    user-select: none;
+    display: inline-block;
+    min-width: 2rem;
+    min-height: 2rem;
+    text-align: center;
+    line-height: 1;
+    pointer-events: auto;
+    background-color: transparent;
+}
+
+.close-modal:hover {
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .service-name {

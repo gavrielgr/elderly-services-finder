@@ -9,6 +9,9 @@ export class ModalManager {
         this.currentService = null;
         this.ratingComponent = null;
         
+        console.log('ModalManager: Modal element found:', !!this.modal);
+        console.log('ModalManager: Details container found:', !!this.detailsContainer);
+        
         console.log('ModalManager: Creating RouterService');
         this.router = new RouterService();
         
@@ -34,19 +37,42 @@ export class ModalManager {
     }
     
     setupEventListeners() {
+        console.log('ModalManager: Setting up event listeners');
+        
+        // Wait a bit to ensure DOM is fully ready
+        setTimeout(() => {
+            this.setupModalEventListeners();
+        }, 100);
+    }
+    
+    setupModalEventListeners() {
+        console.log('ModalManager: Setting up modal event listeners');
+        
         // Close modal when clicking outside or on close button
         if (this.modal) {
+            console.log('ModalManager: Modal found, setting up click outside listener');
             this.modal.addEventListener('click', (e) => {
                 if (e.target === this.modal) {
+                    console.log('ModalManager: Clicked outside modal, closing');
                     this.closeModal();
                 }
             });
             
             // Close button event listener
-            const closeButton = this.modal.querySelector('.close-button, .modal-close');
+            const closeButton = this.modal.querySelector('.close-modal');
             if (closeButton) {
-                closeButton.addEventListener('click', () => this.closeModal());
+                console.log('ModalManager: Close button found, adding event listener');
+                closeButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('ModalManager: Close button clicked');
+                    this.closeModal();
+                });
+            } else {
+                console.error('ModalManager: Close button not found');
             }
+        } else {
+            console.error('ModalManager: Modal element not found in setupModalEventListeners');
         }
 
         // Set up call button event
@@ -182,8 +208,6 @@ export class ModalManager {
         document.execCommand('copy');
         document.body.removeChild(input);
         
-        // Show a more informative message
-        alert(`המידע הועתק ללוח!\n\nשירות: ${title}\nהקישור הועתק גם כן.\n\nכעת תוכל להדביק אותם בכל מקום.`);
     }
     
     initRatingComponent(serviceId) {
@@ -201,7 +225,9 @@ export class ModalManager {
     }
     
     closeModal() {
+        console.log('ModalManager: closeModal called');
         if (this.modal) {
+            console.log('ModalManager: Setting modal display to none');
             this.modal.style.display = 'none';
             
             // Navigate back to main page
@@ -214,6 +240,8 @@ export class ModalManager {
             if (this.detailsContainer) {
                 this.detailsContainer.innerHTML = '';
             }
+        } else {
+            console.error('ModalManager: Modal element not found in closeModal');
         }
     }
 
@@ -225,6 +253,9 @@ export class ModalManager {
             console.error('ModalManager: Details container not found');
             return;
         }
+        
+        // Re-setup event listeners to ensure they work
+        this.setupModalEventListeners();
         
         // Set the modal title
         const modalTitle = document.getElementById('modal-title');
@@ -363,7 +394,8 @@ export class ModalManager {
             </div>`;
 
         this.detailsContainer.innerHTML = detailsHTML;
-        this.modal.style.display = 'block';
+        this.modal.style.display = 'flex';
+        console.log('ModalManager: Modal displayed with flex, current display style:', this.modal.style.display);
         
         // Add event listeners for email links to ensure they work with Chrome
         const emailLinks = this.detailsContainer.querySelectorAll('.email-link');
@@ -436,6 +468,16 @@ export class ModalManager {
 
         // Add WhatsApp share button if it doesn't exist
         this.addWhatsAppShareButton();
+        
+        // Verify close button is accessible
+        const closeButton = this.modal.querySelector('.close-modal');
+        if (closeButton) {
+            console.log('ModalManager: Close button is accessible after modal display');
+            console.log('ModalManager: Close button element:', closeButton);
+            console.log('ModalManager: Close button computed style:', window.getComputedStyle(closeButton));
+        } else {
+            console.error('ModalManager: Close button not accessible after modal display');
+        }
     }
 
     // Add WhatsApp share button
