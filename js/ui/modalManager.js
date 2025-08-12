@@ -159,18 +159,15 @@ export class ModalManager {
 
         const s = this.currentService;
         
-        // Create shareable link using slug with referrer tracking
+        // Create optimal shareable link based on platform
         const serviceSlug = this.uiManager.dataService.createSlug(s.name);
-        const referrer = 'shared';
-        const shareableLink = `${window.location.origin}${window.location.pathname}#service/${serviceSlug}?ref=${referrer}`;
-        console.log(`Generated shareable link: ${shareableLink}`);
+        const shareableLink = this.isAppleDevice() ? 
+            this.createAppleOptimizedLink(serviceSlug) : 
+            this.createShortenedLink(serviceSlug);
+        console.log(`Generated ${this.isAppleDevice() ? 'Apple-optimized' : 'SMS-friendly'} shareable link: ${shareableLink}`);
         
-        // Create a focused share text - service name with clean Hebrew link
-        const rtlMark = '\u200F'; // Right-to-Left Mark
-        const rtlEmbed = '\u202B'; // Right-to-Left Embedding
-        const rtlPop = '\u202C'; // Pop Directional Formatting
-        
-        const shareText = `${rtlMark}${rtlEmbed}${s.name}\n\nקישור לשירות:\n${shareableLink}${rtlPop}`;
+        // Create optimal share text based on platform
+        const shareText = this.getOptimalShareText(s.name, shareableLink);
         
         if (navigator.share) {
             navigator.share({
@@ -184,14 +181,70 @@ export class ModalManager {
         }
     }
     
+    createSMSFriendlyShareText(serviceName, link) {
+        // Create SMS-optimized share text
+        // Keep it simple and clean for better SMS compatibility
+        // Use shorter format for SMS
+        return `${serviceName}\n\nקישור לשירות:\n${link}`;
+    }
+    
+    createCompactShareText(serviceName, link) {
+        // Create an even more compact format for SMS
+        // This format is optimized for mobile devices and SMS
+        return `${serviceName}\n${link}`;
+    }
+    
+    createAppleMessagesShareText(serviceName, link) {
+        // Create format optimized for Apple Messages (iMessage)
+        // Apple Messages handles links very well, so we can use a more descriptive format
+        return `${serviceName}\n\nקישור לשירות:\n${link}`;
+    }
+    
+    isAppleDevice() {
+        // Detect if user is on an Apple device (iOS, macOS)
+        return /iPad|iPhone|iPod|Mac/.test(navigator.userAgent) || 
+               /Mac|iOS/.test(navigator.platform);
+    }
+    
+    getOptimalShareText(serviceName, link) {
+        // Choose the best share format based on the platform
+        if (this.isAppleDevice()) {
+            // Apple devices can handle richer formatting
+            return this.createAppleMessagesShareText(serviceName, link);
+        } else {
+            // Other devices get the compact format
+            return this.createCompactShareText(serviceName, link);
+        }
+    }
+    
+    createShortenedLink(serviceSlug) {
+        // Create a shorter, more SMS-friendly link
+        // Remove unnecessary parts and keep only essential information
+        const baseUrl = window.location.origin;
+        const path = window.location.pathname;
+        
+        // If we're on the root path, use a shorter format
+        if (path === '/' || path === '') {
+            return `${baseUrl}#service/${serviceSlug}`;
+        }
+        
+        return `${baseUrl}${path}#service/${serviceSlug}`;
+    }
+    
+    createAppleOptimizedLink(serviceSlug) {
+        // Create a link optimized for Apple Messages
+        // Apple Messages handles links very well, so we can use the full path
+        const baseUrl = window.location.origin;
+        const path = window.location.pathname;
+        
+        // For Apple devices, we can use the full path as they handle it well
+        return `${baseUrl}${path}#service/${serviceSlug}`;
+    }
+    
     fallbackShare(text, link, title) {
         // Fallback for browsers that don't support navigator.share
-        // Add RTL formatting for Hebrew text
-        const rtlMark = '\u200F'; // Right-to-Left Mark
-        const rtlEmbed = '\u202B'; // Right-to-Left Embedding
-        const rtlPop = '\u202C'; // Pop Directional Formatting
-        
-        const fullText = `${rtlMark}${rtlEmbed}${title}\n\nקישור לשירות:\n${link}${rtlPop}`;
+        // Use optimal format based on platform
+        const fullText = this.getOptimalShareText(title, link);
         
         // Create a temporary input element
         const input = document.createElement('textarea');
@@ -525,17 +578,14 @@ export class ModalManager {
 
         const s = this.currentService;
         
-        // Create shareable link using slug with referrer tracking
+        // Create optimal shareable link based on platform
         const serviceSlug = this.uiManager.dataService.createSlug(s.name);
-        const referrer = 'whatsapp';
-        const shareableLink = `${window.location.origin}${window.location.pathname}#service/${serviceSlug}?ref=${referrer}`;
+        const shareableLink = this.isAppleDevice() ? 
+            this.createAppleOptimizedLink(serviceSlug) : 
+            this.createShortenedLink(serviceSlug);
         
-        // Create focused WhatsApp share text - service name with clean Hebrew link
-        const rtlMark = '\u200F'; // Right-to-Left Mark
-        const rtlEmbed = '\u202B'; // Right-to-Left Embedding
-        const rtlPop = '\u202C'; // Pop Directional Formatting
-        
-        const whatsappText = `${rtlMark}${rtlEmbed}${s.name}\n\nקישור לשירות:\n${shareableLink}${rtlPop}`;
+        // Create optimal share text based on platform
+        const whatsappText = this.getOptimalShareText(s.name, shareableLink);
         
         // Create WhatsApp URL
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
