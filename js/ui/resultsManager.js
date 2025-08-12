@@ -8,6 +8,7 @@ export class ResultsManager {
         this.viewMode = localStorage.getItem('viewMode') || 'grid';
         this.noResultsMessage = document.getElementById('no-results-message');
         this.currentResults = [];
+        this.currentCategory = null;
         
         this.initializeViewToggle();
     }

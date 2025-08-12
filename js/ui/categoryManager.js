@@ -48,6 +48,9 @@ export class CategoryManager {
         });
 
         this.updateCategoriesVisibility();
+        
+        // Set default category if none is selected
+        this.setDefaultCategory();
     }
 
     createCategoryCard(categoryId, categoryName) {
@@ -127,5 +130,32 @@ export class CategoryManager {
 
     getCategoryName(categoryId) {
         return this.categoryMap.get(categoryId) || 'כללי';
+    }
+    
+    setDefaultCategory() {
+        // Only set default if no category is currently selected
+        if (this.activeCategory === null) {
+            const categories = this.uiManager.dataService.getCategories();
+            if (categories && Array.isArray(categories)) {
+                console.log('Available categories:', categories.map(c => c.name));
+                
+                // Find the "שירותים ומסגרות בזקנה" category
+                const defaultCategory = categories.find(category => 
+                    category.name === 'שירותים ומסגרות בזקנה'
+                );
+                
+                if (defaultCategory) {
+                    console.log('Setting default category:', defaultCategory.name, 'with ID:', defaultCategory.id);
+                    this.selectCategory(defaultCategory.id);
+                } else {
+                    console.log('Default category "שירותים ומסגרות בזקנה" not found');
+                    console.log('Available category names:', categories.map(c => c.name));
+                }
+            } else {
+                console.log('No categories available for default selection');
+            }
+        } else {
+            console.log('Category already selected, not setting default:', this.activeCategory);
+        }
     }
 }
