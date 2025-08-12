@@ -247,127 +247,116 @@ export class DataService {
 
     // Get a service by ID with option to refresh from server
     async getServiceById(serviceId, forceRefresh = false) {
-        if (!serviceId) {
+        try {
+            // אם יש לנו את הנתונים במטמון ולא ביקשנו רענון, נחזיר מהם
+            if (!forceRefresh && this.allServicesData && this.allServicesData.services) {
+                const service = this.allServicesData.services.find(s => s.id === serviceId);
+                if (service) {
+                    console.log(`Service found in cache for ID: ${serviceId}`);
+                    return service;
+                }
+            }
+
+            // אם אין במטמון או שביקשנו רענון, נטען מפיירבייס
+            console.log(`Initializing Firebase for getServiceById(${serviceId})`);
+            const { db } = await initializeFirebase();
+            
+            if (!db) {
+                console.error(`Failed to initialize Firebase in getServiceById(${serviceId}):`, 'Firebase db is null');
+                return null;
+            }
+
+            console.log(`Firebase db initialized successfully for getServiceById(${serviceId}):`, db);
+
+            // נסה לטעון מהפיירבייס
+            const serviceDoc = await getDoc(doc(db, 'services', serviceId));
+            
+            if (serviceDoc.exists()) {
+                const serviceData = serviceDoc.data();
+                console.log(`Service found in Firestore for ID: ${serviceId}:`, serviceData);
+                return { id: serviceDoc.id, ...serviceData };
+            } else {
+                console.log(`Service not found in Firestore for ID: ${serviceId}`);
+                return null;
+            }
+        } catch (error) {
+            console.error(`Error fetching service by ID ${serviceId}:`, error);
             return null;
         }
+    }
 
-        // Get a fresh Firebase db instance directly
-        let db = null;
-        if (forceRefresh) {
-            try {
-                console.log(`Initializing Firebase for getServiceById(${serviceId})`);
-                const firebaseResult = await initializeFirebase();
-                console.log('Firebase initialization result:', firebaseResult);
-                
-                if (!firebaseResult || !firebaseResult.db) {
-                    console.warn("Firebase db not available after initialization:", firebaseResult);
-                    forceRefresh = false; // Fallback to cache
-                } else {
-                    db = firebaseResult.db;
-                    console.log(`Firebase db initialized successfully for getServiceById(${serviceId}):`, db);
-                }
-            } catch (error) {
-                console.error(`Failed to initialize Firebase in getServiceById(${serviceId}):`, error);
-                // Fallback to cache if DB init fails
-                forceRefresh = false;
+    // Get service by slug (converted service name)
+    async getServiceBySlug(serviceSlug, forceRefresh = false) {
+        try {
+            if (!serviceSlug) {
+                console.error('getServiceBySlug: serviceSlug is required');
+                return null;
             }
-        }
 
-        // First check if we have it in memory (unless forceRefresh)
-        if (this.allServicesData?.services && !forceRefresh) {
-            const service = this.allServicesData.services.find(s => s.id === serviceId);
-            if (service) {
-                // console.log(`Returning service ${serviceId} from memory cache`);
-                return service;
-            }
-        }
+            // Decode the URL-encoded slug
+            const decodedSlug = decodeURIComponent(serviceSlug);
+            console.log(`getServiceBySlug: Original slug: ${serviceSlug}, Decoded slug: ${decodedSlug}`);
 
-        // If forceRefresh is true and db is available, fetch fresh from Firestore
-        if (forceRefresh && db) {
-            try {
-                // Validate that db is a valid Firestore instance
-                if (!db || typeof db !== 'object' || !db._databaseId) {
-                    console.error('Invalid Firestore instance:', db);
-                    throw new Error('Invalid Firestore instance');
-                }
-                
-                console.log(`Fetching fresh data for service ${serviceId} from Firestore...`);
-                // 1. Fetch the service document
-                const serviceDocRef = doc(db, 'services', serviceId);
-                console.log('Service document reference:', serviceDocRef);
-                
-                const serviceDocSnap = await getDoc(serviceDocRef);
-                console.log('Service document snapshot:', serviceDocSnap);
-
-                if (!serviceDocSnap.exists()) {
-                    console.warn(`Service ${serviceId} not found in Firestore.`);
-                    return null; // Service doesn't exist
-                }
-
-                let serviceData = { id: serviceDocSnap.id, ...serviceDocSnap.data() };
-                console.log('Service data from Firestore:', serviceData);
-
-                // 2. Fetch related interest area mappings
-                console.log('About to create mappings query...');
-                console.log('collection function:', collection);
-                console.log('db parameter:', db);
-                console.log('db type:', typeof db);
-                
-                const mappingsQuery = query(
-                    collection(db, 'service-interest-areas'),
-                    where('serviceId', '==', serviceId)
-                );
-                console.log('Mappings query created successfully:', mappingsQuery);
-
-                const mappingsSnapshot = await getDocs(mappingsQuery);
-
-                const interestAreaIds = [];
-                mappingsSnapshot.forEach(mappingDoc => {
-                    const mappingData = mappingDoc.data();
-                    if (mappingData.interestAreaId) {
-                        interestAreaIds.push(mappingData.interestAreaId);
-                    }
+            // אם יש לנו את הנתונים במטמון ולא ביקשנו רענון, נחפש בהם
+            if (!forceRefresh && this.allServicesData && this.allServicesData.services) {
+                const service = this.allServicesData.services.find(s => {
+                    // Convert service name to slug and compare
+                    const slug = this.createSlug(s.name);
+                    console.log(`Comparing cached service "${s.name}" slug: "${slug}" with decoded slug: "${decodedSlug}"`);
+                    return slug === decodedSlug;
                 });
-
-                // 3. Merge interest areas into the service data
-                serviceData.interestAreas = interestAreaIds;
-                console.log(`Merged interestAreas for ${serviceId}:`, interestAreaIds);
-
-                // 4. Update the service in our local memory cache (allServicesData)
-                if (this.allServicesData?.services) {
-                    const index = this.allServicesData.services.findIndex(s => s.id === serviceId);
-                    if (index >= 0) {
-                        console.log(`Updating service ${serviceId} in memory cache`);
-                        this.allServicesData.services[index] = serviceData;
-                    } else {
-                        // If service wasn't in cache before, add it (less common case)
-                        this.allServicesData.services.push(serviceData);
-                    }
-                    // Optionally, update the main lastUpdated timestamp if needed
-                    // this.allServicesData.lastUpdated = new Date().toISOString();
-
-                    // 5. Save the *entire* updated data structure back to IndexedDB
-                    // This ensures the cache reflects the newly merged data
-                    await saveToIndexedDB(ALL_SERVICES_KEY, this.allServicesData);
-                    console.log(`Saved updated allServicesData to IndexedDB after fetching ${serviceId}`);
+                
+                if (service) {
+                    console.log(`Service found in cache for slug: ${decodedSlug}`);
+                    return service;
                 }
-
-                return serviceData; // Return the freshly fetched and merged data
-
-            } catch (error) {
-                console.error(`Error fetching service ${serviceId} directly from Firestore:`, error);
-                // Don't fallback here if Firestore fetch fails, let the final fallback handle it
             }
-        }
 
-        // Fallback to local cache if not forceRefresh, or if Firestore fetch failed
-        if (this.allServicesData?.services) {
-            // console.log(`Returning service ${serviceId} from memory cache (fallback)`);
-            return this.allServicesData.services.find(s => s.id === serviceId) || null;
-        }
+            // אם אין במטמון או שביקשנו רענון, נטען מפיירבייס
+            console.log(`Initializing Firebase for getServiceBySlug(${decodedSlug})`);
+            const { db } = await initializeFirebase();
+            
+            if (!db) {
+                console.error(`Failed to initialize Firebase in getServiceBySlug(${decodedSlug}):`, 'Firebase db is null');
+                return null;
+            }
 
-        console.warn(`Service ${serviceId} could not be found.`);
-        return null;
+            console.log(`Firebase db initialized successfully for getServiceBySlug(${decodedSlug}):`, db);
+
+            // Get all services and find by slug
+            const servicesQuery = query(collection(db, 'services'));
+            const querySnapshot = await getDocs(servicesQuery);
+            
+            for (const doc of querySnapshot.docs) {
+                const serviceData = doc.data();
+                const slug = this.createSlug(serviceData.name);
+                console.log(`Comparing Firestore service "${serviceData.name}" slug: "${slug}" with decoded slug: "${decodedSlug}"`);
+                
+                if (slug === decodedSlug) {
+                    console.log(`Service found in Firestore for slug: ${decodedSlug}:`, serviceData);
+                    return { id: doc.id, ...serviceData };
+                }
+            }
+            
+            console.log(`Service not found in Firestore for slug: ${decodedSlug}`);
+            return null;
+        } catch (error) {
+            console.error(`Error fetching service by slug ${serviceSlug}:`, error);
+            return null;
+        }
+    }
+
+    // Helper method to create slug from service name
+    createSlug(serviceName) {
+        if (!serviceName) return '';
+        
+        return serviceName
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '-')        // Replace spaces with hyphens
+            .replace(/[^\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFFa-zA-Z0-9-]/g, '') // Keep Hebrew, Arabic, Latin letters, numbers, and hyphens
+            .replace(/-+/g, '-')         // Replace multiple hyphens with single hyphen
+            .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
     }
 
     async getCachedData() {

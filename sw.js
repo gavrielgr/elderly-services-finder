@@ -1,13 +1,19 @@
 // Service Worker for Elderly Services Finder
 
 // This version is injected during build
-const CACHE_VERSION = '1.99.140'; // Updated version
+const CACHE_VERSION = '1.99.141'; // Updated version
 const CACHE_NAME = `elderly-services-cache-v${CACHE_VERSION}`;
 
 // Function to normalize URL
 const normalizeUrl = (url) => {
   const urlObj = new URL(url, self.location.origin);
-  // Remove hash from the URL if it exists
+  
+  // Don't normalize URLs that contain service hashes - these are our deep links
+  if (urlObj.hash && urlObj.hash.startsWith('#service/')) {
+    return url; // Keep the full URL with hash for service deep links
+  }
+  
+  // Remove hash from other URLs if it exists
   return urlObj.origin + urlObj.pathname;
 };
 
@@ -83,6 +89,25 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
+
+  // Skip JavaScript module requests - let them go directly to the network
+  // This prevents MIME type errors when the service worker interferes with module loading
+  if (event.request.url.includes('.js') || event.request.url.includes('type=module')) {
+    return; // Let the browser handle this request normally
+  }
+
+  // Handle service deep link URLs specially - always serve from network
+  if (event.request.url.includes('#service/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => response)
+        .catch(error => {
+          console.error('Failed to fetch service deep link:', error);
+          throw error;
+        })
+    );
+    return;
+  }
 
   // Handle Google Fonts requests differently
   if (event.request.url.includes('fonts.googleapis.com') || 

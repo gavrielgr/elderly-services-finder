@@ -429,7 +429,7 @@ export class ResultsManager {
 
             card.addEventListener('click', () => {
                 if (this.uiManager && this.uiManager.modalManager) {
-                    this.uiManager.modalManager.showServiceDetails(service);
+                    this.uiManager.modalManager.showServiceDetails(service.id);
                 } else {
                     console.error('ModalManager not initialized');
                 }

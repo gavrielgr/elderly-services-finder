@@ -1,29 +1,53 @@
+import { RouterService } from '../services/routerService.js';
+
 export class ModalManager {
     constructor(uiManager) {
+        console.log('ModalManager: Constructor called');
         this.uiManager = uiManager;
         this.modal = document.getElementById('service-modal');
         this.detailsContainer = document.getElementById('service-details-container');
         this.currentService = null;
         this.ratingComponent = null;
         
-        this.initModal();
-    }
-    
-    initModal() {
-        // Close the modal when the X is clicked
-        const closeButton = document.querySelector('.close-modal');
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                this.modal.style.display = 'none';
-            });
-        }
-
-        // Close when clicking outside of the modal content
-        window.addEventListener('click', (event) => {
-            if (event.target === this.modal) {
-                this.modal.style.display = 'none';
+        console.log('ModalManager: Creating RouterService');
+        this.router = new RouterService();
+        
+        console.log('ModalManager: Setting up router callback');
+        // Set up router callback
+        this.router.setRouteChangeCallback(async (serviceSlug) => {
+            console.log('ModalManager: Router callback triggered with serviceSlug:', serviceSlug);
+            if (serviceSlug) {
+                // URL changed to a service - open it from share link (this will update URL)
+                console.log('ModalManager: Opening service modal from share link for slug:', serviceSlug);
+                await this.openServiceFromShareLink(serviceSlug);
+            } else {
+                // URL changed to main page - close modal
+                console.log('ModalManager: Closing modal, returning to main page');
+                this.closeModal();
             }
         });
+        
+        console.log('ModalManager: Router callback set successfully');
+        
+        this.setupEventListeners();
+        console.log('ModalManager: Constructor completed');
+    }
+    
+    setupEventListeners() {
+        // Close modal when clicking outside or on close button
+        if (this.modal) {
+            this.modal.addEventListener('click', (e) => {
+                if (e.target === this.modal) {
+                    this.closeModal();
+                }
+            });
+            
+            // Close button event listener
+            const closeButton = this.modal.querySelector('.close-button, .modal-close');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => this.closeModal());
+            }
+        }
 
         // Set up call button event
         const callButton = document.getElementById('call-button');
@@ -44,13 +68,161 @@ export class ModalManager {
             });
         }
     }
+    
+    async showServiceDetails(serviceId) {
+        try {
+            console.log('ModalManager: Opening service details for ID:', serviceId);
+            
+            // Fetch the service data
+            let service = await this.uiManager.dataService.getServiceById(serviceId);
+            
+            if (!service) {
+                console.error('ModalManager: Service not found for ID:', serviceId);
+                return;
+            }
 
-    async showServiceDetails(service) {
-        console.log('Showing service details:', service);
+            // Show the modal with the service data
+            this.showModal(service);
+            
+            // Only update URL if this is a direct navigation (not from clicking a service card)
+            // We'll add a separate method for share links
+            console.log('ModalManager: Service modal opened for ID:', serviceId);
+            
+        } catch (error) {
+            console.error('ModalManager: Error opening service details:', error);
+        }
+    }
+
+    // New method specifically for share links - this will update the URL
+    async openServiceFromShareLink(serviceSlug) {
+        try {
+            console.log('ModalManager: Opening service from share link for slug:', serviceSlug);
+            
+            // Fetch the service data
+            let service = await this.uiManager.dataService.getServiceBySlug(serviceSlug);
+            
+            if (!service) {
+                console.error('ModalManager: Service not found for slug:', serviceSlug);
+                return;
+            }
+
+            // Show the modal with the service data
+            this.showModal(service);
+            
+            // Update URL for share links
+            this.router.navigateToService(serviceSlug);
+            
+            console.log('ModalManager: Service modal opened from share link for slug:', serviceSlug);
+            
+        } catch (error) {
+            console.error('ModalManager: Error opening service from share link:', error);
+        }
+    }
+    
+    createDetailSection(label, content) {
+        return `
+            <div class="service-detail-section">
+                <div class="service-detail-label">${label}:</div>
+                <div class="service-detail-value">${content}</div>
+            </div>
+        `;
+    }
+    
+    shareService() {
+        if (!this.currentService) return;
+
+        const s = this.currentService;
+        
+        // Create shareable link using slug with referrer tracking
+        const serviceSlug = this.uiManager.dataService.createSlug(s.name);
+        const referrer = 'shared';
+        const shareableLink = `${window.location.origin}${window.location.pathname}#service/${serviceSlug}?ref=${referrer}`;
+        console.log(`Generated shareable link: ${shareableLink}`);
+        
+        // Create a focused share text - service name with clean Hebrew link
+        const rtlMark = '\u200F'; // Right-to-Left Mark
+        const rtlEmbed = '\u202B'; // Right-to-Left Embedding
+        const rtlPop = '\u202C'; // Pop Directional Formatting
+        
+        const shareText = `${rtlMark}${rtlEmbed}${s.name}\n\nקישור לשירות:\n${shareableLink}${rtlPop}`;
+        
+        if (navigator.share) {
+            navigator.share({
+                text: shareText
+            }).catch(error => {
+                console.error('Error sharing:', error);
+                this.fallbackShare(shareText, shareableLink, s.name);
+            });
+        } else {
+            this.fallbackShare(shareText, shareableLink, s.name);
+        }
+    }
+    
+    fallbackShare(text, link, title) {
+        // Fallback for browsers that don't support navigator.share
+        // Add RTL formatting for Hebrew text
+        const rtlMark = '\u200F'; // Right-to-Left Mark
+        const rtlEmbed = '\u202B'; // Right-to-Left Embedding
+        const rtlPop = '\u202C'; // Pop Directional Formatting
+        
+        const fullText = `${rtlMark}${rtlEmbed}${title}\n\nקישור לשירות:\n${link}${rtlPop}`;
+        
+        // Create a temporary input element
+        const input = document.createElement('textarea');
+        input.value = fullText;
+        // Set RTL direction and alignment for the textarea
+        input.style.direction = 'rtl';
+        input.style.textAlign = 'right';
+        input.style.fontFamily = 'Arial, sans-serif';
+        input.style.fontSize = '14px';
+        input.style.width = '400px';
+        input.style.height = '200px';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        
+        // Show a more informative message
+        alert(`המידע הועתק ללוח!\n\nשירות: ${title}\nהקישור הועתק גם כן.\n\nכעת תוכל להדביק אותם בכל מקום.`);
+    }
+    
+    initRatingComponent(serviceId) {
+        // Initialize rating component if it exists
+        if (this.ratingComponent) {
+            this.ratingComponent.init(serviceId);
+        }
+    }
+    
+    refreshRatings() {
+        // Refresh ratings for current service
+        if (this.currentService && this.ratingComponent) {
+            this.ratingComponent.refresh();
+        }
+    }
+    
+    closeModal() {
+        if (this.modal) {
+            this.modal.style.display = 'none';
+            
+            // Navigate back to main page
+            this.router.navigateToMain();
+            
+            // Clear current service
+            this.currentService = null;
+            
+            // Clear details container
+            if (this.detailsContainer) {
+                this.detailsContainer.innerHTML = '';
+            }
+        }
+    }
+
+    // Show the modal with service data
+    showModal(service) {
         this.currentService = service;
         
         if (!this.detailsContainer) {
-            console.error('Details container not found');
+            console.error('ModalManager: Details container not found');
             return;
         }
         
@@ -58,22 +230,6 @@ export class ModalManager {
         const modalTitle = document.getElementById('modal-title');
         if (modalTitle) {
             modalTitle.textContent = service.name;
-        }
-        
-        // Check if the service needs to be refreshed (implement versioned cache)
-        const needsRefresh = await this.uiManager.dataService.checkServiceVersion(service.id);
-        if (needsRefresh) {
-            // Get the latest version from the server
-            console.log('Service has been updated, fetching latest version');
-            const updatedService = await this.uiManager.dataService.getServiceById(service.id, true);
-            if (updatedService) {
-                this.currentService = updatedService;
-                service = updatedService;
-                // Update title if service was refreshed
-                if (modalTitle) {
-                    modalTitle.textContent = updatedService.name;
-                }
-            }
         }
         
         this.detailsContainer.innerHTML = '';
@@ -277,132 +433,72 @@ export class ModalManager {
         if (shareButton) {
             shareButton.style.display = 'block';
         }
+
+        // Add WhatsApp share button if it doesn't exist
+        this.addWhatsAppShareButton();
     }
-    
-    createDetailSection(title, content) {
-        return `
-            <div class="service-detail-section">
-                <h3 class="detail-title">${title}</h3>
-                <div class="detail-content">${content}</div>
-            </div>
+
+    // Add WhatsApp share button
+    addWhatsAppShareButton() {
+        // Check if WhatsApp share button already exists
+        if (document.getElementById('whatsapp-share-button')) {
+            return;
+        }
+
+        // Create WhatsApp share button
+        const whatsappButton = document.createElement('button');
+        whatsappButton.id = 'whatsapp-share-button';
+        whatsappButton.className = 'whatsapp-share-button';
+        whatsappButton.innerHTML = '📱 WhatsApp';
+        whatsappButton.title = 'שתף בווטסאפ';
+        
+        // Style the button
+        whatsappButton.style.cssText = `
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
         `;
+
+        // Add click event
+        whatsappButton.addEventListener('click', () => {
+            this.shareToWhatsApp();
+        });
+
+        // Find the share button and add WhatsApp button next to it
+        const shareButton = document.getElementById('share-button');
+        if (shareButton && shareButton.parentNode) {
+            shareButton.parentNode.insertBefore(whatsappButton, shareButton.nextSibling);
+        }
     }
-    
-    shareService() {
+
+    // Share to WhatsApp
+    shareToWhatsApp() {
         if (!this.currentService) return;
 
         const s = this.currentService;
-        const contact = s.contact || {};
-        let shareLines = [];
-
-        // Name
-        if (s.name) shareLines.push(`שירות: ${s.name}`);
-        // Description
-        if (s.description) shareLines.push(`תיאור: ${s.description}`);
-        // Phone(s)
-        if (contact.phone && Array.isArray(contact.phone) && contact.phone.length > 0) {
-            const phones = contact.phone.map(p => p.number + (p.description ? ` (${p.description})` : '')).join(', ');
-            shareLines.push(`טלפון: ${phones}`);
-        }
-        // Email(s)
-        if (contact.email && Array.isArray(contact.email) && contact.email.length > 0) {
-            const emails = contact.email.map(e => e.address + (e.description ? ` (${e.description})` : '')).join(', ');
-            shareLines.push(`דוא"ל: ${emails}`);
-        }
-        // Website(s)
-        if (contact.website && Array.isArray(contact.website) && contact.website.length > 0) {
-            const websites = contact.website.map(w => w.url + (w.description ? ` (${w.description})` : '')).join(', ');
-            shareLines.push(`אתר: ${websites}`);
-        }
-        // City
-        if (s.city) shareLines.push(`עיר: ${s.city}`);
-        // Address
-        if (s.address) shareLines.push(`כתובת: ${s.address}`);
-
-        const shareText = shareLines.join('\n');
-
-        if (navigator.share) {
-            navigator.share({
-                title: s.name,
-                text: shareText
-            }).catch(error => {
-                console.error('Error sharing:', error);
-                this.fallbackShare(shareText);
-            });
-        } else {
-            this.fallbackShare(shareText);
-        }
-    }
-    
-    fallbackShare(text) {
-        // Fallback for browsers that don't support navigator.share
-        // Create a temporary input element
-        const input = document.createElement('textarea');
-        input.value = text;
-        document.body.appendChild(input);
-        input.select();
-        document.execCommand('copy');
-        document.body.removeChild(input);
         
-        alert('הטקסט הועתק ללוח. כעת תוכל להדביק אותו בכל מקום.');
-    }
-    
-    async initRatingComponent(serviceId) {
-        try {
-            // Import Rating Component dynamically
-            const RatingModule = await import('../components/RatingComponent.js');
-            
-            // Clean up previous rating component if exists
-            if (this.ratingComponent) {
-                this.ratingComponent.destroy();
-                this.ratingComponent = null;
-            }
-            
-            // Create new rating component
-            this.ratingComponent = RatingModule.createRatingComponent('service-rating-container', serviceId, this.currentService);
-        } catch (error) {
-            console.error('Error initializing rating component:', error);
-        }
-    }
-
-    // Add a new method to refresh ratings
-    async refreshRatings() {
-        if (!this.currentService || !this.ratingComponent) {
-            return;
-        }
+        // Create shareable link using slug with referrer tracking
+        const serviceSlug = this.uiManager.dataService.createSlug(s.name);
+        const referrer = 'whatsapp';
+        const shareableLink = `${window.location.origin}${window.location.pathname}#service/${serviceSlug}?ref=${referrer}`;
         
-        console.log('Refreshing ratings for service:', this.currentService.id);
+        // Create focused WhatsApp share text - service name with clean Hebrew link
+        const rtlMark = '\u200F'; // Right-to-Left Mark
+        const rtlEmbed = '\u202B'; // Right-to-Left Embedding
+        const rtlPop = '\u202C'; // Pop Directional Formatting
         
-        // Show loading indicator on the button
-        const refreshButton = document.getElementById('refresh-ratings-button');
-        if (refreshButton) {
-            refreshButton.classList.add('loading');
-            refreshButton.innerHTML = '<span class="loading-spinner"></span>';
-        }
+        const whatsappText = `${rtlMark}${rtlEmbed}${s.name}\n\nקישור לשירות:\n${shareableLink}${rtlPop}`;
         
-        try {
-            // Fetch the latest service data including ratings
-            const updatedService = await this.uiManager.dataService.getServiceById(this.currentService.id, true);
-            
-            if (updatedService) {
-                // Update the current service with the new data
-                this.currentService = updatedService;
-                
-                // Update the rating component
-                await this.ratingComponent.updateServiceData(this.currentService);
-            }
-        } catch (error) {
-            console.error('Error refreshing ratings:', error);
-        } finally {
-            // Restore the refresh button
-            if (refreshButton) {
-                refreshButton.classList.remove('loading');
-                refreshButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38"/>
-                    </svg>
-                `;
-            }
-        }
+        // Create WhatsApp URL
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+        
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
     }
 }
