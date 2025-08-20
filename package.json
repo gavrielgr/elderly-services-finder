@@ -1,7 +1,7 @@
 {
   "name": "elderly-services-finder",
   "private": true,
-  "version": "1.99.148",
+  "version": "1.99.149",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"node server.js\" \"vite\"",
