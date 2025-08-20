@@ -52,3 +52,4 @@ Thumbs.db
 serviceAccountKey.json
 js/config/firebase-admin-key.json
 CLAUDE.md
+.claude/settings.local.json

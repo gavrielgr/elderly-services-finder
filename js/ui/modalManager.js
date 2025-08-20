@@ -206,6 +206,16 @@ export class ModalManager {
                /Mac|iOS/.test(navigator.platform);
     }
     
+    isMobile() {
+        // Detect if user is on a mobile device
+        // Combine screen size detection with touch capability and user agent
+        const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const isMobileScreen = window.matchMedia('(max-width: 768px)').matches;
+        const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        return isMobileScreen || (hasTouch && isMobileUserAgent);
+    }
+    
     getOptimalShareText(serviceName, link) {
         // Choose the best share format based on the platform
         if (this.isAppleDevice()) {
@@ -359,7 +369,11 @@ export class ModalManager {
                 .map(p => {
                     const number = p.number;
                     const description = p.description;
-                    return `<a href="tel:${number}" class="phone-link">${number}</a>${description ? ` - ${description}` : ''}`;
+                    if (this.isMobile()) {
+                        return `<a href="tel:${number}" class="phone-link mobile-only-link">${number}</a>${description ? ` - ${description}` : ''}`;
+                    } else {
+                        return `<span class="phone-text desktop-text">${number}</span>${description ? ` - ${description}` : ''}`;
+                    }
                 })
                 .join('<br>');
             
@@ -372,8 +386,13 @@ export class ModalManager {
                 .map(e => {
                     const address = e.address;
                     const description = e.description;
-                    // Create a clean email link without inline onclick
-                    return `<a href="#" class="email-link" data-email="${address}" style="color: #007bff; text-decoration: underline; cursor: pointer;">${address}</a>${description ? ` - ${description}` : ''}`;
+                    if (this.isMobile()) {
+                        // Create a clean email link without inline onclick for mobile
+                        return `<a href="#" class="email-link mobile-only-link" data-email="${address}">${address}</a>${description ? ` - ${description}` : ''}`;
+                    } else {
+                        // Create plain text for desktop
+                        return `<span class="email-text desktop-text">${address}</span>${description ? ` - ${description}` : ''}`;
+                    }
                 })
                 .join('<br>');
             
@@ -464,46 +483,48 @@ export class ModalManager {
         this.modal.style.display = 'flex';
         console.log('ModalManager: Modal displayed with flex, current display style:', this.modal.style.display);
         
-        // Add event listeners for email links to ensure they work with Chrome
-        const emailLinks = this.detailsContainer.querySelectorAll('.email-link');
-        emailLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const email = link.getAttribute('data-email');
-                if (email) {
-                    console.log('Email link clicked, attempting to open mailto:', email);
-                    
-                    // Create a temporary link element and click it programmatically
-                    // This approach often works better with Chrome's security
-                    const tempLink = document.createElement('a');
-                    tempLink.href = `mailto:${email}`;
-                    tempLink.style.display = 'none';
-                    document.body.appendChild(tempLink);
-                    
-                    // Use a small delay to ensure the element is properly added to DOM
-                    setTimeout(() => {
-                        try {
-                            tempLink.click();
-                            console.log('Temporary link clicked successfully');
-                        } catch (error) {
-                            console.error('Error clicking temporary link:', error);
-                            // Fallback: try direct navigation
+        // Add event listeners for email links only on mobile devices
+        if (this.isMobile()) {
+            const emailLinks = this.detailsContainer.querySelectorAll('.email-link');
+            emailLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const email = link.getAttribute('data-email');
+                    if (email) {
+                        console.log('Email link clicked, attempting to open mailto:', email);
+                        
+                        // Create a temporary link element and click it programmatically
+                        // This approach often works better with Chrome's security
+                        const tempLink = document.createElement('a');
+                        tempLink.href = `mailto:${email}`;
+                        tempLink.style.display = 'none';
+                        document.body.appendChild(tempLink);
+                        
+                        // Use a small delay to ensure the element is properly added to DOM
+                        setTimeout(() => {
                             try {
-                                window.location.href = `mailto:${email}`;
-                                console.log('Fallback navigation attempted');
-                            } catch (error2) {
-                                console.error('Fallback also failed:', error2);
+                                tempLink.click();
+                                console.log('Temporary link clicked successfully');
+                            } catch (error) {
+                                console.error('Error clicking temporary link:', error);
+                                // Fallback: try direct navigation
+                                try {
+                                    window.location.href = `mailto:${email}`;
+                                    console.log('Fallback navigation attempted');
+                                } catch (error2) {
+                                    console.error('Fallback also failed:', error2);
+                                }
+                            } finally {
+                                // Clean up
+                                if (document.body.contains(tempLink)) {
+                                    document.body.removeChild(tempLink);
+                                }
                             }
-                        } finally {
-                            // Clean up
-                            if (document.body.contains(tempLink)) {
-                                document.body.removeChild(tempLink);
-                            }
-                        }
-                    }, 10);
-                }
+                        }, 10);
+                    }
+                });
             });
-        });
+        }
         
         // Initialize rating component
         this.initRatingComponent(service.id);

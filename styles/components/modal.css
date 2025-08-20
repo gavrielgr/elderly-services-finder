@@ -277,3 +277,27 @@
         transform: rotate(360deg);
     }
 }
+
+/* Mobile-only clickable links */
+.mobile-only-link {
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.mobile-only-link:hover {
+    color: var(--primary-hover, #0056b3);
+    text-decoration: underline;
+}
+
+/* Desktop text (non-clickable) */
+.desktop-text {
+    color: var(--text-color);
+    text-decoration: none;
+    cursor: default;
+}
+
+.desktop-text:hover {
+    color: var(--text-color);
+    text-decoration: none;
+}
